@@ -124,7 +124,7 @@ export function Hero({ onAuditClick }: HeroProps) {
         </div>
 
         {/* ── MOBILE: CTAs below body text (hidden on md+) ── */}
-        <div className="md:hidden flex flex-col mt-6" style={{ zIndex: 20 }}>
+        <div className="md:hidden flex flex-col gap-3 mt-6" style={{ zIndex: 20 }}>
           <button
             onClick={onAuditClick}
             className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-semibold px-7 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
@@ -132,6 +132,18 @@ export function Hero({ onAuditClick }: HeroProps) {
           >
             Get instant AI audit
           </button>
+          <a
+            href="https://calendly.com/its-naunas/30min"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 font-semibold px-7 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
+            style={{ background: 'var(--accent)', color: '#0C0C0C' }}
+          >
+            Book your free audit
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2.5 7h9M8 3.5L11.5 7 8 10.5" stroke="#0C0C0C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
         </div>
 
         {/* ── MOBILE: social proof pinned to bottom (hidden on md+) ── */}
