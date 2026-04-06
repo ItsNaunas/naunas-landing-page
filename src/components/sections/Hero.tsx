@@ -111,24 +111,11 @@ export function Hero({ onAuditClick }: HeroProps) {
         </div>
 
         {/* ── Desktop CTAs (hidden on mobile) ── */}
-        <div className="relative hidden md:flex flex-row items-center justify-center gap-3" style={{ zIndex: 20 }}>
-          <Magnetic>
-            <a
-              href="https://calendly.com/its-naunas/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] font-semibold px-7 py-3.5 rounded-full transition-colors active:scale-[0.98] text-sm glow-accent"
-            >
-              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Book your free audit
-            </a>
-          </Magnetic>
+        <div className="relative hidden md:flex flex-row items-center justify-center" style={{ zIndex: 20 }}>
           <Magnetic>
             <button
               onClick={onAuditClick}
-              className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-medium px-7 py-3.5 rounded-full transition-all active:scale-[0.98] text-sm"
+              className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-semibold px-8 py-3.5 rounded-full transition-all active:scale-[0.98] text-sm"
               style={{ background: '#0C0C0C', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 0 16px rgba(242,97,63,0.2), 0 0 32px rgba(242,97,63,0.08)' }}
             >
               Get instant AI audit
@@ -137,22 +124,11 @@ export function Hero({ onAuditClick }: HeroProps) {
         </div>
 
         {/* ── MOBILE: CTAs below body text (hidden on md+) ── */}
-        <div className="md:hidden flex flex-col gap-3 mt-6" style={{ zIndex: 20 }}>
-          <a
-            href="https://calendly.com/its-naunas/30min"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 bg-[var(--accent)] text-[#0C0C0C] font-semibold px-7 py-4 rounded-full transition-colors active:scale-[0.98] text-sm w-full glow-accent"
-          >
-            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Book your free audit
-          </a>
+        <div className="md:hidden flex flex-col mt-6" style={{ zIndex: 20 }}>
           <button
             onClick={onAuditClick}
-            className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-medium px-7 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
-            style={{ background: 'rgba(12,12,12,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}
+            className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-semibold px-7 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
+            style={{ background: 'rgba(12,12,12,0.85)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', boxShadow: '0 0 16px rgba(242,97,63,0.15)' }}
           >
             Get instant AI audit
           </button>
