@@ -20,7 +20,7 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 };
 
 export function About() {
@@ -126,7 +126,7 @@ export function About() {
           <motion.div
             initial={{ opacity: 0, x: -20, y: -10 }}
             animate={isInView ? { opacity: 1, x: 0, y: 0 } : {}}
-            transition={{ delay: 0.45, duration: 0.5, ease: 'easeOut' }}
+            transition={{ delay: 0.45, duration: 0.5, ease: 'easeOut' as const }}
             className="absolute top-4 left-0 z-20 rounded-xl p-4 min-w-[170px] hidden md:block"
             style={{
               background: '#fff',
@@ -153,7 +153,7 @@ export function About() {
           <motion.div
             initial={{ opacity: 0, x: 20, y: 10 }}
             animate={isInView ? { opacity: 1, x: 0, y: 0 } : {}}
-            transition={{ delay: 0.6, duration: 0.5, ease: 'easeOut' }}
+            transition={{ delay: 0.6, duration: 0.5, ease: 'easeOut' as const }}
             className="absolute bottom-8 right-0 z-20 rounded-xl p-4 min-w-[160px] hidden md:block"
             style={{
               background: '#fff',

@@ -123,7 +123,7 @@ export function Comparison() {
                 key={row.label}
                 initial={{ opacity: 0, y: 16 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.4, delay: 0.2 + i * 0.07, ease: 'easeOut' }}
+                transition={{ duration: 0.4, delay: 0.2 + i * 0.07, ease: 'easeOut' as const }}
                 className="grid grid-cols-4"
                 style={{ background: i % 2 === 0 ? '#fff' : 'rgba(0,0,0,0.015)' }}
               >

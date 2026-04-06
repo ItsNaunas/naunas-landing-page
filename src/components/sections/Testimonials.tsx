@@ -92,7 +92,7 @@ export function Testimonials() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.3, ease: 'easeInOut' as const }}
               className="md:col-span-3 flex flex-col justify-between py-10 pr-0 md:pr-12"
               style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}
             >
