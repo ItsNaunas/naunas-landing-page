@@ -1,0 +1,532 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────
+   DESIGN TOKENS
+   All raw values must come from here.
+   Never hardcode hex, shadow, z-index, or
+   font values directly in components.
+───────────────────────────────────────── */
+
+:root {
+  /* Backgrounds */
+  --bg:          #0C0C0C;
+  --card:        #111111;
+  --card-raised: #1A1A1A;
+
+  /* Borders */
+  --border:        #2A2A2A;
+  --border-subtle: #1F1F1F;
+
+  /* Text */
+  --fg:             #FFFFFF;
+  --text-secondary: #CCCCCC;
+  --muted:          #999999;
+  --label:          #808080;
+  --placeholder:    #444444;
+
+  /* Accent */
+  --accent:       #F2613F;
+  --accent-hover: #D94E2E;
+
+  /* Semantic */
+  --error: #EF4444;
+
+  /* Shadows */
+  --shadow-card:  0 4px 24px rgba(0, 0, 0, 0.40);
+  --shadow-float: 0 8px 40px rgba(0, 0, 0, 0.55);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.75);
+
+  /* Z-Index Scale */
+  --z-base:     0;
+  --z-float:    10;
+  --z-sticky:   40;
+  --z-backdrop: 50;
+  --z-modal:    51;
+
+  /* Font Stacks */
+  --font-display: 'Clash Display', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --font-body:    'Satoshi', 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Spacing Scale (multiples of 4px) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+}
+
+@theme inline {
+  --color-bg:             var(--bg);
+  --color-card:           var(--card);
+  --color-card-raised:    var(--card-raised);
+  --color-border:         var(--border);
+  --color-border-subtle:  var(--border-subtle);
+  --color-fg:             var(--fg);
+  --color-secondary:      var(--text-secondary);
+  --color-muted:          var(--muted);
+  --color-label:          var(--label);
+  --color-placeholder:    var(--placeholder);
+  --color-accent:         var(--accent);
+  --color-accent-hover:   var(--accent-hover);
+  --color-error:          var(--error);
+  --font-display:         var(--font-display);
+  --font-body:            var(--font-body);
+}
+
+/* ─────────────────────────────────────────
+   BASE RESET
+   Only box-sizing — Tailwind Preflight
+   handles margin/padding reset. Adding
+   padding:0 here overrides utility classes.
+───────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─────────────────────────────────────────
+   TYPOGRAPHY RULES
+   Headings always use display font.
+   Body always uses body font.
+───────────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+p, li, span, label, input, textarea, select, button {
+  font-family: var(--font-body);
+}
+
+/* ─────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────── */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Elements start hidden — JS adds .is-visible to trigger */
+.will-animate {
+  opacity: 0;
+}
+
+.is-visible.anim-up {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.is-visible.anim-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+/* Stagger delays */
+.delay-100 { animation-delay: 0.10s; }
+.delay-200 { animation-delay: 0.20s; }
+.delay-300 { animation-delay: 0.30s; }
+.delay-400 { animation-delay: 0.40s; }
+.delay-500 { animation-delay: 0.50s; }
+
+/* Problem section — dark band (matches overall page theme) */
+section#problem.problem-section-dark {
+  --problem-bg: #0c0c0c;
+  --problem-panel: #151515;
+  --problem-panel-border: #2a2a2a;
+  --problem-fg: #ffffff;
+  --problem-muted: #a0a0a0;
+  --problem-card: #1a1a1a;
+  --problem-card-raised: #1f1f1f;
+  --problem-border: #333333;
+  --problem-border-subtle: #2a2a2a;
+  --problem-shadow: 0 4px 28px rgba(0, 0, 0, 0.4);
+  --problem-shadow-deep: 0 8px 36px rgba(0, 0, 0, 0.6);
+  background-color: var(--problem-bg);
+}
+
+section#problem.problem-section-dark .problem-outline-cta {
+  border-color: var(--problem-border);
+  color: var(--problem-fg);
+  background: transparent;
+}
+
+@media (hover: hover) {
+  section#problem.problem-section-dark .problem-outline-cta:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--problem-fg);
+  }
+}
+
+/* Deck on light problem section */
+section#problem.problem-section-light .problem-deck-card-face {
+  border-color: var(--border-subtle);
+  background-color: var(--card-raised);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0) 44%
+  );
+  box-shadow:
+    0 2px 12px rgba(15, 15, 23, 0.06),
+    0 0 0 1px rgba(15, 15, 23, 0.05);
+}
+
+section#problem.problem-section-light .problem-deck-card[data-deck-depth="0"] .problem-deck-card-face {
+  box-shadow:
+    0 6px 32px rgba(15, 15, 23, 0.09),
+    0 0 0 1px rgba(15, 15, 23, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+section#problem.problem-section-light .problem-deck-card[data-deck-depth="1"] .problem-deck-card-face {
+  box-shadow:
+    0 4px 20px rgba(15, 15, 23, 0.07),
+    0 0 0 1px rgba(15, 15, 23, 0.05);
+}
+
+section#problem.problem-section-light .problem-deck-card[data-deck-depth="2"] .problem-deck-card-face {
+  box-shadow:
+    0 3px 14px rgba(15, 15, 23, 0.06),
+    0 0 0 1px rgba(15, 15, 23, 0.045);
+}
+
+section#problem.problem-section-light .problem-deck-card[data-deck-depth="3"] .problem-deck-card-face {
+  box-shadow:
+    0 2px 10px rgba(15, 15, 23, 0.055),
+    0 0 0 1px rgba(15, 15, 23, 0.04);
+}
+
+@media (hover: hover) {
+  section#problem.problem-section-light .problem-deck-card[data-deck-depth="0"]:hover .problem-deck-card-face {
+    box-shadow:
+      var(--problem-shadow-deep),
+      0 0 0 1px rgba(15, 15, 23, 0.08),
+      0 0 36px rgba(242, 97, 63, 0.12),
+      0 1px 0 rgba(255, 255, 255, 0.95) inset;
+    border-color: rgba(15, 15, 23, 0.1);
+  }
+}
+
+/* Deck on dark problem section */
+section#problem.problem-section-dark .problem-deck-card-face {
+  border-color: var(--problem-border-subtle);
+  background-color: var(--problem-card-raised);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0) 44%
+  );
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+section#problem.problem-section-dark .problem-deck-card[data-deck-depth="0"] .problem-deck-card-face {
+  box-shadow:
+    0 6px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+section#problem.problem-section-dark .problem-deck-card[data-deck-depth="1"] .problem-deck-card-face {
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+section#problem.problem-section-dark .problem-deck-card[data-deck-depth="2"] .problem-deck-card-face {
+  box-shadow:
+    0 3px 14px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+section#problem.problem-section-dark .problem-deck-card[data-deck-depth="3"] .problem-deck-card-face {
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@media (hover: hover) {
+  section#problem.problem-section-dark .problem-deck-card[data-deck-depth="0"]:hover .problem-deck-card-face {
+    box-shadow:
+      var(--problem-shadow-deep),
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 0 36px rgba(242, 97, 63, 0.15),
+      0 1px 0 rgba(255, 255, 255, 0.15) inset;
+  }
+}
+
+/* Problem section — deck (surfaces, depth, micro-motion) */
+.problem-deck-card {
+  transform-origin: bottom center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+.problem-deck-card-face {
+  border-color: var(--border-subtle);
+  background-color: var(--card-raised);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.055) 0%,
+    rgba(255, 255, 255, 0) 42%
+  );
+  /* Fallback if depth > 3 */
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+  transition:
+    box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.4s ease;
+}
+
+/* Tiered depth — softer stack, front card reads clearly */
+.problem-deck-card[data-deck-depth="0"] .problem-deck-card-face {
+  box-shadow:
+    0 4px 28px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.problem-deck-card[data-deck-depth="1"] .problem-deck-card-face {
+  box-shadow:
+    0 3px 20px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.045);
+}
+
+.problem-deck-card[data-deck-depth="2"] .problem-deck-card-face {
+  box-shadow:
+    0 2px 14px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+.problem-deck-card[data-deck-depth="3"] .problem-deck-card-face {
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.problem-deck-card-icon-well {
+  background: rgba(242, 97, 63, 0.07);
+  border: 1px solid rgba(242, 97, 63, 0.16);
+}
+
+/* Enhanced idle drift — front card only, more natural movement */
+@keyframes problemDeckIdleFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotateZ(0deg);
+  }
+  25% {
+    transform: translateY(-2px) rotateZ(0.5deg);
+  }
+  50% {
+    transform: translateY(-1px) rotateZ(-0.3deg);
+  }
+  75% {
+    transform: translateY(-2.5px) rotateZ(0.2deg);
+  }
+}
+
+.problem-deck-idle-float-inner {
+  animation: problemDeckIdleFloat 3.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .problem-deck-idle-float-inner {
+    animation: none;
+  }
+}
+
+/* Enhanced hover effects for front card */
+@media (hover: hover) {
+  .problem-deck-card[data-deck-depth="0"]:hover {
+    z-index: 10;
+  }
+  
+  .problem-deck-card[data-deck-depth="0"]:hover .problem-deck-card-face {
+    transform: translateY(-8px) scale(1.02) rotateZ(2deg);
+    box-shadow: 
+      0 20px 40px rgba(242, 97, 63, 0.15),
+      0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.34, 1.12, 0.36, 1);
+  }
+  
+  .problem-deck-card[data-deck-depth="0"]:hover .problem-deck-card-icon-well {
+    background: rgba(242, 97, 63, 0.12);
+    border-color: rgba(242, 97, 63, 0.25);
+    transform: scale(1.05);
+    transition: all 0.3s ease;
+  }
+}
+
+/* Soft accent pulse when a new card becomes front */
+@keyframes problemDeckFrontFlash {
+  0% {
+    opacity: 1;
+    box-shadow: 0 0 0 1px rgba(242, 97, 63, 0.35), 0 0 20px rgba(242, 97, 63, 0.2);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0 1px rgba(242, 97, 63, 0), 0 0 0 0 rgba(242, 97, 63, 0);
+  }
+}
+
+.problem-deck-flash-ring {
+  animation: problemDeckFrontFlash 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .problem-deck-card[data-deck-depth="0"]:hover .problem-deck-card-face {
+    box-shadow:
+      var(--shadow-float),
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 40px rgba(242, 97, 63, 0.08),
+      0 1px 0 rgba(255, 255, 255, 0.05) inset;
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* ─────────────────────────────────────────
+   CARD HOVER LIFT
+   Add .card-hover to any card that should
+   lift on hover.
+───────────────────────────────────────── */
+
+.card-hover {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-float);
+  }
+}
+
+/* ─────────────────────────────────────────
+   ACCENT GLOW
+   Add to any orange CTA button/link.
+───────────────────────────────────────── */
+
+.glow-accent {
+  box-shadow: 0 0 18px rgba(242, 97, 63, 0.35), 0 0 40px rgba(242, 97, 63, 0.12);
+  transition: box-shadow 0.22s ease, background-color 0.2s ease;
+}
+
+@media (hover: hover) {
+  .glow-accent:hover {
+    box-shadow: 0 0 24px rgba(242, 97, 63, 0.5), 0 0 56px rgba(242, 97, 63, 0.18);
+  }
+}
+
+/* ─────────────────────────────────────────
+   REVENUE CALCULATOR — range slider
+───────────────────────────────────────── */
+
+.calc-slider {
+  --slider-fill: 0%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  background: transparent;
+}
+
+.calc-slider::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    #F2613F var(--slider-fill),
+    rgba(242, 97, 63, 0.15) var(--slider-fill)
+  );
+}
+
+.calc-slider::-moz-range-track {
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(242, 97, 63, 0.15);
+}
+
+.calc-slider::-moz-range-progress {
+  height: 3px;
+  border-radius: 9999px;
+  background: #F2613F;
+}
+
+.calc-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #F2613F;
+  cursor: pointer;
+  margin-top: -8.5px;
+  box-shadow: 0 0 0 4px rgba(242, 97, 63, 0.18);
+  transition: box-shadow 0.2s ease;
+}
+
+.calc-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 6px rgba(242, 97, 63, 0.28);
+}
+
+.calc-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #F2613F;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 0 4px rgba(242, 97, 63, 0.18);
+}
+
+/* ─────────────────────────────────────────
+   FOCUS RING (accessibility)
+───────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
