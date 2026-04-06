@@ -137,7 +137,6 @@ export function CaseStudies() {
               style={{
                 borderTop: '1px solid rgba(255,255,255,0.07)',
                 borderBottom: '1px solid rgba(255,255,255,0.07)',
-                divideColor: 'rgba(255,255,255,0.07)',
               }}
             >
               {active.results.map((r) => (
