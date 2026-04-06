@@ -142,7 +142,7 @@ const CardSwap: React.FC<CardSwapProps> = ({
             (child.props as CardProps).onClick?.(e);
             onCardClick?.(i);
           },
-        })
+        } as CardProps & { ref: React.Ref<HTMLDivElement> })
       : child
   );
 
