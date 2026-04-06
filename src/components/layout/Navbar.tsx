@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 
 const NAV_LINKS = [
-  { label: 'Home',     href: '#hero' },
-  { label: 'Services', href: '#services' },
-  { label: 'Process',  href: '#process' },
-  { label: 'FAQ',      href: '#faq' },
-  { label: 'Contact',  href: '#contact' },
+  { label: 'Home',     id: 'hero' },
+  { label: 'Services', id: 'services' },
+  { label: 'Process',  id: 'process' },
+  { label: 'FAQ',      id: 'faq' },
+  { label: 'Contact',  id: 'contact' },
 ];
+
+function scrollTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 interface NavbarProps {
   onAuditClick: () => void;
@@ -36,20 +40,20 @@ export function Navbar({ onAuditClick }: NavbarProps) {
       <nav className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <a href="#hero" className="text-lg font-semibold text-[var(--fg)] tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+        <button onClick={() => scrollTo('hero')} className="text-lg font-semibold text-[var(--fg)] tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
           Naunas<span className="text-[var(--accent)]">.</span>
-        </a>
+        </button>
 
         {/* Desktop nav */}
         <ul className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((link) => (
             <li key={link.label}>
-              <a
-                href={link.href}
+              <button
+                onClick={() => scrollTo(link.id)}
                 className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
               >
                 {link.label}
-              </a>
+              </button>
             </li>
           ))}
         </ul>
@@ -96,13 +100,12 @@ export function Navbar({ onAuditClick }: NavbarProps) {
           <ul className="flex flex-col gap-4 pt-4">
             {NAV_LINKS.map((link) => (
               <li key={link.label}>
-                <a
-                  href={link.href}
+                <button
+                  onClick={() => { scrollTo(link.id); setMenuOpen(false); }}
                   className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
-                  onClick={() => setMenuOpen(false)}
                 >
                   {link.label}
-                </a>
+                </button>
               </li>
             ))}
           </ul>
