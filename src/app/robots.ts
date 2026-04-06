@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://naunas.co.uk/sitemap.xml',
+    sitemap: 'https://www.naunas.co.uk/sitemap.xml',
   };
 }

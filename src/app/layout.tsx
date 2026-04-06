@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { CursorGlow } from "@/components/ui/CursorGlow";
 
-const SITE_URL = 'https://naunas.co.uk';
+const SITE_URL = 'https://www.naunas.co.uk';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
