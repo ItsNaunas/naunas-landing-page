@@ -24,7 +24,21 @@ const DECISION_OPTIONS = ['Yes', 'Partly', 'No'];
 const EXPERIENCE_OPTIONS = ['Brand new', 'Some experience', 'Already building'];
 
 type Path = 'services' | 'builder';
-type Stage = 'form' | 'qualified' | 'notQualified' | 'builder';
+type Stage = 'form' | 'qualified' | 'notQualified' | 'builder' | 'booked';
+
+const FAQS = [
+  { q: 'What actually happens on the call?', a: "I map your lead-to-cash journey, show you where it's leaking and what it's costing, then exactly what I'd install to fix it. A map, not a hard pitch." },
+  { q: 'How long is it?', a: '20–30 minutes. Come as you are — no prep deck needed.' },
+  { q: 'What does it cost to work together after?', a: "The audit's free. If you want me to build the fix, installs typically start around £5k plus a monthly retainer — I'll give you exact numbers on the call, based on what we find." },
+  { q: 'Do I need to prepare anything?', a: 'Just reply to your confirmation email with your website or booking link so I can pre-audit it before we talk.' },
+  { q: "What if it turns out it's not for me?", a: "No pressure at all — you'll leave with the map either way." },
+];
+
+const EXPECT = [
+  'A clear read on where your enquiries leak — and a rough £ on what it costs you monthly.',
+  'The exact system I\'d install to plug it, built around the tools you already use.',
+  'Zero obligation. If it\'s a fit we talk next steps; if not, you keep the map.',
+];
 
 interface Answers {
   fork: string;
@@ -179,6 +193,17 @@ export function AuditQualifyForm() {
     const to = window.setTimeout(() => window.clearInterval(id), 8000);
     return () => { window.clearInterval(id); window.clearTimeout(to); };
   }, [stage]);
+
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      const data = e.data as { event?: string } | null;
+      if (typeof e.origin === 'string' && e.origin.includes('calendly.com') && data?.event === 'calendly.event_scheduled') {
+        setStage('booked');
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   const steps = path === 'builder' ? BUILDER_STEPS : path === 'services' ? SERVICES_STEPS : (['fork'] as const);
   const currentStep = steps[stepIndex];
@@ -560,6 +585,84 @@ export function AuditQualifyForm() {
             >
               Calendar not loading? Open it in a new tab →
             </a>
+          </motion.div>
+        )}
+
+        {stage === 'booked' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col gap-9 pt-6"
+          >
+            <div className="flex flex-col items-center text-center gap-4">
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(242,97,63,0.15)', border: '1px solid rgba(242,97,63,0.3)' }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="#F2613F" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold" style={{ color: '#fff' }}>
+                You&apos;re booked, {firstName}.
+              </h1>
+              <p className="text-sm max-w-md leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Your calendar invite and the call link are on their way to your inbox.
+              </p>
+            </div>
+
+            <div className="rounded-2xl px-5 py-5" style={{ background: 'rgba(242,97,63,0.08)', border: '1px solid rgba(242,97,63,0.25)' }}>
+              <p className="text-sm font-semibold mb-1.5" style={{ color: '#F2613F' }}>One thing before we talk →</p>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                Reply to your confirmation email with your website or booking link. I&apos;ll pre-audit it before the call, so we skip the warm-up and go straight to where you&apos;re leaking.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center text-center gap-3">
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>While you wait — the breakdown of the 6 places businesses leak revenue:</p>
+              <a
+                href={LEAD_MAGNET_URL}
+                className="font-semibold px-7 py-3 rounded-full transition-colors active:scale-[0.98] text-sm glow-accent"
+                style={{ background: '#F2613F', color: '#0C0C0C' }}
+              >
+                Get the free breakdown →
+              </a>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-widest mb-4" style={{ color: '#F2613F' }}>What to expect</p>
+              <ul className="flex flex-col gap-3">
+                {EXPECT.map((item) => (
+                  <li key={item} className="flex gap-3 text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    <span style={{ color: '#F2613F' }}>—</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <Testimonial {...FEATURED_TESTIMONIAL} />
+
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-widest mb-4" style={{ color: '#F2613F' }}>Common questions</p>
+              <div className="flex flex-col">
+                {FAQS.map((f, i) => (
+                  <div key={f.q} className="py-4" style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-sm font-medium mb-1.5" style={{ color: '#fff' }}>{f.q}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{f.a}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p className="text-center text-xs max-w-sm mx-auto" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              See how these systems get built day to day —{' '}
+              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="underline transition-colors hover:text-[var(--accent)]" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                @naunas_builds
+              </a>
+              .
+            </p>
           </motion.div>
         )}
 
