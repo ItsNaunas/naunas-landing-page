@@ -22,7 +22,7 @@ const TESTIMONIALS = [
     quote: "When it comes to incorporating AI, he's a master — a wizard in that field. Exceptional service as always, and brilliant at delivering on time.",
     name: 'Shuheyb',
     role: 'CEO',
-    company: 'Elyra',
+    company: 'Alira',
     industry: 'AI',
     initials: 'S',
   },

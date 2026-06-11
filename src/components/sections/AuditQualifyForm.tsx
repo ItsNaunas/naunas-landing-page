@@ -10,6 +10,12 @@ const BOOKING_URL = process.env.NEXT_PUBLIC_BOOKING_URL ?? 'https://calendly.com
 const LEAD_MAGNET_URL = process.env.NEXT_PUBLIC_LEAD_MAGNET_URL ?? '/six-leaks.pdf';
 const INSTAGRAM_URL = 'https://www.instagram.com/naunas_builds/';
 
+declare global {
+  interface Window {
+    Calendly?: { initInlineWidget: (opts: { url: string; parentElement: HTMLElement }) => void };
+  }
+}
+
 const BUSINESS_OPTIONS = ['Agency', 'Coach/consultant', 'Service business', 'Creative/design studio', 'Other'];
 const LEADS_OPTIONS = ['0–5', '5–20', '20–50', '50+'];
 const REVENUE_OPTIONS = ['Under £2k', '£2–5k', '£5–15k', '£15k+'];
@@ -57,7 +63,7 @@ const FEATURED_TESTIMONIAL = {
 const SHUHEYB_TESTIMONIAL = {
   quote: "When it comes to incorporating AI, he's a master — a wizard in that field. Exceptional service as always, and brilliant at delivering on time.",
   name: 'Shuheyb',
-  descriptor: 'CEO, Elyra',
+  descriptor: 'CEO, Alira',
 };
 
 interface OptionButtonProps {
@@ -147,6 +153,7 @@ export function AuditQualifyForm() {
   const [submitError, setSubmitError] = useState(false);
   const [direction, setDirection] = useState(1);
   const sourceRef = useRef<{ src: string; utm: Record<string, string> }>({ src: 'site', utm: {} });
+  const calendlyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -156,6 +163,22 @@ export function AuditQualifyForm() {
     });
     sourceRef.current = { src: params.get('src') ?? 'site', utm };
   }, []);
+
+  useEffect(() => {
+    if (stage !== 'qualified') return;
+    const init = () => {
+      if (window.Calendly && calendlyRef.current) {
+        calendlyRef.current.innerHTML = '';
+        window.Calendly.initInlineWidget({ url: BOOKING_URL, parentElement: calendlyRef.current });
+        return true;
+      }
+      return false;
+    };
+    if (init()) return;
+    const id = window.setInterval(() => { if (init()) window.clearInterval(id); }, 300);
+    const to = window.setTimeout(() => window.clearInterval(id), 8000);
+    return () => { window.clearInterval(id); window.clearTimeout(to); };
+  }, [stage]);
 
   const steps = path === 'builder' ? BUILDER_STEPS : path === 'services' ? SERVICES_STEPS : (['fork'] as const);
   const currentStep = steps[stepIndex];
@@ -524,8 +547,8 @@ export function AuditQualifyForm() {
             <Testimonial {...SHUHEYB_TESTIMONIAL} />
 
             <div
-              className="calendly-inline-widget rounded-2xl overflow-hidden"
-              data-url={BOOKING_URL}
+              ref={calendlyRef}
+              className="rounded-2xl overflow-hidden"
               style={{ minWidth: '320px', height: '680px', border: '1px solid rgba(255,255,255,0.08)' }}
             />
             <a
