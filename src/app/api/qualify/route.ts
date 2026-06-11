@@ -107,13 +107,13 @@ export async function POST(req: NextRequest) {
   const created = (await res.json()) as { id?: number };
   const rowId = created.id;
 
-  if (!isBuilder && qualified && rowId && typeof website === 'string' && website.trim()) {
+  if (!isBuilder && qualified && rowId) {
     after(() =>
       generateBrief({
         rowId,
         tableId,
         token,
-        website: website.trim(),
+        website: typeof website === 'string' ? website.trim() : '',
         business: business ?? '',
         leads: leads ?? '',
         revenue: revenue ?? '',
@@ -196,14 +196,18 @@ async function generateBrief(input: BriefInput): Promise<void> {
       return;
     }
 
-    const url = normaliseUrl(input.website);
     let siteText: string | null = null;
     let siteNote = '';
-    if (url) {
-      siteText = await scrapeSite(url);
-      if (!siteText) siteNote = 'Site fetch failed — brief built from form answers only.';
+    if (!input.website.trim()) {
+      siteNote = 'No website or handle given — brief built from form answers only. Worth a quick manual look before the call.';
     } else {
-      siteNote = 'IG only, no site to scrape — brief built from form answers only.';
+      const url = normaliseUrl(input.website);
+      if (url) {
+        siteText = await scrapeSite(url);
+        if (!siteText) siteNote = 'Site fetch failed — brief built from form answers only.';
+      } else {
+        siteNote = 'Instagram-only (no website) — enrich from their IG before the call; brief here is from answers only.';
+      }
     }
 
     const prompt = [
