@@ -133,9 +133,7 @@ export function Hero({ onAuditClick }: HeroProps) {
             Get instant AI audit
           </button>
           <a
-            href="https://calendly.com/its-naunas/30min"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/audit"
             className="inline-flex items-center justify-center gap-2 font-semibold px-7 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
             style={{ background: 'var(--accent)', color: '#0C0C0C' }}
           >
@@ -263,9 +261,7 @@ export function Hero({ onAuditClick }: HeroProps) {
 
             {/* Shape 3 — CTA link (top right, orange) */}
             <a
-              href="https://calendly.com/its-naunas/30min"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/audit"
               className="glow-accent"
               style={{
                 position: 'absolute', left: 210, top: 0, width: 160, height: 50,
