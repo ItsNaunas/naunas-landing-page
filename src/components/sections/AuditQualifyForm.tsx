@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const BOOKING_URL = process.env.NEXT_PUBLIC_BOOKING_URL ?? 'https://calendly.com/its-naunas/30min';
-const LEAD_MAGNET_URL = process.env.NEXT_PUBLIC_LEAD_MAGNET_URL ?? '#';
+const LEAD_MAGNET_URL = process.env.NEXT_PUBLIC_LEAD_MAGNET_URL ?? '/six-leaks.pdf';
 const INSTAGRAM_URL = 'https://www.instagram.com/naunas_builds/';
 
 const BUSINESS_OPTIONS = ['Agency', 'Coach/consultant', 'Service business', 'Creative/design studio', 'Other'];
