@@ -6,36 +6,36 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 const TESTIMONIALS = [
   {
     id: 1,
-    metric: '< 48hrs',
-    metricLabel: 'lead to signed contract',
-    quote: 'Leads were falling through the cracks daily. Now the whole flow runs without us touching it.',
-    name: 'James Rowe',
-    role: 'Operations Director',
-    company: 'Rowe Roofing',
-    industry: 'Home Services',
-    initials: 'JR',
+    metric: '30 mins',
+    metricLabel: 'request to full update',
+    quote: "I send him templates, microcopy, everything, all the time. He doesn't reply — he just gives me 30 minutes and comes back with a full update. Who does that?",
+    name: 'Haider',
+    role: 'Content strategist',
+    company: 'Content strategist',
+    industry: 'Content',
+    initials: 'H',
   },
   {
     id: 2,
-    metric: '12hrs/wk',
-    metricLabel: 'back from manual follow-up',
-    quote: 'I was chasing every lead myself. The system Naunas installed does it — and does it better than I did.',
-    name: 'Sophie Mackenzie',
-    role: 'Founder',
-    company: 'Mackenzie Creative',
-    industry: 'Agency',
-    initials: 'SM',
+    metric: 'On time',
+    metricLabel: 'every delivery',
+    quote: "When it comes to incorporating AI, he's a master — a wizard in that field. Exceptional service as always, and brilliant at delivering on time.",
+    name: 'Shuheyb',
+    role: 'CEO',
+    company: 'Elyra',
+    industry: 'AI',
+    initials: 'S',
   },
   {
     id: 3,
-    metric: '+40%',
-    metricLabel: 'client retention since install',
-    quote: 'The onboarding flow made us look like a proper operation. Clients notice the difference immediately.',
-    name: 'Tom Bellamy',
-    role: 'MD',
-    company: 'Bellamy Home Services',
-    industry: 'Home Services',
-    initials: 'TB',
+    metric: 'Blew it away',
+    metricLabel: 'expectations, exceeded',
+    quote: 'Super super responsive, very quick, and completely blew my expectations out of the water. Highly recommend — if you’re ever considering it, just give it a go.',
+    name: 'Fesal',
+    role: 'Founder',
+    company: 'E-ctrl',
+    industry: 'E-commerce',
+    initials: 'F',
   },
 ];
 
@@ -65,14 +65,14 @@ export function Testimonials() {
         >
           <div>
             <span className="text-[11px] font-medium text-[#F2613F] uppercase tracking-widest">
-              Client Results
+              In their words
             </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mt-3" style={{ color: '#fff' }}>
-              Outcomes, not promises.
+              What it&apos;s like to work with me.
             </h2>
           </div>
           <p className="text-sm md:text-base max-w-xs md:text-right leading-relaxed mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Every result below came from a full done-for-you install.
+            Real clients, real projects. No scripts.
           </p>
         </motion.div>
 
