@@ -23,6 +23,7 @@ type Stage = 'form' | 'qualified' | 'notQualified' | 'builder';
 interface Answers {
   fork: string;
   business: string;
+  businessOther: string;
   leads: string;
   revenue: string;
   leadHandling: string;
@@ -38,7 +39,7 @@ interface Answers {
 }
 
 const EMPTY_ANSWERS: Answers = {
-  fork: '', business: '', leads: '', revenue: '', leadHandling: '', topFix: '',
+  fork: '', business: '', businessOther: '', leads: '', revenue: '', leadHandling: '', topFix: '',
   decisionMaker: '', building: '', experience: '', name: '', email: '',
   phone: '', website: '', instagram: '',
 };
@@ -195,10 +196,14 @@ export function AuditQualifyForm() {
     setLoading(true);
     setSubmitError(false);
     try {
+      const business =
+        answers.business === 'Other' && answers.businessOther.trim()
+          ? `Other — ${answers.businessOther.trim()}`
+          : answers.business;
       const res = await fetch('/api/qualify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...answers, path, ...sourceRef.current }),
+        body: JSON.stringify({ ...answers, business, path, ...sourceRef.current }),
       });
       if (!res.ok) throw new Error('Request failed');
       const data: { qualified: boolean; path: Path } = await res.json();
@@ -293,9 +298,36 @@ export function AuditQualifyForm() {
                   <StepShell title="What's your business?">
                     <div className="flex flex-col gap-3">
                       {BUSINESS_OPTIONS.map((opt) => (
-                        <OptionButton key={opt} label={opt} selected={answers.business === opt} onClick={() => advanceOption('business', opt)} />
+                        <OptionButton
+                          key={opt}
+                          label={opt}
+                          selected={answers.business === opt}
+                          onClick={() => (opt === 'Other' ? set('business', 'Other') : advanceOption('business', opt))}
+                        />
                       ))}
                     </div>
+                    {answers.business === 'Other' && (
+                      <div className="flex flex-col gap-3">
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Tell me what you do"
+                          value={answers.businessOther}
+                          onChange={(e) => set('businessOther', e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' && answers.businessOther.trim()) goNext(); }}
+                          className={inputClass}
+                        />
+                        <button
+                          type="button"
+                          disabled={!answers.businessOther.trim()}
+                          onClick={goNext}
+                          className="w-full font-semibold py-4 rounded-2xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] text-base glow-accent"
+                          style={{ background: '#F2613F', color: '#0C0C0C' }}
+                        >
+                          Continue →
+                        </button>
+                      </div>
+                    )}
                   </StepShell>
                 )}
 
