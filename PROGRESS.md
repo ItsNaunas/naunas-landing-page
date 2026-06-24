@@ -1,7 +1,7 @@
 # Project Status
 
-**Last updated**: 2026-06-12
-**State**: **SHIPPED — funnel live on www.naunas.co.uk.** Vercel project = `naunas-landing-page` (git-connected, auto-deploys master). Full funnel verified end-to-end against the real domain: /audit wizard → /api/qualify → Baserow row with Qualified/Source/Date populated. All 14 Baserow fields exist; all 5 env vars on the project. Built locally, NOT yet committed/deployed: /newsletter + /api/subscribe (MailerLite; MAILERLITE_API_TOKEN needs adding to Vercel first), Vercel Web Analytics in root layout, and /links link-in-bio page (Carrd replacement) with src forwarding + link_click custom events.
+**Last updated**: 2026-06-24
+**State**: **SHIPPED — funnel live on www.naunas.co.uk.** Vercel project = `naunas-landing-page` (git-connected, auto-deploys master). Full funnel verified end-to-end against the real domain: /audit wizard → /api/qualify → Baserow row with Qualified/Source/Date populated. All 14 Baserow fields exist; all 5 env vars on the project. Built locally, NOT yet committed/deployed: /newsletter + /api/subscribe (MailerLite; MAILERLITE_API_TOKEN needs adding to Vercel first), Vercel Web Analytics in root layout, /links link-in-bio page (Carrd replacement, rebuilt 2026-06-12 UI/UX pass: avatar + proof chip + mentorship Calendly link), and the audit/newsletter UI/UX fixes from the same pass.
 
 ## Next steps
 - [ ] Deploy newsletter signup: commit, add MAILERLITE_API_TOKEN to the `naunas-landing-page` Vercel project (use the temp-file + `cmd /c "vercel env add ... < file"` trick — see 2026-06-12 SHIPPED entry), push
@@ -11,6 +11,20 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-06-24 (Managed waitlist — formerly "Roster")
+- New /managed waitlist page (`src/app/managed/page.tsx` + `src/components/sections/ManagedWaitlist.tsx`) for the Managed app (AI talent manager for creators; **renamed from Roster mid-session, no "roster" left in src**). Mirrors /newsletter visual language (radial glow, framer-motion fade-up, same input/button classes). Email (required) + optional @handle, success state. Reads ?src= (default 'managed').
+- New `/api/managed-waitlist` route: validates email, writes to the EXISTING Baserow Contacts table (919893) with `Path: 'managed-waitlist'` (Name=handle||email, Website=handle, Source=src, Date=ISO). Plain-text fields, so no new table/fields needed — Baserow MCP can't create tables/fields anyway (token is row-only; schema needs UI/JWT). Reuses BASEROW_TOKEN + BASEROW_TABLE_ID already on Vercel → works in prod on deploy, no new env vars. Filter waitlist signups in the CRM by `Path = managed-waitlist`.
+- /links (LinksHub.tsx): added a "Managed: AI talent manager" secondary button after the newsletter (→ /managed?src=links-<src>, track('link_click', target:'managed')). No em dash (used colon) per brand rule.
+- Verified: clean `next build` (/managed prerenders static, /api/managed-waitlist dynamic); live Baserow write smoke-tested via MCP under the old name (row 108, Path populated, then deleted). NOT committed, NOT deployed.
+
+### 2026-06-12 (UI/UX pass: /links rebuild + /audit + /newsletter)
+- New shared `src/components/ui/Avatar.tsx` + new `public/assets/sections/hero/avatar.png` (256px face crop derived from the hero image via sharp — the full hero PNG is 2.2MB, too heavy for a 96px avatar). Circular, accent ring.
+- /links rebuilt (LinksHub.tsx): avatar → wordmark → one-liner → the homepage hero's "12+ systems installed" proof chip (same markup as Hero mobile) → solid-accent primary "Book a call about your business" (→ /audit?src=links-<src>) → visible card-raised secondaries "Book a mentorship intro" (→ Calendly 30min ?utm_source=links-<src>&utm_medium=mentorship, new tab) and "The newsletter" → row of 3 inline-SVG social icon buttons (IG/TikTok/LinkedIn) → "Email me" text link. ?src= forwarding + track('link_click') kept on every link (mentorship target = 'mentorship'); subtexts at var(--muted) minimum.
+- /audit fixes (surgical): fork screen no longer shows "Step 1 of 1" + full bar — the whole progress header is hidden until a path is chosen (counts after the fork unchanged: Step 2 of 8 / 2 of 4, verified in browser); value line added above the fork options; builder outcome screen gains a secondary "Book a mentorship intro" button (Calendly ?utm_source=audit-builder&utm_medium=mentorship, new tab, tracked) with the @naunas_builds line kept.
+- /newsletter: avatar (80px) added above the headline, nothing else.
+- ONE Calendly event for everything (calendly.com/its-naunas/30min); mentorship distinguished by UTM, not a separate event.
+- Verified: clean `next build`; all four screens screenshot-checked at 390px against `next start` (builder path walked with /api/qualify mocked — no test rows). Not committed, not deployed.
+
 ### 2026-06-12 (analytics + /links page)
 - Vercel Web Analytics site-wide: `@vercel/analytics` installed, `<Analytics />` from `@vercel/analytics/next` in `src/app/layout.tsx`. Custom events need "Web Analytics" enabled on the Vercel project (and custom events require a plan that supports them) — check before relying on link_click data.
 - New /links page (`src/app/links/page.tsx` + `src/components/sections/LinksHub.tsx`): one-screen mobile-first link-in-bio replacing Carrd. Naunas. wordmark + "AI systems for service businesses", stacked buttons: audit (accent CTA) → newsletter → Instagram → TikTok → LinkedIn → mailto:contact@naunas.co.uk. Matches /newsletter visual language (radial glow, framer-motion fade-up, same button/input classes).

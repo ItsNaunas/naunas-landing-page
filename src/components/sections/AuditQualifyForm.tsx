@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import { AnimatePresence, motion } from 'framer-motion';
+import { track } from '@vercel/analytics';
 import { cn } from '@/lib/utils';
 
 const BOOKING_URL = process.env.NEXT_PUBLIC_BOOKING_URL ?? 'https://calendly.com/its-naunas/30min';
+const MENTORSHIP_URL = 'https://calendly.com/its-naunas/30min?utm_source=audit-builder&utm_medium=mentorship';
 const LEAD_MAGNET_URL = process.env.NEXT_PUBLIC_LEAD_MAGNET_URL ?? '/six-leaks.pdf';
 const INSTAGRAM_URL = 'https://www.instagram.com/naunas_builds/';
 
@@ -295,8 +297,9 @@ export function AuditQualifyForm() {
 
         {stage === 'form' && (
           <>
-            <div className="flex items-center gap-3 mb-8">
-              {stepIndex > 0 && (
+            {/* No progress UI on the fork screen — no path chosen yet, so there is no honest count to show */}
+            {stepIndex > 0 && (
+              <div className="flex items-center gap-3 mb-8">
                 <button
                   type="button"
                   onClick={goBack}
@@ -308,11 +311,11 @@ export function AuditQualifyForm() {
                   </svg>
                   Back
                 </button>
-              )}
-              <div className="flex-1">
-                <ProgressBar current={stepIndex} total={total} />
+                <div className="flex-1">
+                  <ProgressBar current={stepIndex} total={total} />
+                </div>
               </div>
-            </div>
+            )}
 
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
@@ -325,6 +328,9 @@ export function AuditQualifyForm() {
               >
                 {currentStep === 'fork' && (
                   <StepShell title="What brings you here?">
+                    <p className="text-sm leading-relaxed -mt-2" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                      Answer a few quick questions and I&apos;ll tell you exactly where your business is leaking. Two minutes.
+                    </p>
                     <div className="flex flex-col gap-3">
                       <OptionButton
                         label="I run a business and I'm losing leads / enquiries"
@@ -717,6 +723,15 @@ export function AuditQualifyForm() {
             <p className="text-sm max-w-md leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
               The community isn&apos;t open yet — but you&apos;re on the waitlist, and I&apos;ll show you how I build this stuff the moment the doors open.
             </p>
+            <a
+              href={MENTORSHIP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('link_click', { target: 'mentorship', src: 'audit-builder' })}
+              className="font-semibold px-7 py-3.5 rounded-full transition-colors active:scale-[0.98] text-sm mt-1 bg-[var(--card-raised)] border border-[var(--border)] text-[var(--fg)] hover:border-[var(--accent)]"
+            >
+              Book a mentorship intro →
+            </a>
             <p className="text-sm max-w-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
               In the meantime, follow the build at{' '}
               <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="underline transition-colors hover:text-[var(--accent)]" style={{ color: 'rgba(255,255,255,0.7)' }}>

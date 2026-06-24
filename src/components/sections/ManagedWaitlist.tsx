@@ -3,32 +3,30 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Avatar } from '@/components/ui/Avatar';
-
-const INSTAGRAM_URL = 'https://www.instagram.com/naunas_builds/';
 
 const inputClass = 'w-full rounded-xl px-4 py-3.5 text-base transition-colors min-h-[52px] bg-white/5 border border-white/10 text-[var(--fg)] placeholder-[var(--placeholder)] focus:outline-none focus:border-[var(--accent)]';
 
 const PERKS = [
-  'Every system I build for clients, broken down so you can build it yourself.',
-  'The templates, prompts and resources from my videos, linked in full.',
-  'One email a week. Free.',
+  'Reads every inbound brand email and tells you which deals are worth your time.',
+  'Drafts the reply, holds your line on rate, never sends without your say-so.',
+  'Keeps the 20% a manager would take. First creators in get founding pricing.',
 ];
 
 function isEmail(value: string) {
   return /\S+@\S+\.\S+/.test(value);
 }
 
-export function NewsletterSignup() {
+export function ManagedWaitlist() {
   const [email, setEmail] = useState('');
+  const [handle, setHandle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-  const srcRef = useRef('site');
+  const [joined, setJoined] = useState(false);
+  const srcRef = useRef('managed');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    srcRef.current = params.get('src') ?? 'site';
+    srcRef.current = params.get('src') ?? 'managed';
   }, []);
 
   async function submit() {
@@ -36,13 +34,13 @@ export function NewsletterSignup() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/subscribe', {
+      const res = await fetch('/api/managed-waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), src: srcRef.current }),
+        body: JSON.stringify({ email: email.trim(), handle: handle.trim(), src: srcRef.current }),
       });
       if (!res.ok) throw new Error('Request failed');
-      setSubscribed(true);
+      setJoined(true);
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -69,7 +67,7 @@ export function NewsletterSignup() {
       </header>
 
       <main className="relative max-w-xl mx-auto px-6 pt-10 pb-24" style={{ zIndex: 10 }}>
-        {subscribed ? (
+        {joined ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,17 +83,10 @@ export function NewsletterSignup() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold" style={{ color: '#fff' }}>
-              You&apos;re in.
+              You&apos;re on the list.
             </h1>
             <p className="text-sm max-w-md leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-              The next system breakdown lands in your inbox this week. If it ever stops being useful, unsubscribe is one click.
-            </p>
-            <p className="text-xs max-w-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              In the meantime, watch the builds happen day to day at{' '}
-              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="underline transition-colors hover:text-[var(--accent)]" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                @naunas_builds
-              </a>
-              .
+              We&apos;re onboarding creators in small batches. When your spot opens you&apos;ll be the first to know, founding pricing included.
             </p>
           </motion.div>
         ) : (
@@ -106,12 +97,14 @@ export function NewsletterSignup() {
             className="flex flex-col gap-8 pt-6"
           >
             <div className="flex flex-col gap-4">
-              <Avatar size={80} />
+              <span className="text-sm font-semibold tracking-wide" style={{ color: 'var(--accent)' }}>
+                Managed
+              </span>
               <h1 className="text-3xl md:text-4xl font-bold leading-snug" style={{ color: '#fff' }}>
-                Every system I build, in your inbox.
+                Your AI talent manager.
               </h1>
               <p className="text-sm max-w-md leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                I install client lifecycle systems for real businesses, then show the work. Sign up and you get the lot.
+                Brand deals handled end to end. Managed triages the inbound, drafts the replies on your terms and gets you paid, without handing a manager 20%.
               </p>
             </div>
 
@@ -133,6 +126,14 @@ export function NewsletterSignup() {
                 onKeyDown={(e) => { if (e.key === 'Enter' && !loading) submit(); }}
                 className={inputClass}
               />
+              <input
+                type="text"
+                placeholder="@your_handle (optional)"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !loading) submit(); }}
+                className={inputClass}
+              />
               {error && <p className="text-xs" style={{ color: 'var(--error)' }}>{error}</p>}
               <button
                 type="button"
@@ -141,10 +142,10 @@ export function NewsletterSignup() {
                 className="w-full font-semibold py-4 rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] text-base glow-accent"
                 style={{ background: '#F2613F', color: '#0C0C0C' }}
               >
-                {loading ? 'Subscribing...' : 'Get the systems →'}
+                {loading ? 'Joining...' : 'Join the waitlist →'}
               </button>
               <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                No spam, no selling your email. Unsubscribe anytime.
+                No spam. We only email you when there&apos;s a spot.
               </p>
             </div>
           </motion.div>
