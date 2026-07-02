@@ -9,8 +9,6 @@ import { Avatar } from '@/components/ui/Avatar';
 const INSTAGRAM_URL = 'https://www.instagram.com/naunas_builds/';
 const TIKTOK_URL = 'https://www.tiktok.com/@naunas_builds';
 const LINKEDIN_URL = 'https://www.linkedin.com/in/naufal-nassor-0a1b6936b/';
-const PROMPT_PACK_URL = 'https://naunas8.gumroad.com/l/fuxpbw';
-const SETUP_KIT_URL = 'https://naunas8.gumroad.com/l/vzrehp';
 
 const secondaryClass =
   'w-full block text-center rounded-2xl px-5 py-4 transition-colors active:scale-[0.98] bg-[var(--card-raised)] border border-[var(--border)] hover:border-[var(--accent)]';
@@ -60,8 +58,6 @@ export function LinksHub() {
 
   const forwardedSrc = encodeURIComponent(src ? `links-${src}` : 'links');
   const mentorshipUrl = `https://calendly.com/its-naunas/30min?utm_source=${forwardedSrc}&utm_medium=mentorship`;
-  const promptPackUrl = `${PROMPT_PACK_URL}?src=${forwardedSrc}`;
-  const setupKitUrl = `${SETUP_KIT_URL}?src=${forwardedSrc}`;
 
   function handleClick(target: string) {
     track('link_click', { target, src: src || 'direct' });
@@ -134,31 +130,16 @@ export function LinksHub() {
               </span>
             </a>
 
-            <a
-              href={promptPackUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => handleClick('prompt_pack')}
+            <Link
+              href={`/kit?src=${forwardedSrc}`}
+              onClick={() => handleClick('kit')}
               className={secondaryClass}
             >
-              <span className="block text-base font-semibold" style={{ color: 'rgba(255,255,255,0.92)' }}>The Builder Prompt Pack &middot; $39</span>
+              <span className="block text-base font-semibold" style={{ color: 'rgba(255,255,255,0.92)' }}>Make your app survive real users</span>
               <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
-                50+ prompts to take a vibe-coded app to production. Spec to ship.
+                Prompts + guides to take vibe-code to production. From free.
               </span>
-            </a>
-
-            <a
-              href={setupKitUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => handleClick('setup_kit')}
-              className={secondaryClass}
-            >
-              <span className="block text-base font-semibold" style={{ color: 'rgba(255,255,255,0.92)' }}>The Setup Kit &middot; free</span>
-              <span className="block text-xs mt-1" style={{ color: 'var(--muted)' }}>
-                Claude Code from zero. Pay what you want.
-              </span>
-            </a>
+            </Link>
 
             <Link
               href={`/newsletter?src=${forwardedSrc}`}

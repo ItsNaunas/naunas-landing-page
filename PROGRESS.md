@@ -11,10 +11,12 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
-### 2026-07-02 (Gumroad products on /links)
-- /links (LinksHub.tsx): added two Gumroad product buttons after the mentorship intro (same builder audience), kept as secondaries below the audit primary per spec. "The Builder Prompt Pack · $39" (naunas8.gumroad.com/l/fuxpbw, track target 'prompt_pack') and "The Setup Kit · free" (naunas8.gumroad.com/l/vzrehp, track target 'setup_kit'). Both new-tab, ?src= forwarded onto the Gumroad URL. Middot not em dash per brand rule.
-- Note: Gumroad doesn't surface arbitrary ?src= params in its dashboard — real attribution is the Vercel link_click events. Products live per digital-products-spec.md (Prompt Pack = Phase 1 paid validator, Setup Kit = free newsletter feeder).
-- Verified: clean `tsc --noEmit`. Committed + deployed (Vercel auto-deploys master).
+### 2026-07-02 (Gumroad products → new /kit page)
+- Decision: don't stack each Gumroad product on /links (congests the tree, catalog grows to 4). Collapse into ONE enticing linktree slot → dedicated /kit showcase page. Own-brand, scales, keeps source attribution.
+- New /kit page (`src/app/kit/page.tsx` + `src/components/sections/KitShowcase.tsx`): hook as H1 ("You vibe-coded an app. Now make it survive real users."), product cards paid-first / free-at-bottom per Naufal — Builder Prompt Pack $39 (l/fuxpbw, "Start here" text tag) then Setup Kit Free (l/vzrehp). Each card → Gumroad new-tab, ?src=kit-<src> forwarded, track('kit_click', target). "Landing soon" teaser lists CRM Build Guide + Automation Pack. Footer cross-sell → /newsletter. No pills/rounded-full (brand rule), no em dash. Matches /managed visual language.
+- /links (LinksHub.tsx): the two direct product buttons I'd added earlier were REPLACED by one secondary "Make your app survive real users" → /kit?src=links-<src> (track 'kit'). Unused URL consts removed.
+- Note: Gumroad doesn't surface arbitrary ?src= params in its dashboard — real attribution is the Vercel kit_click/link_click events. Products per digital-products-spec.md (Prompt Pack = Phase 1 paid validator, Setup Kit = free newsletter feeder).
+- Verified: clean `tsc --noEmit` + `next build` (/kit and /links both prerender static). Committed + deployed (Vercel auto-deploys master).
 
 ### 2026-06-24 (Managed waitlist — formerly "Roster")
 - New /managed waitlist page (`src/app/managed/page.tsx` + `src/components/sections/ManagedWaitlist.tsx`) for the Managed app (AI talent manager for creators; **renamed from Roster mid-session, no "roster" left in src**). Mirrors /newsletter visual language (radial glow, framer-motion fade-up, same input/button classes). Email (required) + optional @handle, success state. Reads ?src= (default 'managed').
