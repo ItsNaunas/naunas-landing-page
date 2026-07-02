@@ -1,6 +1,6 @@
 # Project Status
 
-**Last updated**: 2026-06-24
+**Last updated**: 2026-07-02
 **State**: **SHIPPED — funnel live on www.naunas.co.uk.** Vercel project = `naunas-landing-page` (git-connected, auto-deploys master). Full funnel verified end-to-end against the real domain: /audit wizard → /api/qualify → Baserow row with Qualified/Source/Date populated. All 14 Baserow fields exist; all 5 env vars on the project. Built locally, NOT yet committed/deployed: /newsletter + /api/subscribe (MailerLite; MAILERLITE_API_TOKEN needs adding to Vercel first), Vercel Web Analytics in root layout, /links link-in-bio page (Carrd replacement, rebuilt 2026-06-12 UI/UX pass: avatar + proof chip + mentorship Calendly link), and the audit/newsletter UI/UX fixes from the same pass.
 
 ## Next steps
@@ -11,6 +11,11 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-07-02 (Gumroad products on /links)
+- /links (LinksHub.tsx): added two Gumroad product buttons after the mentorship intro (same builder audience), kept as secondaries below the audit primary per spec. "The Builder Prompt Pack · $39" (naunas8.gumroad.com/l/fuxpbw, track target 'prompt_pack') and "The Setup Kit · free" (naunas8.gumroad.com/l/vzrehp, track target 'setup_kit'). Both new-tab, ?src= forwarded onto the Gumroad URL. Middot not em dash per brand rule.
+- Note: Gumroad doesn't surface arbitrary ?src= params in its dashboard — real attribution is the Vercel link_click events. Products live per digital-products-spec.md (Prompt Pack = Phase 1 paid validator, Setup Kit = free newsletter feeder).
+- Verified: clean `tsc --noEmit`. Committed + deployed (Vercel auto-deploys master).
+
 ### 2026-06-24 (Managed waitlist — formerly "Roster")
 - New /managed waitlist page (`src/app/managed/page.tsx` + `src/components/sections/ManagedWaitlist.tsx`) for the Managed app (AI talent manager for creators; **renamed from Roster mid-session, no "roster" left in src**). Mirrors /newsletter visual language (radial glow, framer-motion fade-up, same input/button classes). Email (required) + optional @handle, success state. Reads ?src= (default 'managed').
 - New `/api/managed-waitlist` route: validates email, writes to the EXISTING Baserow Contacts table (919893) with `Path: 'managed-waitlist'` (Name=handle||email, Website=handle, Source=src, Date=ISO). Plain-text fields, so no new table/fields needed — Baserow MCP can't create tables/fields anyway (token is row-only; schema needs UI/JWT). Reuses BASEROW_TOKEN + BASEROW_TABLE_ID already on Vercel → works in prod on deploy, no new env vars. Filter waitlist signups in the CRM by `Path = managed-waitlist`.
