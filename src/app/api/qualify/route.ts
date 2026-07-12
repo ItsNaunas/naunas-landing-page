@@ -107,21 +107,39 @@ export async function POST(req: NextRequest) {
   const created = (await res.json()) as { id?: number };
   const rowId = created.id;
 
-  if (!isBuilder && qualified && rowId) {
-    after(() =>
-      generateBrief({
-        rowId,
-        tableId,
-        token,
-        website: typeof website === 'string' ? website.trim() : '',
+  const whale = !isBuilder && revenue === '£15k+';
+
+  if (!isBuilder && (qualified || whale) && rowId) {
+    after(async () => {
+      const brief = qualified
+        ? await generateBrief({
+            rowId,
+            tableId,
+            token,
+            website: typeof website === 'string' ? website.trim() : '',
+            business: business ?? '',
+            leads: leads ?? '',
+            revenue: revenue ?? '',
+            leadHandling: leadHandling ?? '',
+            topFix: topFix ?? '',
+            decisionMaker: decisionMaker ?? '',
+          })
+        : null;
+      await sendLeadAlert({
+        name,
+        email,
+        phone: phone ?? '',
         business: business ?? '',
-        leads: leads ?? '',
         revenue: revenue ?? '',
-        leadHandling: leadHandling ?? '',
+        leads: leads ?? '',
         topFix: topFix ?? '',
-        decisionMaker: decisionMaker ?? '',
-      })
-    );
+        website: contact,
+        source,
+        qualified,
+        whale,
+        brief,
+      });
+    });
   }
 
   return NextResponse.json({ success: true, qualified, path: isBuilder ? 'builder' : 'services' });
@@ -188,12 +206,71 @@ interface OpenAIChatResponse {
   choices?: Array<{ message?: { content?: string | null } }>;
 }
 
-async function generateBrief(input: BriefInput): Promise<void> {
+interface LeadAlertInput {
+  name: string;
+  email: string;
+  phone: string;
+  business: string;
+  revenue: string;
+  leads: string;
+  topFix: string;
+  website: string;
+  source: string;
+  qualified: boolean;
+  whale: boolean;
+  brief: string | null;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+async function sendLeadAlert(input: LeadAlertInput): Promise<void> {
+  const url = process.env.NOTIFY_RELAY_URL;
+  const secret = process.env.NOTIFY_RELAY_SECRET;
+  if (!url || !secret) return;
+
+  const subject = input.whale
+    ? `WHALE LEAD: ${input.name} (${input.revenue}${input.qualified ? ', qualified' : ', NOT fully qualified'})`
+    : `Qualified lead: ${input.name} (${input.revenue})`;
+
+  const lines = [
+    `<p><strong>${escapeHtml(input.name)}</strong> · ${escapeHtml(input.business)} · ${escapeHtml(input.revenue)}/mo · ${escapeHtml(input.leads)} leads/mo</p>`,
+    `<p>Email: ${escapeHtml(input.email)}${input.phone ? ` · Phone: ${escapeHtml(input.phone)}` : ''}</p>`,
+    input.website ? `<p>Website/handle: ${escapeHtml(input.website)}</p>` : '',
+    `<p>Wants fixed: ${escapeHtml(input.topFix)}</p>`,
+    `<p>Source: ${escapeHtml(input.source)}</p>`,
+    input.brief
+      ? `<hr/><p><strong>Pre-call brief</strong></p><div style="white-space:pre-wrap">${escapeHtml(input.brief)}</div>`
+      : '<p><em>No brief (not fully qualified or generation failed) - check Baserow.</em></p>',
+  ].filter(Boolean);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-notify-secret': secret,
+      },
+      body: JSON.stringify({ lane: 'ops', subject, html: lines.join('\n') }),
+    });
+    if (!res.ok) {
+      console.error('[Qualify] Notify relay error:', await res.text());
+    }
+  } catch (err) {
+    console.error('[Qualify] Notify relay failed:', err);
+  }
+}
+
+async function generateBrief(input: BriefInput): Promise<string | null> {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       console.error('[Qualify] Missing OPENAI_API_KEY — skipping brief');
-      return;
+      return null;
     }
 
     let siteText: string | null = null;
@@ -247,14 +324,14 @@ async function generateBrief(input: BriefInput): Promise<void> {
 
     if (!aiRes.ok) {
       console.error('[Qualify] OpenAI error:', await aiRes.text());
-      return;
+      return null;
     }
 
     const aiJson = (await aiRes.json()) as OpenAIChatResponse;
     const brief = aiJson.choices?.[0]?.message?.content?.trim();
     if (!brief) {
       console.error('[Qualify] OpenAI returned empty brief');
-      return;
+      return null;
     }
 
     const patchRes = await fetch(
@@ -283,7 +360,10 @@ async function generateBrief(input: BriefInput): Promise<void> {
         console.error('[Qualify] Slack webhook error:', await slackRes.text());
       }
     }
+
+    return brief;
   } catch (err) {
     console.error('[Qualify] Brief generation failed:', err);
+    return null;
   }
 }
