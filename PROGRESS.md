@@ -1,16 +1,18 @@
 # Project Status
 
-**Last updated**: 2026-07-02
-**State**: **SHIPPED — funnel live on www.naunas.co.uk.** Vercel project = `naunas-landing-page` (git-connected, auto-deploys master). Full funnel verified end-to-end against the real domain: /audit wizard → /api/qualify → Baserow row with Qualified/Source/Date populated. All 14 Baserow fields exist; all 5 env vars on the project. Built locally, NOT yet committed/deployed: /newsletter + /api/subscribe (MailerLite; MAILERLITE_API_TOKEN needs adding to Vercel first), Vercel Web Analytics in root layout, /links link-in-bio page (Carrd replacement, rebuilt 2026-06-12 UI/UX pass: avatar + proof chip + mentorship Calendly link), and the audit/newsletter UI/UX fixes from the same pass.
+**Last updated**: 2026-07-12
+**State**: **SHIPPED — funnel live on www.naunas.co.uk** with instant lead alerts. /audit → /api/qualify → Baserow + pre-call brief, and every qualified (or £15k+-band) lead now emails Naufal within seconds via the notify relay, brief inline. Lead magnet serves the real /six-leaks.pdf. Vercel project = `naunas-landing-page` (git-connected, auto-deploys master); 8 env vars on Production (added NOTIFY_RELAY_URL/SECRET, fixed NEXT_PUBLIC_LEAD_MAGNET_URL).
 
 ## Next steps
-- [ ] Deploy newsletter signup: commit, add MAILERLITE_API_TOKEN to the `naunas-landing-page` Vercel project (use the temp-file + `cmd /c "vercel env add ... < file"` trick — see 2026-06-12 SHIPPED entry), push
-- [ ] Delete test subscriber newsletter-test@naunas.co.uk from MailerLite (group 190096378194560944)
-- [ ] Lead magnet URL is a placeholder — NEXT_PUBLIC_LEAD_MAGNET_URL currently carries the .env.local value; replace when the real asset exists
 - [ ] Testimonials header still reads "Outcomes, not promises" / "every result came from a full done-for-you install" — real testimonials aren't metric-based, so consider softening that subcopy.
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-07-12 (instant lead alert + lead-magnet fix)
+- `/api/qualify`: `after()` now generates the brief (returns it) then fires `sendLeadAlert` → POST to the Naunas Notification Relay (ops lane): subject "Qualified lead: X (£rev)" or "WHALE LEAD: …" for the £15k+ band (whales alert even when not fully qualified; brief only generates for qualified). HTML = answers summary + brief inline. Best-effort, never blocks. Env: NOTIFY_RELAY_URL + NOTIFY_RELAY_SECRET (Vercel prod + .env.local).
+- **Verified e2e on prod**: test submit 10:48:01 → relay email in inbox 10:48:07 with brief; Baserow rows deleted after. Gotcha: piping `£` through bash curl mangles UTF-8 → server-side enum match fails and the lead silently disqualifies; test with a UTF-8 JSON file (`--data-binary @file`).
+- **Lead-magnet placeholder fixed**: prod `NEXT_PUBLIC_LEAD_MAGNET_URL` was `#` (baked into the bundle — the `?? '/six-leaks.pdf'` fallback never fires because `#`/empty isn't nullish). Re-set to `/six-leaks.pdf` (the real 4-page PDF already in public/ and serving), redeployed, verified the string in the live chunk.
+- MailerLite test subscriber confirmed already deleted (API 404 on lookup).
 ### 2026-07-02 (Gumroad products → new /kit page)
 - Decision: don't stack each Gumroad product on /links (congests the tree, catalog grows to 4). Collapse into ONE enticing linktree slot → dedicated /kit showcase page. Own-brand, scales, keeps source attribution.
 - New /kit page (`src/app/kit/page.tsx` + `src/components/sections/KitShowcase.tsx`): hook as H1 ("You vibe-coded an app. Now make it survive real users."), product cards paid-first / free-at-bottom per Naufal — Builder Prompt Pack $39 (l/fuxpbw, "Start here" text tag) then Setup Kit Free (l/vzrehp). Each card → Gumroad new-tab, ?src=kit-<src> forwarded, track('kit_click', target). "Landing soon" teaser lists CRM Build Guide + Automation Pack. Footer cross-sell → /newsletter. No pills/rounded-full (brand rule), no em dash. Matches /managed visual language.
