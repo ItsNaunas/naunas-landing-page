@@ -8,6 +8,12 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-07-12 (newsletter welcome email)
+- `/api/subscribe`: new MailerLite subscribers (201) now get a welcome/confirmation email from `Naufal at Naunas <contact@naunas.co.uk>` via Zoho SMTP (nodemailer, `after()`, never blocks the signup). Existing subscribers (200 upsert) are NOT re-mailed. Copy: confirmed + what-you-get + six-leaks PDF link + reply invite. Env: ZOHO_SMTP_HOST/PORT/USER/PASS (Vercel prod + .env.local).
+- **Verified e2e on prod** with a Gmail plus-address (fresh 201): welcome landed in the inbox; test subscriber deleted from MailerLite after. Also verified the 200 path correctly skips (its.naunas@gmail.com has existed in the account since 06-12).
+- Newsletter health check: group has 10 real active subscribers, latest 07-10; live subscribe→MailerLite→delete round-trip clean.
+- Note: if a native MailerLite "on joining group" automation is ever set up in their UI, remove this code path to avoid double welcomes.
+
 ### 2026-07-12 (CRM Build Guide live on /kit)
 - KitShowcase.tsx: "Build a CRM That Survives Real Users" (£100, gumroad l/ivsdmt) added as the second product card (after Prompt Pack $39, before free Setup Kit — paid-first order kept). Tagline from crm-build-guide-spec positioning. Removed from the "Landing soon" teaser (Automation Pack remains). Same kit_click tracking + ?src forwarding as the other cards.
 - Context: Naufal considered closing Gumroad thinking products weren't linked; confirmed the 07-02 one-slot-on-/links → /kit architecture is live, so the fix was just publishing the third product card. Gumroad stays.
