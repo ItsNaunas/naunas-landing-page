@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { track } from '@vercel/analytics';
 
 const PROMPT_PACK_URL = 'https://naunas8.gumroad.com/l/fuxpbw';
+const CRM_GUIDE_URL = 'https://naunas8.gumroad.com/l/ivsdmt';
 const SETUP_KIT_URL = 'https://naunas8.gumroad.com/l/vzrehp';
 
 type Product = {
@@ -28,6 +29,14 @@ const PRODUCTS: Product[] = [
     tag: 'Start here',
   },
   {
+    key: 'crm_guide',
+    name: 'Build a CRM That Survives Real Users',
+    price: '£100',
+    tagline:
+      'The full build guide plus the deployable Pipeline repo: a secure, multi-tenant, AI-scored CRM built the Claude Code way, not an insecure CRUD toy.',
+    url: CRM_GUIDE_URL,
+  },
+  {
     key: 'setup_kit',
     name: 'The Setup Kit',
     price: 'Free',
@@ -36,7 +45,7 @@ const PRODUCTS: Product[] = [
   },
 ];
 
-const COMING_SOON = ['The CRM Build Guide', 'The Automation Pack (n8n)'];
+const COMING_SOON = ['The Automation Pack (n8n)'];
 
 export function KitShowcase() {
   const [src, setSrc] = useState('');

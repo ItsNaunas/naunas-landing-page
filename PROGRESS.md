@@ -8,6 +8,10 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-07-12 (CRM Build Guide live on /kit)
+- KitShowcase.tsx: "Build a CRM That Survives Real Users" (£100, gumroad l/ivsdmt) added as the second product card (after Prompt Pack $39, before free Setup Kit — paid-first order kept). Tagline from crm-build-guide-spec positioning. Removed from the "Landing soon" teaser (Automation Pack remains). Same kit_click tracking + ?src forwarding as the other cards.
+- Context: Naufal considered closing Gumroad thinking products weren't linked; confirmed the 07-02 one-slot-on-/links → /kit architecture is live, so the fix was just publishing the third product card. Gumroad stays.
+
 ### 2026-07-12 (instant lead alert + lead-magnet fix)
 - `/api/qualify`: `after()` now generates the brief (returns it) then fires `sendLeadAlert` → POST to the Naunas Notification Relay (ops lane): subject "Qualified lead: X (£rev)" or "WHALE LEAD: …" for the £15k+ band (whales alert even when not fully qualified; brief only generates for qualified). HTML = answers summary + brief inline. Best-effort, never blocks. Env: NOTIFY_RELAY_URL + NOTIFY_RELAY_SECRET (Vercel prod + .env.local).
 - **Verified e2e on prod**: test submit 10:48:01 → relay email in inbox 10:48:07 with brief; Baserow rows deleted after. Gotcha: piping `£` through bash curl mangles UTF-8 → server-side enum match fails and the lead silently disqualifies; test with a UTF-8 JSON file (`--data-binary @file`).
