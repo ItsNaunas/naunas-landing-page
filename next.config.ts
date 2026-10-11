@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
         permanent: false,
       })),
       // Retired builder-era pages (2026-10-11): send old links to the home page.
-      ...['/managed', '/newsletter', '/links'].map((p) => ({ source: p, destination: `/?utm_source=old-link&utm_medium=${p.slice(1)}`, permanent: true })),
+      ...['/managed', '/newsletter', '/links', '/kit'].map((p) => ({ source: p, destination: `/?utm_source=old-link&utm_medium=${p.slice(1)}`, permanent: true })),
     ];
   },
 };
