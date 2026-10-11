@@ -4,7 +4,9 @@
 **State**: **SHIPPED — funnel live on www.naunas.co.uk** with instant lead alerts. /audit → /api/qualify → Baserow + pre-call brief, and every qualified (or £15k+-band) lead now emails Naufal within seconds via the notify relay, brief inline. Lead magnet serves the real /six-leaks.pdf. Vercel project = `naunas-landing-page` (git-connected, auto-deploys master); 8 env vars on Production (added NOTIFY_RELAY_URL/SECRET, fixed NEXT_PUBLIC_LEAD_MAGNET_URL).
 
 ## Next steps
-- [ ] **Uncommitted (2026-10-11):** case-study cards + /case-studies pages + testimonial slider. Built OK locally; review, then commit + push (auto-deploys).
+- [x] **LIVE 2026-10-11** (c1b6e46, c3b1d05). Verified on prod with its.naunas+funneltest@gmail.com: /api/leak-map → MailerLite 'Leak Map' group (+ PDF email fallback), /api/enquiry → contact@ + auto-reply, signed Cal.com webhook removed the tester from the group. `CAL_WEBHOOK_SECRET` set on Vercel; Cal.com webhook registered on event 7431234 → /api/cal-webhook.
+- [ ] MailerLite: build the 'Leak Map' automation (10 emails, vault 09-Content/leak-map-emails), sender domain auth (DNS at phase8, merge SPF), postal address; then set `LEAK_MAP_COURSE_LIVE=true` on Vercel to stop the PDF fallback email.
+- [ ] Hero redesign (Hero.tsx + Hero.module.css) is UNCOMMITTED in the working tree on purpose: not Claude's work, kept out of the 2026-10-11 push.
 - [ ] Unverified figures still live (Naufal said add-only for now): Alira/E-ctrl case studies (£22K, 20hrs/wk, <48hrs, +40% retention, quotes not in their videos), StatBar £18K+, About £18K+/+18.2%/12+, WhatYouGet £22K/94%/40hrs+. Source of truth for real proof: vault `09-Content/case-study-drafts.md`.
 - [ ] Testimonials header still reads "Outcomes, not promises" / "every result came from a full done-for-you install" — real testimonials aren't metric-based, so consider softening that subcopy.
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
