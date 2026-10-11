@@ -15,7 +15,7 @@ import { About } from '@/components/sections/About';
 import { CtaBanner } from '@/components/sections/CtaBanner';
 import { Faq } from '@/components/sections/Faq';
 import { Contact } from '@/components/sections/Contact';
-import { LeakMapSection } from '@/components/sections/LeakMapSection';
+// import { LeakMapSection } from '@/components/sections/LeakMapSection';
 import { EnquiryModal } from '@/components/ui/EnquiryModal';
 
 export default function Home() {
@@ -28,7 +28,7 @@ export default function Home() {
         <Hero onAuditClick={() => setAuditOpen(true)} />
         <IntegrationBar />
         <Problem />
-        <LeakMapSection />
+        {/* <LeakMapSection /> hidden for now (2026-10-11) */}
         <WhatYouGet />
         <CaseStudies />
         <Testimonials />
