@@ -106,7 +106,7 @@ export default function OgImage() {
             }}
           >
             <span style={{ color: '#0C0C0C', fontSize: 16, fontWeight: 700 }}>
-              Get your free AI audit
+              Get your free audit
             </span>
           </div>
           <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 16 }}>www.naunas.co.uk</span>

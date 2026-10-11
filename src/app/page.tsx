@@ -18,7 +18,7 @@ import { Faq } from '@/components/sections/Faq';
 import { Contact } from '@/components/sections/Contact';
 import { StatBar } from '@/components/sections/StatBar';
 import { RevenueCalculator } from '@/components/sections/RevenueCalculator';
-import { AuditModal } from '@/components/ui/AuditModal';
+import { EnquiryModal } from '@/components/ui/EnquiryModal';
 
 export default function Home() {
   const [auditOpen, setAuditOpen] = useState(false);
@@ -44,7 +44,7 @@ export default function Home() {
         <CtaBanner onAuditClick={() => setAuditOpen(true)} />
       </main>
       <Footer onAuditClick={() => setAuditOpen(true)} />
-      <AuditModal isOpen={auditOpen} onClose={() => setAuditOpen(false)} />
+      <EnquiryModal isOpen={auditOpen} onClose={() => setAuditOpen(false)} />
     </>
   );
 }

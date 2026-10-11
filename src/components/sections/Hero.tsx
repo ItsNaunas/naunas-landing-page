@@ -106,7 +106,7 @@ export function Hero({ onAuditClick }: HeroProps) {
             </span>
           </h1>
           <p className="mt-4 text-[var(--muted)] text-base md:text-lg max-w-lg mx-auto leading-relaxed">
-            Not sure where to start? Get an instant AI audit of your client lifecycle. We'll tell you exactly what's broken and what to fix first.
+            Not sure where to start? Get a free audit of how clients move through your business. I'll show you exactly what's broken and what to fix first.
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export function Hero({ onAuditClick }: HeroProps) {
               className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-semibold px-8 py-3.5 rounded-full transition-all active:scale-[0.98] text-sm"
               style={{ background: '#0C0C0C', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 0 16px rgba(242,97,63,0.2), 0 0 32px rgba(242,97,63,0.08)' }}
             >
-              Get instant AI audit
+              Get your free audit
             </button>
           </Magnetic>
         </div>
@@ -130,7 +130,7 @@ export function Hero({ onAuditClick }: HeroProps) {
             className="inline-flex items-center justify-center gap-2 text-[var(--fg)] font-semibold px-7 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
             style={{ background: 'rgba(12,12,12,0.85)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)', boxShadow: '0 0 16px rgba(242,97,63,0.15)' }}
           >
-            Get instant AI audit
+            Get your free audit
           </button>
           <a
             href="/audit"

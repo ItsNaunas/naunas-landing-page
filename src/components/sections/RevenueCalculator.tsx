@@ -1,5 +1,6 @@
 'use client';
 
+import { BOOKING_URL } from '@/lib/booking';
 import { useState } from 'react';
 import { useInView } from '@/hooks/useInView';
 
@@ -257,10 +258,8 @@ export function RevenueCalculator() {
 
               <div className="mt-auto">
                 <a
-                  href="https://calendly.com/its-naunas/30min"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full font-semibold px-6 py-4 rounded-full text-sm text-[#0C0C0C] glow-accent"
+                  href={BOOKING_URL}
+                                    className="inline-flex items-center justify-center gap-2 w-full font-semibold px-6 py-4 rounded-full text-sm text-[#0C0C0C] glow-accent"
                   style={{ background: '#F2613F' }}
                 >
                   Fix This Now →

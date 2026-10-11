@@ -1,5 +1,6 @@
 'use client';
 
+import { BOOKING_URL } from '@/lib/booking';
 import { useInView } from '@/hooks/useInView';
 import { useCountUp } from '@/hooks/useCountUp';
 
@@ -50,17 +51,15 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
               <span style={{ color: 'var(--accent)' }}>Start building.</span>
             </h2>
             <p className="mt-6 text-base leading-relaxed max-w-sm" style={{ color: 'var(--muted)' }}>
-              Book a discovery call or get a free AI audit to see exactly where your ops are leaking money.
+              Book a discovery call or get a free audit to see exactly where your ops are leaking money.
             </p>
           </div>
 
           {/* Right — CTAs + trust line */}
           <div className="flex flex-col gap-4">
             <a
-              href="https://calendly.com/its-naunas/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 font-medium px-8 py-4 rounded-full transition-colors active:scale-[0.98] text-sm w-full glow-accent"
+              href={BOOKING_URL}
+                            className="inline-flex items-center justify-center gap-2 font-medium px-8 py-4 rounded-full transition-colors active:scale-[0.98] text-sm w-full glow-accent"
               style={{ background: 'var(--accent)', color: 'var(--fg)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-hover)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'var(--accent)')}
@@ -80,7 +79,7 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
                 (e.currentTarget as HTMLElement).style.color = 'var(--muted)';
               }}
             >
-              Free AI Audit
+              Free Audit
             </button>
             <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
               No commitment · Audit delivered within 48 hours

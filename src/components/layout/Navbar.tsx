@@ -1,9 +1,10 @@
 'use client';
 
+import { BOOKING_URL } from '@/lib/booking';
 import { useState, useEffect } from 'react';
 
 const NAV_LINKS = [
-  { label: 'Home',     id: 'hero' },
+  { label: 'Our work', id: 'case-studies' },
   { label: 'Services', id: 'services' },
   { label: 'Process',  id: 'process' },
   { label: 'FAQ',      id: 'faq' },
@@ -21,16 +22,22 @@ interface NavbarProps {
 export function Navbar({ onAuditClick }: NavbarProps) {
   const [scrolled, setScrolled]   = useState(false);
   const [menuOpen, setMenuOpen]   = useState(false);
+  const [overHero, setOverHero] = useState(true);
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20);
+    const handler = () => {
+      setScrolled(window.scrollY > 20);
+      const hero = document.getElementById('hero');
+      setOverHero(!!hero && hero.getBoundingClientRect().bottom > 64);
+    };
+    handler();
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
   return (
     <header
-      style={{ zIndex: 'var(--z-sticky)' } as React.CSSProperties}
+      style={{ zIndex: 'var(--z-sticky)', ...(overHero ? { '--fg': '#0C0C0C', '--muted': '#62626B', '--bg': '#FFFFFF', '--border': '#E9E9EC' } : {}) } as React.CSSProperties}
       className={`fixed top-0 left-0 right-0 transition-all duration-300 ${
         scrolled
           ? 'bg-[var(--bg)]/90 backdrop-blur-md border-b border-[var(--border)]'
@@ -64,13 +71,11 @@ export function Navbar({ onAuditClick }: NavbarProps) {
             onClick={onAuditClick}
             className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
           >
-            AI Audit
+            Free Audit
           </button>
           <a
-            href="https://calendly.com/its-naunas/30min"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] text-sm font-semibold px-5 py-2.5 rounded-full transition-colors glow-accent"
+            href={BOOKING_URL}
+                        className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] text-sm font-semibold px-5 py-2.5 rounded-full transition-colors glow-accent"
           >
             Book your free audit
           </a>
@@ -114,13 +119,11 @@ export function Navbar({ onAuditClick }: NavbarProps) {
               onClick={() => { setMenuOpen(false); onAuditClick(); }}
               className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors text-left"
             >
-              AI Audit
+              Free Audit
             </button>
             <a
-              href="https://calendly.com/its-naunas/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--fg)] text-sm font-medium px-5 py-2.5 rounded-full transition-colors text-center glow-accent"
+              href={BOOKING_URL}
+                            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--fg)] text-sm font-medium px-5 py-2.5 rounded-full transition-colors text-center glow-accent"
             >
               Book your free audit
             </a>
@@ -130,3 +133,4 @@ export function Navbar({ onAuditClick }: NavbarProps) {
     </header>
   );
 }
+

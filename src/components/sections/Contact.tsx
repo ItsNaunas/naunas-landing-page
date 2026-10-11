@@ -43,13 +43,13 @@ export function Contact() {
     const data = {
       name:         (form.elements.namedItem('name')         as HTMLInputElement).value,
       email:        (form.elements.namedItem('email')        as HTMLInputElement).value,
-      businessType: (form.elements.namedItem('businessType') as HTMLSelectElement).value,
+      business:     (form.elements.namedItem('businessType') as HTMLSelectElement).value,
       message:      (form.elements.namedItem('message')      as HTMLTextAreaElement).value,
     };
-    await fetch('/api/audit-lead', {
+    await fetch('/api/enquiry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, src: 'contact-section' }),
     });
     setLoading(false);
     setSubmitted(true);

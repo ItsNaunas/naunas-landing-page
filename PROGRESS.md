@@ -1,13 +1,39 @@
 # Project Status
 
-**Last updated**: 2026-07-12
+**Last updated**: 2026-10-10
 **State**: **SHIPPED — funnel live on www.naunas.co.uk** with instant lead alerts. /audit → /api/qualify → Baserow + pre-call brief, and every qualified (or £15k+-band) lead now emails Naufal within seconds via the notify relay, brief inline. Lead magnet serves the real /six-leaks.pdf. Vercel project = `naunas-landing-page` (git-connected, auto-deploys master); 8 env vars on Production (added NOTIFY_RELAY_URL/SECRET, fixed NEXT_PUBLIC_LEAD_MAGNET_URL).
 
 ## Next steps
+- [ ] **Uncommitted (2026-10-11):** case-study cards + /case-studies pages + testimonial slider. Built OK locally; review, then commit + push (auto-deploys).
+- [ ] Unverified figures still live (Naufal said add-only for now): Alira/E-ctrl case studies (£22K, 20hrs/wk, <48hrs, +40% retention, quotes not in their videos), StatBar £18K+, About £18K+/+18.2%/12+, WhatYouGet £22K/94%/40hrs+. Source of truth for real proof: vault `09-Content/case-study-drafts.md`.
 - [ ] Testimonials header still reads "Outcomes, not promises" / "every result came from a full done-for-you install" — real testimonials aren't metric-based, so consider softening that subcopy.
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-11 (questionnaire-first audit + Leak Map pop-up + course plumbing)
+- `/audit` + every "Free audit"/book button → `AuditFlow`: questions first (name, email, business type, client value, monthly revenue, website, what's not working) → `/api/enquiry` emails contact@ + auto-reply → if qualified, Cal.com inline embed (`naunas/free-audit`) with every answer prefilled; under $5k/client AND under $20k/mo → "I'll reply by email" (no calendar). Option strings must match the Cal.com booking fields exactly. `BOOKING_URL` now = `/audit`; `CAL_URL` for emails.
+- `LeadMagnetPopup` (root layout): Leak Map offer 5s after landing, once per visitor (localStorage), hidden on /audit + old builder pages; skips if another dialog is open. Posts to `/api/leak-map` → MailerLite group "Leak Map" (found/created at runtime, fields `client_value` + `source` auto-created). Until `LEAK_MAP_COURSE_LIVE=true`, also emails the PDF link from contact@ so sign-ups always get it.
+- `/api/cal-webhook`: Cal.com BOOKING_CREATED (HMAC `x-cal-signature-256`, env `CAL_WEBHOOK_SECRET`) → removes attendee from the Leak Map group (stops the course).
+- `public/leak-map.pdf` (24pp, built in vault `09-Content/leak-map/`) + `public/leak-map-cover.png`.
+- Env to add on Vercel before it fully works: `CAL_WEBHOOK_SECRET` (then register the webhook on the Cal.com event), `LEAK_MAP_COURSE_LIVE=true` once the MailerLite automation is built. Existing: `MAILERLITE_API_TOKEN`, `ZOHO_SMTP_*`.
+
+### 2026-10-11 (AI audit + Baserow removed → simple book-or-message funnel)
+- Removed: AuditModal (9-question AI audit), /api/ai-audit (OpenAI), lib/industryData, AuditQualifyForm (learner fork), /api/qualify + /api/audit-lead (Baserow). Build no longer needs OPENAI_API_KEY. /api/managed-waitlist still writes Baserow (the /managed page, untouched).
+- New `EnquiryPanel` (primary: "Book a free 30-minute audit call" → booking link; secondary: name/email/website/message form) used by the new `EnquiryModal` (all "Free audit" buttons), `/audit` page (now a simple two-column page, same panel) — Contact section posts to the same endpoint.
+- New `/api/enquiry`: emails contact@ (reply-to = lead; awaited, so a failed send shows an error) + instant auto-reply to the lead with the booking link (via `after()`). Shared `lib/mailer.ts` (Zoho SMTP env as /api/subscribe).
+- `lib/booking.ts`: single BOOKING_URL = `NEXT_PUBLIC_BOOKING_URL` || Calendly. Switch to Cal.com by setting the env var on Vercel. Navbar/Footer/CtaBanner/RevenueCalculator use it.
+- All "AI audit" wording → "free audit" (hero, nav, footer, CTA banner, FAQ, metadata, OG image).
+- Not testable locally (no Zoho creds in .env.local); verify with one real submission after deploy.
+
+### 2026-10-11 (case studies → cards + own pages; testimonials → one-row slider)
+- New `src/lib/caseStudies.ts` = single source for all 9 case studies (SITH, Nelia, SNAEB, SAAFI full; RT Spaces, TPC, 360CR short; Alira + E-ctrl kept with their existing copy/figures at Naufal's request). Home `CaseStudies` = 3 featured cards (SITH, Nelia, SNAEB) + "See all work". New routes `/case-studies` (grid) and `/case-studies/[slug]` (static via generateStaticParams; sections render only if present). Shared `CaseStudyShell` (logo header + audit CTA). Sitemap now lists them.
+- `Testimonials` rewritten as a single horizontal scroll-snap row (6 quotes, arrows on sm+, swipe on mobile); old CTA row dropped to shorten the section.
+- Build passes locally (needs any `OPENAI_API_KEY` value at build time because /api/ai-audit instantiates the client at import). Not committed/deployed — awaiting Naufal's review.
+
+### 2026-10-10 (real case studies + testimonials, add-only)
+- CaseStudies.tsx: added Soul in the Horn, Nelia Rose Designs, SNAEB, SAAFI ahead of the existing two (now 6 tabs; switcher wraps). `quote`/`author` optional (SNAEB has none). Numbers from the vault drafts: SITH $26,736 (Jul 31 gross, Eventbrite), 37→269 tickets (Oct 2), 100+ dancer purchases, $250 from 2 campaigns.
+- Testimonials.tsx: added Uche (Nelia), Derick (SITH), Abdullah Said (SAAFI) first; stacked column now borders every row but the last.
+- Naufal's instruction: add only, don't fix existing content. Not built (npm registry unreachable), not committed, not deployed.
 ### 2026-07-12 (newsletter welcome email)
 - `/api/subscribe`: new MailerLite subscribers (201) now get a welcome/confirmation email from `Naufal at Naunas <contact@naunas.co.uk>` via Zoho SMTP (nodemailer, `after()`, never blocks the signup). Existing subscribers (200 upsert) are NOT re-mailed. Copy: confirmed + what-you-get + six-leaks PDF link + reply invite. Env: ZOHO_SMTP_HOST/PORT/USER/PASS (Vercel prod + .env.local).
 - **Verified e2e on prod** with a Gmail plus-address (fresh 201): welcome landed in the inbox; test subscriber deleted from MailerLite after. Also verified the 200 path correctly skips (its.naunas@gmail.com has existed in the account since 06-12).

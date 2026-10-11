@@ -21,8 +21,8 @@ const FAQS = [
     a: 'Yes. We offer a post-install optimisation period as standard. Ongoing retainers are available for businesses that want continuous improvement.',
   },
   {
-    q: 'What is the free AI audit?',
-    a: "Submit your details and we'll analyse your current ops using AI-assisted review. You'll receive a breakdown of your lifecycle gaps, automation opportunities, and a priority action list — at no cost.",
+    q: 'What is the free audit?',
+    a: "A 30-minute call where I walk through how enquiries, proposals and clients move through your business, then show you where it's leaking and what I'd fix first. No cost, no obligation. Prefer to write? Send a message and I'll reply within 48 hours.",
   },
 ];
 

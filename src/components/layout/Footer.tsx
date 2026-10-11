@@ -1,5 +1,6 @@
 'use client';
 
+import { BOOKING_URL } from '@/lib/booking';
 import { useInView } from '@/hooks/useInView';
 
 interface FooterProps {
@@ -51,10 +52,8 @@ export function Footer({ onAuditClick }: FooterProps) {
               Get Started
             </p>
             <a
-              href="https://calendly.com/its-naunas/30min"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] text-sm font-semibold px-6 py-3 rounded-full transition-colors text-center glow-accent"
+              href={BOOKING_URL}
+                            className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] text-sm font-semibold px-6 py-3 rounded-full transition-colors text-center glow-accent"
             >
               Book your free audit
             </a>
@@ -62,7 +61,7 @@ export function Footer({ onAuditClick }: FooterProps) {
               onClick={onAuditClick}
               className="border border-[var(--border)] hover:border-white/30 text-[var(--muted)] hover:text-[var(--fg)] text-sm font-medium px-6 py-3 rounded-full transition-colors"
             >
-              Free AI Audit
+              Free Audit
             </button>
           </div>
         </div>

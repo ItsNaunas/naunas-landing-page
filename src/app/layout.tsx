@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { CursorGlow } from "@/components/ui/CursorGlow";
+import { LeadMagnetPopup } from "@/components/ui/LeadMagnetPopup";
 import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = 'https://www.naunas.co.uk';
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
     template: '%s | Naunas Systems',
   },
   description:
-    'Naunas Systems installs done-for-you client lifecycle automation for service businesses. Stop losing leads — get a free AI audit and find exactly where your revenue is leaking.',
+    'Naunas Systems installs done-for-you client lifecycle automation for service businesses. Stop losing leads — get a free audit and find exactly where your revenue is leaking.',
   keywords: [
     'business automation',
     'client lifecycle automation',
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Naunas Systems — Done-For-You Business Automation',
     description:
-      'Stop losing leads between the cracks. Get a free AI audit and find exactly where your revenue is leaking.',
+      'Stop losing leads between the cracks. Get a free audit and find exactly where your revenue is leaking.',
     images: ['/og-image.png'],
     creator: '@naunas_builds',
   },
@@ -107,6 +108,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#0C0C0C] text-white">
         <CursorGlow />
         {children}
+        <LeadMagnetPopup />
         <Analytics />
       </body>
     </html>
