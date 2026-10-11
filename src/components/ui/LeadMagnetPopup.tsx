@@ -6,9 +6,9 @@ import { track } from '@vercel/analytics';
 import { getAttribution } from '@/lib/attribution';
 
 // Free-resource pop-up: offers the Leak Map ~5s after landing, once per visitor.
-// Not shown on /audit (they're already mid-enquiry) or the old builder pages.
+// Not auto-shown on /audit (they're already mid-enquiry) or /links (it has its own Leak Map button).
 const SEEN_KEY = 'leakmap_popup_seen_v1';
-const HIDDEN_ON = ['/audit', '/kit', '/managed', '/links', '/newsletter'];
+const HIDDEN_ON = ['/audit', '/links'];
 const CLIENT_VALUE = ['Under $5k', '$5k-25k', '$25k-100k', '$100k+'];
 
 type Status = 'idle' | 'sending' | 'done' | 'error';
