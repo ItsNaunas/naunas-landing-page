@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { track } from '@vercel/analytics';
 import { Avatar } from '@/components/ui/Avatar';
-import { CASE_STUDIES, FEATURED_SLUGS } from '@/lib/caseStudies';
+import { CASE_STUDIES } from '@/lib/caseStudies';
 
 // Link-in-bio page. Each platform's bio uses its own short link (/ig, /tt, /li, /yt — see
 // next.config.ts), which lands here with UTM tags. The attribution tracker stores them, so a
@@ -56,7 +56,6 @@ function Arrow() {
 }
 
 export function LinksHub() {
-  const featured = FEATURED_SLUGS.map((s) => CASE_STUDIES.find((c) => c.slug === s)).filter((c) => !!c);
   const quote = CASE_STUDIES.find((c) => c.slug === 'nelia-rose-designs')?.quote;
 
   return (
@@ -102,33 +101,17 @@ export function LinksHub() {
             </span>
             <Arrow />
           </button>
-        </div>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between">
-            <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: '#F2613F' }}>Recent work</span>
-            <Link href="/case-studies" onClick={() => clicked('case-studies')} className="text-xs transition-colors hover:text-[#F2613F]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              See all →
-            </Link>
-          </div>
-          <div className="flex flex-col" style={border}>
-            {featured.map((c, i) => (
-              <Link
-                key={c.slug}
-                href={`/case-studies/${c.slug}`}
-                onClick={() => clicked(`case-${c.slug}`)}
-                className={rowClass}
-                style={i ? { borderTop: '1px solid rgba(255,255,255,0.08)' } : undefined}
-              >
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold" style={{ color: '#fff' }}>{c.client}</span>
-                  <span className="block text-xs mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{c.metric.value} {c.metric.label}</span>
-                </span>
-                <Arrow />
-              </Link>
-            ))}
-          </div>
-        </section>
+          <Link
+            href="/case-studies"
+            onClick={() => clicked('case-studies')}
+            className={rowClass}
+            style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <span className="text-base font-semibold" style={{ color: '#fff' }}>Case studies</span>
+            <Arrow />
+          </Link>
+        </div>
 
         {quote && (
           <figure className="px-5 py-5" style={{ ...border, background: '#0f0f0f' }}>
