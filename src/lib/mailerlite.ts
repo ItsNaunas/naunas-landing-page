@@ -33,8 +33,13 @@ async function ensureFields() {
   if (fieldsReady) return;
   const existing = await ml<{ data: { key: string }[] }>('/fields?limit=100');
   const keys = new Set(existing.data.map((f) => f.key));
-  for (const name of ['client_value', 'source']) {
-    if (!keys.has(name)) await ml('/fields', { method: 'POST', body: JSON.stringify({ name, type: 'text' }) });
+  for (const name of ['client_value', 'signup_source']) {
+    if (keys.has(name)) continue;
+    try {
+      await ml('/fields', { method: 'POST', body: JSON.stringify({ name, type: 'text' }) });
+    } catch (err) {
+      console.error('[MailerLite] could not create field', name, err); // never block a sign-up on this
+    }
   }
   fieldsReady = true;
 }
@@ -45,7 +50,7 @@ export async function addToGroup(opts: { email: string; name?: string; clientVal
   const fields: Record<string, string> = {};
   if (opts.name) fields.name = opts.name;
   if (opts.clientValue) fields.client_value = opts.clientValue;
-  if (opts.source) fields.source = opts.source;
+  if (opts.source) fields.signup_source = opts.source;
   // Upsert: 201 new, 200 existing. Adding to the group starts the course automation.
   await ml('/subscribers', { method: 'POST', body: JSON.stringify({ email: opts.email, fields, groups: [groupId] }) });
 }
