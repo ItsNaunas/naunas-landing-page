@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { CursorGlow } from "@/components/ui/CursorGlow";
 import { LeadMagnetPopup } from "@/components/ui/LeadMagnetPopup";
+import { AttributionTracker } from "@/components/ui/AttributionTracker";
 import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = 'https://www.naunas.co.uk';
@@ -108,6 +109,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#0C0C0C] text-white">
         <CursorGlow />
         {children}
+        <AttributionTracker />
         <LeadMagnetPopup />
         <Analytics />
       </body>

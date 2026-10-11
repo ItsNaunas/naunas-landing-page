@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { getMailer, escapeHtml, textToHtml } from '@/lib/mailer';
 import { CAL_URL, isQualified } from '@/lib/booking';
+import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE } from '@/lib/hubspot';
+import type { Attribution } from '@/lib/attribution';
 
 // The free-audit questionnaire (and the contact section). No database: the answers are emailed to
 // contact@ (reply-to = the lead) and the lead gets an instant auto-reply. Qualified leads are shown
@@ -20,6 +22,7 @@ export async function POST(req: NextRequest) {
   const website = str('website');
   const message = str('message').slice(0, 4000);
   const src = str('src') || 'site';
+  const attribution = (body.attribution && typeof body.attribution === 'object' ? body.attribution : {}) as Attribution;
 
   if (!name || !EMAIL_RE.test(email) || !message) {
     return NextResponse.json({ error: 'Please fill in your name, a valid email and what’s not working.' }, { status: 400 });
@@ -74,6 +77,24 @@ export async function POST(req: NextRequest) {
       await mailer.transporter.sendMail({ from: `Naufal at Naunas <${mailer.from}>`, to: email, subject: 'Got your answers', text, html: textToHtml(text) });
     } catch (err) {
       console.error('[Enquiry] Auto-reply failed:', err);
+    }
+  });
+
+  // CRM: contact always; deal only for qualified questionnaire leads and contact-form messages.
+  after(async () => {
+    try {
+      const isContactForm = src === 'contact-section';
+      const leadSource = inferLeadSource(isContactForm ? 'contact_form' : 'audit_questionnaire', attribution);
+      const contactId = await upsertContact({
+        email, ...splitName(name), website, business_type: business || undefined,
+        client_value: clientValue || undefined, monthly_revenue_band: revenue || undefined,
+        whats_not_working: message, leadSource, attribution,
+      });
+      await addNote(contactId, `<p><strong>${isContactForm ? 'Contact form' : 'Free-audit questionnaire'}</strong> (${escapeHtml(src)})</p>`
+        + `<p>${escapeHtml(message)}</p><p>${qualified ? 'Shown the booking calendar.' : 'Below threshold: reply by email.'}</p>`);
+      if (qualified) await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution });
+    } catch (err) {
+      console.error('[Enquiry] HubSpot failed:', err);
     }
   });
 

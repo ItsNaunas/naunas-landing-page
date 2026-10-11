@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { track } from '@vercel/analytics';
 import { CAL_LINK } from '@/lib/booking';
+import { getAttribution } from '@/lib/attribution';
 
 // Free-audit flow: questions first, then (if qualified) the Cal.com calendar with every answer
 // prefilled, so nothing is typed twice. Option text must match the Cal.com booking fields exactly.
@@ -111,7 +112,7 @@ export function AuditFlow({ origin = 'site', onWide }: { origin?: string; onWide
       const res = await fetch('/api/enquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...a, src }),
+        body: JSON.stringify({ ...a, src, attribution: getAttribution() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong.');

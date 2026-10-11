@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { addToGroup, LEAK_MAP_GROUP } from '@/lib/mailerlite';
 import { getMailer, textToHtml } from '@/lib/mailer';
+import { upsertContact, inferLeadSource, splitName } from '@/lib/hubspot';
+import type { Attribution } from '@/lib/attribution';
 
 // Pop-up sign-up for the Leak Map. Adds the person to the MailerLite "Leak Map" group, which
 // starts the 8-day course (day 0 delivers the PDF). Until that automation is switched on
@@ -18,6 +20,7 @@ export async function POST(req: NextRequest) {
   const email = str('email');
   const clientValue = str('clientValue');
   const src = str('src') || 'popup';
+  const attribution = (body.attribution && typeof body.attribution === 'object' ? body.attribution : {}) as Attribution;
 
   if (!name || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: 'Please add your first name and a valid email.' }, { status: 400 });
@@ -47,6 +50,14 @@ export async function POST(req: NextRequest) {
       }
     });
   }
+
+  after(async () => {
+    try {
+      await upsertContact({ email, ...splitName(name), client_value: clientValue || undefined, leadSource: inferLeadSource('leak_map_popup', attribution), attribution });
+    } catch (err) {
+      console.error('[LeakMap] HubSpot failed:', err);
+    }
+  });
 
   return NextResponse.json({ success: true, pdf: '/leak-map.pdf' });
 }

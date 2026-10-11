@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { track } from '@vercel/analytics';
+import { getAttribution } from '@/lib/attribution';
 
 // Free-resource pop-up: offers the Leak Map ~5s after landing, once per visitor.
 // Not shown on /audit (they're already mid-enquiry) or the old builder pages.
@@ -64,7 +65,7 @@ export function LeadMagnetPopup() {
       const res = await fetch('/api/leak-map', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, src: `popup${pathname ?? ''}${src ? `:${src}` : ''}` }),
+        body: JSON.stringify({ ...form, src: `popup${pathname ?? ''}${src ? `:${src}` : ''}`, attribution: getAttribution() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? 'Something went wrong.');

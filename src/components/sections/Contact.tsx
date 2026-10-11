@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { getAttribution } from '@/lib/attribution';
 import { motion, useInView } from 'framer-motion';
 
 const BUSINESS_TYPES = [
@@ -49,7 +50,7 @@ export function Contact() {
     await fetch('/api/enquiry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, src: 'contact-section' }),
+      body: JSON.stringify({ ...data, src: 'contact-section', attribution: getAttribution() }),
     });
     setLoading(false);
     setSubmitted(true);
