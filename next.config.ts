@@ -14,11 +14,15 @@ const SHORT_LINKS: { path: string; source: string; medium: string }[] = [
 const nextConfig: NextConfig = {
   reactCompiler: true,
   async redirects() {
-    return SHORT_LINKS.map(({ path, source, medium }) => ({
-      source: path,
-      destination: `/?utm_source=${source}&utm_medium=${medium}`,
-      permanent: false,
-    }));
+    return [
+      ...SHORT_LINKS.map(({ path, source, medium }) => ({
+        source: path,
+        destination: `/?utm_source=${source}&utm_medium=${medium}`,
+        permanent: false,
+      })),
+      // Retired builder-era pages (2026-10-11): send old links to the home page.
+      ...['/managed', '/newsletter', '/links'].map((p) => ({ source: p, destination: `/?utm_source=old-link&utm_medium=${p.slice(1)}`, permanent: true })),
+    ];
   },
 };
 

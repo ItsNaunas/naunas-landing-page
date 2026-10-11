@@ -142,15 +142,6 @@ export function KitShowcase() {
               ))}
             </ul>
           </div>
-
-          <Link
-            href={`/newsletter?src=${forwardedSrc}`}
-            onClick={() => track('kit_click', { target: 'newsletter', src: src || 'direct' })}
-            className="text-center text-sm underline underline-offset-4 transition-colors hover:text-[var(--accent)]"
-            style={{ color: 'var(--muted)' }}
-          >
-            Get told first when a new pack drops
-          </Link>
         </motion.div>
       </main>
     </div>
