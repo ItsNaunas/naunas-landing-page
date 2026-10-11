@@ -14,10 +14,10 @@ const BUSINESS_TYPES = [
 ];
 
 const WHAT_YOU_GET = [
-  { label: 'Full lifecycle gap analysis', sub: 'Every stage from lead to retained client' },
-  { label: 'Automation opportunity map', sub: 'Exactly what to automate and in what order' },
-  { label: 'Tool stack assessment', sub: 'What to keep, replace, or connect' },
-  { label: 'Priority action list', sub: 'Ranked by revenue impact, delivered in writing' },
+  { label: 'Where it leaks', sub: 'Enquiries, proposals, onboarding or referrals' },
+  { label: 'What I would fix first', sub: 'Ranked by what it is likely costing you' },
+  { label: 'What to keep, replace or connect', sub: 'Built around the tools you already use' },
+  { label: 'A straight answer', sub: 'Even if what you need is not me' },
 ];
 
 const inputClass = `
@@ -75,13 +75,13 @@ export function Contact() {
           <div className="flex flex-col justify-center gap-8">
             <div>
               <span className="text-[11px] font-medium text-[#F2613F] uppercase tracking-widest">
-                Free Systems Audit
+                Prefer to write?
               </span>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mt-3" style={{ color: '#fff' }}>
-                Find out exactly<br />what's leaking.
+                Send a message.<br />I'll reply myself.
               </h2>
               <p className="text-base md:text-lg leading-relaxed mt-4 max-w-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Submit your details and we'll analyse your current ops. You'll get a written breakdown — no sales call required to receive it.
+                Not ready for a call? Tell me what's not working and I'll reply within 48 hours with where I'd start.
               </p>
             </div>
 
@@ -118,7 +118,7 @@ export function Contact() {
 
             {/* Trust line */}
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              Delivered in writing within 48 hours · Based on your actual setup, not a template
+              Reply within 48 hours · Goes straight to Naufal
             </p>
           </div>
 
@@ -145,7 +145,7 @@ export function Contact() {
                 </div>
                 <h3 className="text-xl font-semibold" style={{ color: '#fff' }}>Request received</h3>
                 <p className="text-sm max-w-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  We'll analyse your setup and send your audit within 48 hours.
+                  I'll read it myself and reply within 48 hours.
                 </p>
               </div>
             ) : (
@@ -237,7 +237,7 @@ export function Contact() {
                 </button>
 
                 <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  No sales call required · Reply within 48 hours
+                  Reply within 48 hours · No spam
                 </p>
               </form>
             )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { removeFromGroup, LEAK_MAP_GROUP } from '@/lib/mailerlite';
 import { upsertContact, ensureDeal, splitName, STAGE } from '@/lib/hubspot';
+import { priorityOf } from '@/lib/booking';
 
 // Cal.com webhook (BOOKING_CREATED). When someone books the free audit, stop the Leak Map course
 // for them by removing them from the MailerLite group. Signed with CAL_WEBHOOK_SECRET.
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
         business_type: business, client_value: val('client-value'), monthly_revenue_band: val('monthly-revenue'),
         whats_not_working: val('whats-not-working'), leadSource: 'audit_questionnaire',
       });
-      await ensureDeal({ contactId, name: `${booker.name ?? booker.email}${business ? ` · ${business}` : ''}`, stage: STAGE.auditBooked, leadSource: 'audit_questionnaire' });
+      await ensureDeal({ contactId, name: `${booker.name ?? booker.email}${business ? ` · ${business}` : ''}`, stage: STAGE.auditBooked, leadSource: 'audit_questionnaire', priority: priorityOf(val('client-value'), val('monthly-revenue')) });
     } catch (err) {
       console.error('[CalWebhook] HubSpot failed:', err);
     }

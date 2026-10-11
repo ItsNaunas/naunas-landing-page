@@ -75,9 +75,9 @@ export default function OgImage() {
             maxWidth: 800,
           }}
         >
-          Done-For-You
+          The Client System
           <br />
-          <span style={{ color: '#F2613F' }}>Business Automation</span>
+          <span style={{ color: '#F2613F' }}>for high-ticket businesses</span>
         </div>
 
         {/* Sub */}
@@ -90,7 +90,7 @@ export default function OgImage() {
             marginBottom: 48,
           }}
         >
-          Stop losing leads between the cracks. We install the systems that run your client lifecycle end to end.
+          From first enquiry to final handover, and the referral after it. Built in your own accounts.
         </div>
 
         {/* Bottom row */}

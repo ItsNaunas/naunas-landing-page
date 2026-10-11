@@ -44,6 +44,13 @@ export function LeadMagnetPopup() {
     return () => clearTimeout(t);
   }, [pathname]);
 
+  // Buttons anywhere on the site can open it: window.dispatchEvent(new Event('open-leak-map'))
+  useEffect(() => {
+    const openNow = () => { setOpen(true); markSeen(); track('leakmap_popup_opened'); };
+    window.addEventListener('open-leak-map', openNow);
+    return () => window.removeEventListener('open-leak-map', openNow);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };

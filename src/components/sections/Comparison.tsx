@@ -4,8 +4,8 @@ import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 
 const ROWS = [
-  { label: 'Cost',                 inhouse: '£40K+/yr salary',     freelancer: 'Variable, unclear',  naunas: 'Fixed project fee'    },
-  { label: 'Time to value',        inhouse: '3–6 months',          freelancer: 'Weeks to months',    naunas: '2–4 weeks'            },
+  { label: 'Cost',                 inhouse: 'A full-time salary',     freelancer: 'Variable, unclear',  naunas: 'Fixed project fee'    },
+  { label: 'Time to value',        inhouse: '3–6 months',          freelancer: 'Weeks to months',    naunas: 'Scoped in writing'            },
   { label: 'Accountability',       inhouse: 'High (employee)',      freelancer: 'Low, no guarantees', naunas: 'High, defined scope'  },
   { label: 'System ownership',     inhouse: 'You own it',          freelancer: 'Often unclear',      naunas: 'You own everything'   },
   { label: 'Full lifecycle scope', inhouse: 'Maybe, over time',    freelancer: 'Rarely',             naunas: 'Always, end-to-end'   },

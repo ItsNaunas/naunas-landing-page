@@ -5,24 +5,32 @@ import { useInView } from '@/hooks/useInView';
 
 const FAQS = [
   {
-    q: 'What type of businesses do you work with?',
-    a: 'Agencies, coaching businesses, and service operators with an established offer and active lead flow. If you have a repeatable service and want to scale it without burning out, we can install the infrastructure to do that.',
+    q: 'Who do you work with?',
+    a: 'Businesses that sell a few big things rather than lots of small ones: design studios, construction and remodelling, property, agencies, academies and professional services. Usually a new client is worth $5k or more to you.',
   },
   {
-    q: 'How long does a full lifecycle install take?',
-    a: 'Most installs take 2–4 weeks depending on scope. Automation-only projects can be done in under a week. Bespoke builds are scoped individually.',
+    q: 'Do I have to change the tools I use?',
+    a: "No. I build around what already works for you and only replace what's holding you back. If a tool has an API, I can connect it.",
   },
   {
-    q: "What if I'm already using tools like n8n, Airtable, or HubSpot?",
-    a: "We build on top of your existing stack wherever possible. We're tool-agnostic — if it has an API, we can work with it.",
+    q: 'Who owns the system?',
+    a: 'You do. Everything is built in your own accounts, with documentation, so nothing is locked to me.',
   },
   {
-    q: 'Do you offer ongoing support after the install?',
-    a: 'Yes. We offer a post-install optimisation period as standard. Ongoing retainers are available for businesses that want continuous improvement.',
+    q: 'How long does it take?',
+    a: "It's scoped in writing before we start. One building block is much quicker than the full Client System, and you'll know the timeline before you commit.",
+  },
+  {
+    q: "We're not technical. Is that a problem?",
+    a: 'No. You get a walkthrough, training and plain-English docs at handover, and optional monthly support if you want someone looking after it.',
+  },
+  {
+    q: 'Do you work outside the UK?',
+    a: 'Yes. I work with owners in the US and the UK, remotely.',
   },
   {
     q: 'What is the free audit?',
-    a: "A 30-minute call where I walk through how enquiries, proposals and clients move through your business, then show you where it's leaking and what I'd fix first. No cost, no obligation. Prefer to write? Send a message and I'll reply within 48 hours.",
+    a: "Answer a few quick questions, pick a time, and in 30 minutes I'll walk through how enquiries, proposals and clients move through your business, show you where it's leaking and what I'd fix first. No cost, no obligation.",
   },
 ];
 

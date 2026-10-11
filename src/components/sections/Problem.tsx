@@ -93,7 +93,7 @@ function LeadFunnelCard() {
       <div className="flex flex-col">
         {metrics.map((m, i) => <MetricBar key={m.label} {...m} inView={inView} delay={i * 120} />)}
       </div>
-      <CardFooter label="Revenue Leakage Detected" value="£18,400 / month" />
+      <CardFooter label="Example: revenue at risk" value="$18,400 / month" />
     </motion.div>
   );
 }
@@ -161,7 +161,7 @@ function RetentionCard() {
       <div className="flex flex-col">
         {metrics.map((m, i) => <MetricBar key={m.label} {...m} inView={inView} delay={i * 120} />)}
       </div>
-      <CardFooter label="Missed Expansion Revenue" value="£27,000" />
+      <CardFooter label="Example: missed repeat work" value="$27,000" />
     </motion.div>
   );
 }

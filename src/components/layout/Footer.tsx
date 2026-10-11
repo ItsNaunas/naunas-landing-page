@@ -25,8 +25,8 @@ export function Footer({ onAuditClick }: FooterProps) {
               Naunas<span className="text-[var(--accent)]">.</span>
             </p>
             <p className="text-[var(--muted)] text-sm mt-3 leading-relaxed">
-              We install client lifecycle infrastructure, custom automations, and bespoke builds
-              that turn chaotic lead flow into controlled revenue.
+              The client system behind businesses that sell big projects: from first enquiry
+              to final handover, and the referral after it. Built in your own accounts.
             </p>
           </div>
 
@@ -35,10 +35,16 @@ export function Footer({ onAuditClick }: FooterProps) {
             <p className="text-[11px] font-medium text-[var(--label)] uppercase tracking-widest mb-2">
               Navigation
             </p>
-            {['Home', 'Services', 'Process', 'FAQ'].map((l) => (
+            {[
+              { l: 'The Client System', href: '/#services' },
+              { l: 'Case studies', href: '/case-studies' },
+              { l: 'Free Leak Map', href: '/leak-map.pdf' },
+              { l: 'Free audit', href: '/audit?src=footer' },
+              { l: 'FAQ', href: '/#faq' },
+            ].map(({ l, href }) => (
               <a
                 key={l}
-                href={`#${l.toLowerCase()}`}
+                href={href}
                 className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
               >
                 {l}

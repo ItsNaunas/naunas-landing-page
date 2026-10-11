@@ -10,3 +10,11 @@ export const CAL_URL = `https://cal.com/${CAL_LINK}`;
 export function isQualified(clientValue: string, revenue: string) {
   return !(clientValue === 'Under $5k' && revenue === 'Under $20k');
 }
+
+// HubSpot "Lead priority": high = client worth $25k+ or $250k+/mo; small = below the booking threshold.
+export function priorityOf(clientValue?: string, revenue?: string): 'high' | 'normal' | 'small' | undefined {
+  if (!clientValue && !revenue) return undefined;
+  if (clientValue === '$25k-100k' || clientValue === '$100k+' || revenue === '$250k+') return 'high';
+  if (clientValue && revenue && !isQualified(clientValue, revenue)) return 'small';
+  return 'normal';
+}

@@ -51,7 +51,7 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
               <span style={{ color: 'var(--accent)' }}>Start building.</span>
             </h2>
             <p className="mt-6 text-base leading-relaxed max-w-sm" style={{ color: 'var(--muted)' }}>
-              Book a discovery call or get a free audit to see exactly where your ops are leaking money.
+              Answer a few quick questions, pick a time, and I'll show you where your business is leaking and what I'd fix first.
             </p>
           </div>
 
@@ -67,7 +67,7 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
               Book your free audit →
             </a>
             <button
-              onClick={onAuditClick}
+              onClick={() => window.dispatchEvent(new Event('open-leak-map'))}
               className="inline-flex items-center justify-center font-medium px-8 py-4 rounded-full transition-all active:scale-[0.98] text-sm w-full"
               style={{ border: '1px solid rgba(255,255,255,0.12)', color: 'var(--muted)' }}
               onMouseEnter={e => {
@@ -79,10 +79,10 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
                 (e.currentTarget as HTMLElement).style.color = 'var(--muted)';
               }}
             >
-              Free Audit
+              Get the Leak Map (free guide)
             </button>
             <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
-              No commitment · Audit delivered within 48 hours
+              30 minutes · No cost · You own everything we build
             </p>
           </div>
         </div>
@@ -92,12 +92,12 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
           className="grid grid-cols-3 gap-0 mt-20"
           style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
         >
-          <CountStat target={12} format={(n) => `${n}+`} label="Systems installed" inView={inView} borderRight />
+          <CountStat target={9} format={(n) => `${n}`} label="Client builds shipped" inView={inView} borderRight />
           <div className="py-8 text-center" style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}>
-            <p className="font-bold leading-none" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', color: 'var(--fg)' }}>{'< 48hrs'}</p>
-            <p className="text-xs mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>Avg. onboarding time</p>
+            <p className="font-bold leading-none" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.25rem)', color: 'var(--fg)' }}>{'$26,736'}</p>
+            <p className="text-xs mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>One client event, every sale traced</p>
           </div>
-          <CountStat target={100} format={(n) => `${n}%`} label="Done-for-you" inView={inView} />
+          <CountStat target={100} format={(n) => `${n}%`} label="Built in your own accounts" inView={inView} />
         </div>
       </div>
     </section>

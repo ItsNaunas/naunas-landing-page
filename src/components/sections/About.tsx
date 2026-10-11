@@ -5,9 +5,9 @@ import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 
 const STATS = [
-  { value: '12+', label: 'Systems installed' },
-  { value: '£18K+', label: 'Avg. revenue recovered' },
-  { value: '100%', label: 'Done-for-you' },
+  { value: '9', label: 'Client builds shipped' },
+  { value: 'US + UK', label: 'Owners I work with' },
+  { value: '100%', label: 'Built in your accounts' },
 ];
 
 const containerVariants = {
@@ -52,13 +52,13 @@ export function About() {
           </h2>
 
           <p className="text-base md:text-lg leading-relaxed max-w-md" style={{ color: '#555' }}>
-            Naunas Systems is a one-person infrastructure studio. No account managers, no hand-offs.
-            I come in, map your entire client lifecycle, and install the system that runs it — end to end.
+            I'm Naufal. I design and build every system myself: no account managers, no hand-offs.
+            I've built them for a design studio, a Brooklyn live-music brand, a subscription platform and a cleaning company, for owners in the US and UK.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => { window.location.href = '/audit?src=about'; }}
               className="inline-flex items-center justify-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] text-sm font-semibold px-5 py-2.5 rounded-full transition-colors active:scale-[0.98] w-full sm:w-auto"
             >
               Book a free audit
@@ -136,17 +136,17 @@ export function About() {
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#888' }}>
-                Revenue Recovered
+                One client event
               </span>
               <span
                 className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                 style={{ background: 'rgba(242,97,63,0.15)', color: 'var(--accent)' }}
               >
-                +18.2%
+                traced
               </span>
             </div>
-            <p className="text-2xl font-bold" style={{ color: '#0C0C0C' }}>£18K+</p>
-            <p className="text-[10px] mt-0.5" style={{ color: '#888' }}>per client, avg.</p>
+            <p className="text-2xl font-bold" style={{ color: '#0C0C0C' }}>$26,736</p>
+            <p className="text-[10px] mt-0.5" style={{ color: '#888' }}>gross, every ticket by source</p>
           </motion.div>
 
           {/* Floating card — bottom right: Active flows */}
@@ -163,7 +163,7 @@ export function About() {
           >
             <div className="flex items-center gap-2 mb-3">
               <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: '#888' }}>
-                Active Flows
+                First reply
               </span>
             </div>
             {/* Mini bar chart */}
@@ -180,10 +180,9 @@ export function About() {
               ))}
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold" style={{ color: '#0C0C0C' }}>82%</span>
-              <span className="text-[10px]" style={{ color: 'var(--accent)' }}>↑ 38%</span>
+              <span className="text-lg font-bold" style={{ color: '#0C0C0C' }}>0 min</span>
             </div>
-            <p className="text-[10px]" style={{ color: '#888' }}>automation rate</p>
+            <p className="text-[10px]" style={{ color: '#888' }}>automatic, every enquiry</p>
           </motion.div>
 
         </motion.div>

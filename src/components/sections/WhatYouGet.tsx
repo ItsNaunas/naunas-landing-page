@@ -50,143 +50,170 @@ function Terminal({ filename, lines }: { filename: string; lines: LogLine[] }) {
   );
 }
 
-function LifecycleVisual() {
+function EnquiryVisual() {
   return (
     <Terminal
-      filename="lifecycle-install.sh"
+      filename="new-enquiry.flow"
       lines={[
-        { type: 'cmd',   text: 'install lifecycle --client=example' },
+        { type: 'cmd',   text: 'on enquiry.submitted' },
         { type: 'blank', text: '' },
-        { type: 'ok',    text: 'CRM schema created (14 fields)' },
-        { type: 'ok',    text: 'Lead capture webhook connected' },
-        { type: 'ok',    text: 'Pre-call nurture sequence active' },
-        { type: 'ok',    text: 'Post-call follow-up configured' },
-        { type: 'ok',    text: 'Onboarding trigger set' },
-        { type: 'ok',    text: 'Retention check-in scheduled' },
+        { type: 'ok',    text: 'Qualifying answers saved to CRM' },
+        { type: 'ok',    text: 'Source captured (instagram / bio)' },
+        { type: 'ok',    text: 'Auto-reply sent with booking link (0 min)' },
+        { type: 'ok',    text: 'Alert sent to your phone (0 min)' },
+        { type: 'ok',    text: 'No booking in 24h: follow-up queued' },
         { type: 'blank', text: '' },
-        { type: 'run',   text: '6 automations running · 0 errors' },
+        { type: 'run',   text: 'Nothing waits for someone to remember' },
       ]}
     />
   );
 }
 
-function AutomationsVisual() {
+function ProposalVisual() {
   return (
     <Terminal
-      filename="deploy-workflows.sh"
+      filename="proposal-to-payment.flow"
       lines={[
-        { type: 'cmd',   text: 'deploy workflows --env=production' },
+        { type: 'cmd',   text: 'on proposal.sent' },
         { type: 'blank', text: '' },
-        { type: 'ok',    text: 'Trigger: lead form submitted' },
-        { type: 'ok',    text: 'CRM record created' },
-        { type: 'ok',    text: 'Internal alert → new-leads' },
-        { type: 'ok',    text: 'Email sequence initiated' },
-        { type: 'ok',    text: 'Payment link sent' },
+        { type: 'ok',    text: 'One link: read, accept, sign, pay' },
+        { type: 'ok',    text: 'Alert when the client opens it' },
+        { type: 'ok',    text: 'No reply: follow-ups day 2, 5, 10' },
+        { type: 'ok',    text: 'Deposit or instalments via Stripe' },
         { type: 'blank', text: '' },
-        { type: 'run',   text: '5 workflows live · 0 errors' },
+        { type: 'run',   text: 'Signed and paid in one sitting' },
       ]}
     />
   );
 }
 
-function BuildsVisual() {
+function PortalVisual() {
   return (
     <Terminal
-      filename="build.sh"
+      filename="deposit-paid.flow"
       lines={[
-        { type: 'cmd',   text: 'build client-portal --stack=next' },
+        { type: 'cmd',   text: 'on deposit.paid' },
         { type: 'blank', text: '' },
-        { type: 'ok',    text: 'Auth layer configured' },
-        { type: 'ok',    text: 'Dashboard routes created' },
-        { type: 'ok',    text: 'API endpoints connected' },
-        { type: 'ok',    text: 'Database schema migrated' },
-        { type: 'ok',    text: 'Deployed to production' },
+        { type: 'ok',    text: 'Contract copy + welcome email sent' },
+        { type: 'ok',    text: 'Client portal access created' },
+        { type: 'ok',    text: 'What-happens-next checklist sent' },
+        { type: 'ok',    text: 'Kickoff booking link sent' },
         { type: 'blank', text: '' },
-        { type: 'run',   text: 'Build complete · 1.2s' },
+        { type: 'run',   text: 'Weekly update every Friday, automatically' },
       ]}
     />
   );
 }
 
-function OptimisationVisual() {
+function RetentionVisual() {
   return (
     <Terminal
-      filename="health-check.sh"
+      filename="handover.flow"
       lines={[
-        { type: 'cmd',   text: 'run system-health-check --all' },
+        { type: 'cmd',   text: 'on final_payment.received' },
         { type: 'blank', text: '' },
-        { type: 'ok',    text: '8/8 workflows operational' },
-        { type: 'ok',    text: '0 failed runs (last 30 days)' },
-        { type: 'ok',    text: 'Lead → close: 1.8 days avg' },
-        { type: 'ok',    text: 'Onboard time: < 2 hours' },
+        { type: 'ok',    text: 'Handover pack sent' },
+        { type: 'ok',    text: 'Review request at the high point' },
+        { type: 'ok',    text: '+2 weeks: referral ask' },
+        { type: 'ok',    text: '+12 months: anniversary check-in' },
         { type: 'blank', text: '' },
-        { type: 'run',   text: 'Retention rate: 94%' },
-        { type: 'up',    text: 'Revenue +£22K vs baseline' },
+        { type: 'run',   text: 'Every finished client asked, every time' },
       ]}
     />
   );
 }
 
-/* ── Services data ── */
+function DashboardVisual() {
+  return (
+    <Terminal
+      filename="command-centre.report"
+      lines={[
+        { type: 'cmd',   text: 'report revenue --by=source --month' },
+        { type: 'blank', text: '' },
+        { type: 'ok',    text: 'Enquiries by source' },
+        { type: 'ok',    text: 'Calls booked and attended' },
+        { type: 'ok',    text: 'Won deals and revenue by channel' },
+        { type: 'ok',    text: 'Campaigns that sold, and what they sold' },
+        { type: 'blank', text: '' },
+        { type: 'run',   text: 'One screen, every number traced' },
+      ]}
+    />
+  );
+}
+
+/* ── The Client System: building blocks ── */
 
 const SERVICES = [
   {
     number: '01',
-    title: 'Lifecycle Infrastructure',
-    description: 'Most businesses lose revenue not because of bad products — but because their ops have no structure. Leads go cold, onboarding is delayed, clients churn silently. We install the full lifecycle from first touch to retained client, built on your existing stack.',
-    deliverables: ['CRM schema + field mapping', 'Pre-call & post-call nurture sequences', 'FSM-driven deal routing logic', 'Automated onboarding trigger flows', 'Retention check-in + upsell automation'],
-    stat: { value: '£18K+', label: 'avg. monthly revenue leak fixed' },
-    tags: ['CRM Setup', 'Automated Sequences', 'FSM Logic'],
-    Visual: LifecycleVisual,
+    title: 'Enquiry & booking',
+    description: 'Every enquiry gets an instant reply with a booking link, you get an alert, and nobody waits until morning. Qualifying questions up front mean the calls you take are worth taking.',
+    deliverables: ['Qualifying enquiry form', 'Instant auto-reply with booking link', 'Alerts to your phone', "Follow-up when someone doesn't book", 'Every source tracked'],
+    stat: { value: 'Instant', label: 'reply and booking link on every enquiry' },
+    tags: ['Forms', 'Booking', 'Auto-reply'],
+    Visual: EnquiryVisual,
     icon: (
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-        <path d="M3 10h14M10 3v14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <rect x="2" y="2" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M3 5h14v10H3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M3 6l7 5 7-5" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
       </svg>
     ),
   },
   {
     number: '02',
-    title: 'Custom Automations',
-    description: 'Every hour your team spends copy-pasting, chasing updates, or manually triggering tasks is an hour stolen from growth. We map your entire operation and eliminate every manual bottleneck — custom-built pipelines scoped to your existing stack.',
-    deliverables: ['Full ops audit + automation map', 'Automation workflow builds', 'Webhook + API integrations', 'Scheduled job pipelines', 'Notification + alert routing'],
-    stat: { value: '40hrs+', label: 'avg. manual work eliminated per week' },
-    tags: ['Automation Workflows', 'API Integrations', 'Scheduled Jobs'],
-    Visual: AutomationsVisual,
+    title: 'Proposal to payment',
+    description: '"Loved the proposal" shouldn\'t turn into three weeks of chasing. The proposal, agreement and deposit sit behind one link, you know the moment it\'s opened, and the follow-ups send themselves.',
+    deliverables: ['Proposal, e-signature and deposit in one link', '"Opened" alerts', 'Automatic follow-ups', 'Instalments for big projects', 'Payments on Stripe, in your account'],
+    stat: { value: '1 link', label: 'to read, sign and pay the deposit' },
+    tags: ['Proposals', 'E-sign', 'Stripe'],
+    Visual: ProposalVisual,
     icon: (
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-        <circle cx="5" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="15" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M7.5 10h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M5 2h7l4 4v12H5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M8 11l2 2 3-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
   {
     number: '03',
-    title: 'Bespoke Builds',
-    description: "Sometimes the tool you need simply doesn't exist. Off-the-shelf software forces you to adapt your process to their constraints. We build exactly what you need — internal dashboards, client-facing portals, AI-powered agents, and scraping tools scoped to your exact workflow.",
-    deliverables: ['Custom internal dashboards', 'Client-facing portals', 'AI agents + GPT-4o integrations', 'Data scrapers + enrichment tools', 'Full technical documentation'],
-    stat: { value: '100%', label: 'built to your exact specification' },
-    tags: ['Internal Tools', 'Client Portals', 'AI Agents'],
-    Visual: BuildsVisual,
+    title: 'Client portal & onboarding',
+    description: 'The deposit starts everything: contract, welcome, portal access and next steps go out within minutes. Clients see their project in one place, so they stop texting "any update?".',
+    deliverables: ['Deposit-triggered onboarding', 'White-label client portal', 'Weekly automatic updates', 'Approvals in one place', 'Kickoff booking'],
+    stat: { value: 'Deposit', label: 'triggers contract, portal and next steps automatically' },
+    tags: ['Onboarding', 'Client portal', 'Updates'],
+    Visual: PortalVisual,
     icon: (
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-        <path d="M6 8l-4 4 4 4M14 8l4 4-4 4M11 4l-2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="2.5" y="3.5" width="15" height="13" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M2.5 7.5h15M6 11h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },
   {
     number: '04',
-    title: 'Ongoing Optimisation',
-    description: 'A system installed is not a system maintained. Without regular iteration, automations break, data goes stale, and the infrastructure you paid to build quietly stops performing. Our retainer keeps everything running, improving, and adapting as your business scales.',
-    deliverables: ['Monthly performance reviews', 'System health monitoring', 'Workflow iteration + improvements', 'New automation scoping', 'Priority support + response SLA'],
-    stat: { value: '94%', label: 'client retention rate on retainer' },
-    tags: ['Monthly Retainer', 'Performance Reviews', 'System Updates'],
-    Visual: OptimisationVisual,
+    title: 'Retention & referrals',
+    description: 'Your best marketing moment is the handover, and most businesses mark it with an invoice. Review and referral asks go out at the right time, and past clients hear from you again.',
+    deliverables: ['Handover pack', 'Review request at the high point', 'Referral ask two weeks later', 'Check-ins and anniversary notes', 'Win-back campaigns'],
+    stat: { value: '$250', label: "from two emails to a client's inactive list, in 2-3 days" },
+    tags: ['Reviews', 'Referrals', 'Win-back'],
+    Visual: RetentionVisual,
     icon: (
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-        <path d="M10 3v3M10 14v3M3 10h3M14 10h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M4 10a6 6 0 1 0 2-4.5M4 3v3h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    number: '05',
+    title: 'Command-centre dashboard',
+    description: 'One screen for the whole business: enquiries, bookings, revenue and campaigns, with every sale traced to where it came from. You stop guessing which channel brings the big clients.',
+    deliverables: ['Revenue by source', 'Pipeline at a glance', 'Campaign performance', 'Alerts when something stalls', 'Built on the tools you already use'],
+    stat: { value: '$26,736', label: "one client event's gross, every ticket traced to its source" },
+    tags: ['Dashboard', 'Attribution', 'Reporting'],
+    Visual: DashboardVisual,
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+        <path d="M3 17V9M8 17V4M13 17v-6M18 17H2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -226,10 +253,10 @@ export function WhatYouGet() {
           {/* Header */}
           <div className="flex items-end justify-between mb-6">
             <h2 className="text-6xl md:text-7xl lg:text-8xl font-bold text-[var(--fg)] leading-none tracking-tight">
-              Services.
+              The Client System.
             </h2>
             <p className="text-[var(--muted)] text-sm max-w-[260px] text-right leading-relaxed hidden md:block">
-              Everything your business needs to run on autopilot — from first lead to retained client.
+              Five building blocks from first enquiry to the referral after the job. Start with the one that hurts most, or connect them all.
             </p>
           </div>
 

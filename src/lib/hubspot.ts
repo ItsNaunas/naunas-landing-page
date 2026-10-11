@@ -2,6 +2,7 @@
 // never fails a visitor's submission because HubSpot is slow or down.
 
 import type { Attribution } from '@/lib/attribution';
+import { priorityOf } from '@/lib/booking';
 
 const API = 'https://api.hubapi.com';
 const PIPELINE = 'default'; // "Client System sales"
@@ -76,6 +77,7 @@ export async function upsertContact(c: ContactInput): Promise<string> {
     client_value: c.client_value,
     monthly_revenue_band: c.monthly_revenue_band,
     whats_not_working: c.whats_not_working,
+    naunas_priority: priorityOf(c.client_value, c.monthly_revenue_band),
     naunas_lead_source: existing?.properties.naunas_lead_source ? undefined : c.leadSource,
     first_touch_source: keepFirst ? undefined : a.first_touch_source,
     first_touch_medium: keepFirst ? undefined : a.first_touch_medium,
@@ -112,7 +114,7 @@ async function openDealFor(contactId: string): Promise<string | null> {
 }
 
 /** Ensure an open deal exists for the contact and is at least at `stage`. */
-export async function ensureDeal(opts: { contactId: string; name: string; stage: string; leadSource?: string; attribution?: Attribution }) {
+export async function ensureDeal(opts: { contactId: string; name: string; stage: string; leadSource?: string; attribution?: Attribution; priority?: string }) {
   const existing = await openDealFor(opts.contactId);
   if (existing) {
     const order = Object.values(STAGE);
@@ -131,6 +133,7 @@ export async function ensureDeal(opts: { contactId: string; name: string; stage:
         pipeline: PIPELINE,
         dealstage: opts.stage,
         deal_lead_source: opts.leadSource,
+        naunas_deal_priority: opts.priority,
         deal_source: [a.first_touch_source, a.first_touch_medium].filter(Boolean).join(' / ') || undefined,
       }),
       associations: [{ to: { id: opts.contactId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }] }],

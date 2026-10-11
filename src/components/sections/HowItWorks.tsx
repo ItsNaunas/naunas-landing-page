@@ -8,38 +8,38 @@ import { useRef } from 'react';
 const STEPS = [
   {
     number: '01',
-    title: 'Audit & Map',
-    timeline: 'Week 1–2',
-    description: 'We analyse your current ops, identify every revenue leak, and map the full lifecycle from lead to retained client.',
+    title: 'Free audit',
+    timeline: '30 minutes',
+    description: 'Answer a few questions, pick a time, and we walk through how enquiries, proposals and clients move through your business.',
     deliverables: [
-      'Full ops + lifecycle audit',
-      'Revenue leak identification report',
-      'Tech stack + integration mapping',
-      'Custom system architecture design',
+      'Your weakest layer, named',
+      'What it is likely costing you',
+      'What I would fix first',
+      'No cost, no obligation',
     ],
   },
   {
     number: '02',
-    title: 'Build & Install',
-    timeline: 'Week 3–6',
-    description: 'We build and install your lifecycle infrastructure — automations, workflows, CRM logic, and any custom tooling required.',
+    title: 'Written scope',
+    timeline: 'Within 48 hours',
+    description: 'You get a written scope: which building blocks, what changes for you and your clients, the timeline and the price. Nothing is built until you agree it.',
     deliverables: [
-      'CRM schema + all automations installed',
-      'Automation workflows connected end-to-end',
-      'Intake → onboarding → retention flows',
-      'Full QA + live environment testing',
+      'Blocks and features, in plain English',
+      'Timeline with milestones',
+      'Fixed price for the build',
+      'What you need to provide',
     ],
   },
   {
     number: '03',
-    title: 'Hand Off & Scale',
-    timeline: 'Week 7+',
-    description: 'You get a fully documented system with dashboards, team training, and an optional retainer for continuous improvement.',
+    title: 'Build & handover',
+    timeline: 'Scoped per project',
+    description: 'Built in your own accounts, tested on real cases, then handed over with training and plain-English docs. Optional monthly support after.',
     deliverables: [
-      'Full system documentation + SOPs',
-      'Team training + walkthrough session',
-      'Dashboard + monitoring access',
-      'Ongoing optimisation retainer option',
+      'Built in your accounts, you own it',
+      'Tested on real cases before launch',
+      'Training + walkthrough',
+      'Optional monthly support',
     ],
   },
 ];
@@ -66,10 +66,10 @@ export function HowItWorks() {
           </span>
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mt-3">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight" style={{ color: '#fff' }}>
-              Three phases.<br />Full system.
+              Three steps.<br />No surprises.
             </h2>
             <p className="text-sm md:text-base max-w-xs md:text-right leading-relaxed" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Every install follows the same proven sequence — scoped to your stack.
+              A written scope before anything is built, and everything lives in your accounts.
             </p>
           </div>
         </div>
@@ -180,7 +180,7 @@ export function HowItWorks() {
           className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-8 mt-2"
         >
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Ready to start phase 1?
+            Start with the free audit. It takes 30 minutes.
           </p>
           <button
             onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { getMailer, escapeHtml, textToHtml } from '@/lib/mailer';
-import { CAL_URL, isQualified } from '@/lib/booking';
+import { CAL_URL, isQualified, priorityOf } from '@/lib/booking';
 import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE } from '@/lib/hubspot';
 import type { Attribution } from '@/lib/attribution';
 
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       });
       await addNote(contactId, `<p><strong>${isContactForm ? 'Contact form' : 'Free-audit questionnaire'}</strong> (${escapeHtml(src)})</p>`
         + `<p>${escapeHtml(message)}</p><p>${qualified ? 'Shown the booking calendar.' : 'Below threshold: reply by email.'}</p>`);
-      if (qualified) await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution });
+      if (qualified) await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution, priority: priorityOf(clientValue, revenue) });
     } catch (err) {
       console.error('[Enquiry] HubSpot failed:', err);
     }

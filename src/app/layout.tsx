@@ -10,21 +10,21 @@ const SITE_URL = 'https://www.naunas.co.uk';
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Naunas Systems — Done-For-You Business Automation',
+    default: 'Naunas Systems | The Client System for high-ticket service businesses',
     template: '%s | Naunas Systems',
   },
   description:
-    'Naunas Systems installs done-for-you client lifecycle automation for service businesses. Stop losing leads — get a free audit and find exactly where your revenue is leaking.',
+    'The client system behind businesses that sell big projects: instant enquiry replies, proposals signed and paid in one link, client portals, referrals, and every lead traced to its source. Built in your own accounts. Start with a free audit.',
   keywords: [
-    'business automation',
-    'client lifecycle automation',
-    'done-for-you automation',
-    'CRM automation',
+    'client system',
+    'client onboarding automation',
+    'client portal',
+    'proposal to payment',
     'lead follow-up automation',
-    'service business automation',
-    'automation agency UK',
-    'revenue leak audit',
-    'n8n automation',
+    'design studio CRM',
+    'high-ticket service business systems',
+    'lead attribution',
+    'free business audit',
     'Naunas Systems',
   ],
   authors: [{ name: 'Naunas Systems', url: SITE_URL }],
@@ -33,23 +33,23 @@ export const metadata: Metadata = {
     type: 'website',
     url: SITE_URL,
     siteName: 'Naunas Systems',
-    title: 'Naunas Systems — Done-For-You Business Automation',
+    title: 'Naunas Systems | The Client System for high-ticket service businesses',
     description:
-      'Stop losing leads between the cracks. Naunas Systems installs the automation infrastructure that runs your client lifecycle end to end.',
+      'From first enquiry to final handover, and the referral after it. The client system behind high-ticket service businesses.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Naunas Systems — Done-For-You Business Automation',
+        alt: 'Naunas Systems: the Client System',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Naunas Systems — Done-For-You Business Automation',
+    title: 'Naunas Systems | The Client System for high-ticket service businesses',
     description:
-      'Stop losing leads between the cracks. Get a free audit and find exactly where your revenue is leaking.',
+      'From first enquiry to final handover, and the referral after it. Start with a free audit.',
     images: ['/og-image.png'],
     creator: '@naunas_builds',
   },
@@ -72,7 +72,7 @@ const jsonLd = {
   name: 'Naunas Systems',
   url: SITE_URL,
   description:
-    'Done-for-you client lifecycle automation for service businesses. We install the systems that turn chaotic lead flow into controlled revenue.',
+    'The client system behind high-ticket service businesses: enquiry, proposal, payment, onboarding, client portal, referrals and attribution, built in the client’s own accounts.',
   founder: { '@type': 'Person', name: 'Naufal Nassor' },
   sameAs: [
     'https://www.linkedin.com/in/naufal-nassor-0a1b6936b/',
@@ -80,12 +80,13 @@ const jsonLd = {
     'https://www.tiktok.com/@naunas_builds',
     'https://github.com/ItsNaunas',
   ],
-  areaServed: { '@type': 'Country', name: 'United Kingdom' },
+  areaServed: [{ '@type': 'Country', name: 'United States' }, { '@type': 'Country', name: 'United Kingdom' }],
   serviceType: [
-    'Business Automation',
-    'Client Lifecycle Infrastructure',
-    'CRM Automation',
-    'Custom Software Development',
+    'Client onboarding systems',
+    'Client portals',
+    'Proposal and payment automation',
+    'CRM and lead attribution',
+    'Custom software development',
   ],
 };
 

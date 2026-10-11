@@ -8,7 +8,6 @@ import { Problem } from '@/components/sections/Problem';
 import { IntegrationBar } from '@/components/sections/IntegrationBar';
 import { HowItWorks } from '@/components/sections/HowItWorks';
 import { WhatYouGet } from '@/components/sections/WhatYouGet';
-import { Pricing } from '@/components/sections/Pricing';
 import { Comparison } from '@/components/sections/Comparison';
 import { CaseStudies } from '@/components/sections/CaseStudies';
 import { Testimonials } from '@/components/sections/Testimonials';
@@ -16,8 +15,7 @@ import { About } from '@/components/sections/About';
 import { CtaBanner } from '@/components/sections/CtaBanner';
 import { Faq } from '@/components/sections/Faq';
 import { Contact } from '@/components/sections/Contact';
-import { StatBar } from '@/components/sections/StatBar';
-import { RevenueCalculator } from '@/components/sections/RevenueCalculator';
+import { LeakMapSection } from '@/components/sections/LeakMapSection';
 import { EnquiryModal } from '@/components/ui/EnquiryModal';
 
 export default function Home() {
@@ -30,14 +28,12 @@ export default function Home() {
         <Hero onAuditClick={() => setAuditOpen(true)} />
         <IntegrationBar />
         <Problem />
-        <StatBar />
-        <HowItWorks />
+        <LeakMapSection />
         <WhatYouGet />
-        <Pricing />
-        <RevenueCalculator />
-        <Comparison />
         <CaseStudies />
         <Testimonials />
+        <HowItWorks />
+        <Comparison />
         <About />
         <Faq />
         <Contact />
