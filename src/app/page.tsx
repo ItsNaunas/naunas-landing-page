@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Hero } from '@/components/sections/Hero';
+import { JourneyVideo } from '@/components/sections/JourneyVideo';
 import { Problem } from '@/components/sections/Problem';
 import { IntegrationBar } from '@/components/sections/IntegrationBar';
 import { HowItWorks } from '@/components/sections/HowItWorks';
@@ -27,10 +28,11 @@ export default function Home() {
       <main>
         <Hero onAuditClick={() => setAuditOpen(true)} />
         <IntegrationBar />
+        <JourneyVideo onAuditClick={() => setAuditOpen(true)} />
         <Problem />
         {/* <LeakMapSection /> hidden for now (2026-10-11) */}
-        <WhatYouGet />
         <CaseStudies />
+        <WhatYouGet />
         <Testimonials />
         <HowItWorks />
         <Comparison />

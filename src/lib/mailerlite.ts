@@ -3,6 +3,10 @@
 
 const API = 'https://connect.mailerlite.com/api';
 export const LEAK_MAP_GROUP = 'Leak Map';
+// Qualified questionnaire leads who haven't booked yet: starts the 2-email booking nudge. Booking removes them.
+export const ENQUIRED_GROUP = 'Audit enquiry: not booked';
+// Booked the free audit: starts the "before we talk" email. Cancelling removes them.
+export const BOOKED_GROUP = 'Audit booked';
 
 function headers() {
   const token = process.env.MAILERLITE_API_TOKEN;
@@ -33,7 +37,7 @@ async function ensureFields() {
   if (fieldsReady) return;
   const existing = await ml<{ data: { key: string }[] }>('/fields?limit=100');
   const keys = new Set(existing.data.map((f) => f.key));
-  for (const name of ['client_value', 'signup_source']) {
+  for (const name of ['client_value', 'signup_source', 'business_type', 'whats_not_working', 'call_time']) {
     if (keys.has(name)) continue;
     try {
       await ml('/fields', { method: 'POST', body: JSON.stringify({ name, type: 'text' }) });
@@ -44,13 +48,14 @@ async function ensureFields() {
   fieldsReady = true;
 }
 
-export async function addToGroup(opts: { email: string; name?: string; clientValue?: string; source?: string; group: string }) {
+export async function addToGroup(opts: { email: string; name?: string; clientValue?: string; source?: string; group: string; fields?: Record<string, string | undefined> }) {
   await ensureFields();
   const groupId = await getOrCreateGroup(opts.group);
   const fields: Record<string, string> = {};
   if (opts.name) fields.name = opts.name;
   if (opts.clientValue) fields.client_value = opts.clientValue;
   if (opts.source) fields.signup_source = opts.source;
+  for (const [key, value] of Object.entries(opts.fields ?? {})) if (value) fields[key] = value.slice(0, 500);
   // Upsert: 201 new, 200 existing. Adding to the group starts the course automation.
   await ml('/subscribers', { method: 'POST', body: JSON.stringify({ email: opts.email, fields, groups: [groupId] }) });
 }

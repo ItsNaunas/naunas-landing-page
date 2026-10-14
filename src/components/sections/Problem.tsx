@@ -181,7 +181,7 @@ function RowTextLeft({
       initial={{ opacity: 0, y: 36 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center py-14 md:py-16 border-b border-[#E5E5E5]"
+      className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center py-14 md:py-16"
     >
       {/* Text side */}
       <div className="relative overflow-hidden">
@@ -226,7 +226,7 @@ function RowCardLeft({
       initial={{ opacity: 0, y: 36 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-      className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center py-14 md:py-16 border-b border-[#E5E5E5]"
+      className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center py-14 md:py-16"
     >
       {/* Card side — first on desktop */}
       <div className="order-2 md:order-1">{card}</div>
@@ -279,9 +279,6 @@ export function Problem() {
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className="text-center mb-14 md:mb-20"
           >
-            <span className="text-[11px] font-semibold text-[var(--accent)] uppercase tracking-widest">
-              The Problem
-            </span>
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#111] mt-3 leading-tight">
               Your business isn&apos;t broken<br />Your systems are
             </h2>
@@ -292,7 +289,7 @@ export function Problem() {
           </motion.div>
 
           {/* Rows — each fires independently as you scroll */}
-          <div className="flex flex-col border-t border-[#E5E5E5]">
+          <div className="flex flex-col">
             <RowTextLeft
               number="01"
               title="Leads fall through the cracks"

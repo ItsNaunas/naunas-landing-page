@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { getMailer, escapeHtml, textToHtml } from '@/lib/mailer';
 import { CAL_URL, isQualified, priorityOf } from '@/lib/booking';
 import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE } from '@/lib/hubspot';
+import { addToGroup, ENQUIRED_GROUP } from '@/lib/mailerlite';
 import type { Attribution } from '@/lib/attribution';
 
 // The free-audit questionnaire (and the contact section). No database: the answers are emailed to
@@ -79,6 +80,18 @@ export async function POST(req: NextRequest) {
       console.error('[Enquiry] Auto-reply failed:', err);
     }
   });
+
+  // Booking nudge: qualified questionnaire leads join the MailerLite group whose automation sends two
+  // "grab a time" emails (24h, day 3). The Cal.com webhook removes them the moment they book.
+  if (qualified && src !== 'contact-section') {
+    after(async () => {
+      try {
+        await addToGroup({ email, name: name.split(/\s+/)[0], clientValue, source: src, group: ENQUIRED_GROUP, fields: { business_type: business, whats_not_working: message } });
+      } catch (err) {
+        console.error('[Enquiry] MailerLite nudge group failed:', err);
+      }
+    });
+  }
 
   // CRM: contact always; deal only for qualified questionnaire leads and contact-form messages.
   after(async () => {

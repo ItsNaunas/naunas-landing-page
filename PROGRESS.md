@@ -1,7 +1,7 @@
 # Project Status
 
-**Last updated**: 2026-10-11
-**State**: Live site remains deployed; local changes include the white Dot hero, case-study pages, testimonial updates, and revised enquiry flow. Not committed or deployed.
+**Last updated**: 2026-10-12
+**State**: Local hero has autonomous and scroll-responsive Dot motion; tools banner restored above a black split video section. Pending changes remain uncommitted.
 
 ## Next steps
 - [ ] Review the local white Dot hero at http://localhost:3000 (desktop/mobile checked), then commit/deploy with the other pending changes when ready.
@@ -13,69 +13,71 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
-### 2026-10-11 (site-wide repositioning + HubSpot priority) — Claude
-- Home order: Hero (user's, uncommitted) → IntegrationBar → Problem → NEW LeakMapSection (8 layers, opens the Leak Map pop-up via `open-leak-map` event) → WhatYouGet rebuilt as "The Client System" (5 blocks with flow terminals, real proof only: $250, $26,736) → CaseStudies → Testimonials → HowItWorks (free audit → written scope → build & handover) → Comparison → About (real story/stats) → FAQ (rewritten for broad high-ticket ICP) → Contact ("Prefer to write?") → CtaBanner (9 builds · $26,736 · built in your accounts; secondary = Leak Map).
-- Removed from home: Pricing (£), RevenueCalculator (£), StatBar (fake numbers). Files kept. Problem mock-ups now "$ example". Metadata/OG/JSON-LD → Client System, areaServed US+UK. Footer + nav updated.
-- HubSpot: contact `naunas_priority` + deal `naunas_deal_priority` (high/normal/small via `priorityOf()` in lib/booking). Vault: daily brief gets a 📈 PIPELINE block (stale-deal rules), email engine logs outbound to HubSpot; 5 already-emailed US studios backfilled as companies+contacts.
-- Hero.tsx / Hero.module.css deliberately NOT committed (another session's in-progress white Dot hero).
+### 2026-10-14 (funnel phase 1: nudges + pre-call)
+- Plan agreed with Naufal: HubSpot deal stage = source of truth; site webhooks move people between MailerLite groups (option B) + Claude as operator for briefs/drafts (option C). No HubSpot Workflows (Pro tier); no n8n.
+- Code: `/api/enquiry` adds qualified questionnaire leads to MailerLite group "Audit enquiry: not booked" (first name, business_type, whats_not_working). `/api/cal-webhook` now handles CREATED (→ "Audit booked" with call_time in booker's tz, removes from Leak Map + not-booked), RESCHEDULED (updates call_time), CANCELLED (removes from booked). New fields auto-created in `lib/mailerlite.ts`. Email copy + builder in `docs/emails/` (nudge-1, nudge-2, pre-call). tsc clean.
+- MailerLite (via connector): groups + fields created; automations "Audit enquiry: booking nudge" (1d → email, 2d → email) and "Audit booked: before we talk" (instant) built with HTML, exit-on-removal ON, all emails eligible. Both DISABLED until this code is deployed.
+- Cal.com webhook on event 7431234 now subscribes to BOOKING_CREATED + RESCHEDULED + CANCELLED (live code ignores the new two until deploy).
+- Next: pre-call brief + daily reply triage + proposal drafts from Fathom (needs a past proposal as template); Cal.com reminders (Workflows not exposed via API: check in dashboard).
 
-### 2026-10-11 (white mascot hero, local only)
-- Follow-up: removed the service-business eyebrow and bottom client-work strip at user request. Interactive workflow-card/Dot behavior discussed, not yet implemented.
-- Replaced portrait hero with white split layout, original Clash Display/Satoshi fonts, shared rounded magnetic orange button, CSS Dot with breathing/blinks, SVG orbit rings and workflow cards. Added real Derick testimonial and ringed initial avatars, plus client-work links.
-- Navbar uses dark text while over the white hero and restores dark-site theme below it. Existing enquiry flow kept; no AI audit restored. Other pending changes preserved.
-- Desktop 1440px and mobile 390px checked; primary CTA opens enquiry dialog. Hero/Navbar lint passes. Production build checked. No deployment or commit.
+### 2026-10-13 (video section CTA → audit)
+- JourneyVideo's orange button "Watch the walkthrough ↗" (played the video) is now "Book your free audit →" and opens the EnquiryModal (new `onAuditClick` prop wired from page.tsx). The centred play button on the player still plays the video. Click-tested in headless Chrome: opens the "Free audit" dialog. Open question: white "Watch the system in motion" overlay text sits on the light poster frame and is hard to read.
 
-### 2026-10-11 (questionnaire-first audit + Leak Map pop-up + course plumbing)
-- `/audit` + every "Free audit"/book button → `AuditFlow`: questions first (name, email, business type, client value, monthly revenue, website, what's not working) → `/api/enquiry` emails contact@ + auto-reply → if qualified, Cal.com inline embed (`naunas/free-audit`) with every answer prefilled; under $5k/client AND under $20k/mo → "I'll reply by email" (no calendar). Option strings must match the Cal.com booking fields exactly. `BOOKING_URL` now = `/audit`; `CAL_URL` for emails.
-- `LeadMagnetPopup` (root layout): Leak Map offer 5s after landing, once per visitor (localStorage), hidden on /audit + old builder pages; skips if another dialog is open. Posts to `/api/leak-map` → MailerLite group "Leak Map" (found/created at runtime, fields `client_value` + `source` auto-created). Until `LEAK_MAP_COURSE_LIVE=true`, also emails the PDF link from contact@ so sign-ups always get it.
-- `/api/cal-webhook`: Cal.com BOOKING_CREATED (HMAC `x-cal-signature-256`, env `CAL_WEBHOOK_SECRET`) → removes attendee from the Leak Map group (stops the course).
-- `public/leak-map.pdf` (24pp, built in vault `09-Content/leak-map/`) + `public/leak-map-cover.png`.
-- Env to add on Vercel before it fully works: `CAL_WEBHOOK_SECRET` (then register the webhook on the Cal.com event), `LEAK_MAP_COURSE_LIVE=true` once the MailerLite automation is built. Existing: `MAILERLITE_API_TOKEN`, `ZOHO_SMTP_*`.
+### 2026-10-13 (hero play circle removed)
+- Removed the play circle + pulse from the hero "See how it works" link (Naufal's call); back to text + trailing arrow, still smooth-scrolls to the walkthrough video, underline-on-hover under the label. Play-circle CSS deleted. tsc clean. Local only.
 
-### 2026-10-11 (AI audit + Baserow removed → simple book-or-message funnel)
-- Removed: AuditModal (9-question AI audit), /api/ai-audit (OpenAI), lib/industryData, AuditQualifyForm (learner fork), /api/qualify + /api/audit-lead (Baserow). Build no longer needs OPENAI_API_KEY. /api/managed-waitlist still writes Baserow (the /managed page, untouched).
-- New `EnquiryPanel` (primary: "Book a free 30-minute audit call" → booking link; secondary: name/email/website/message form) used by the new `EnquiryModal` (all "Free audit" buttons), `/audit` page (now a simple two-column page, same panel) — Contact section posts to the same endpoint.
-- New `/api/enquiry`: emails contact@ (reply-to = lead; awaited, so a failed send shows an error) + instant auto-reply to the lead with the booking link (via `after()`). Shared `lib/mailer.ts` (Zoho SMTP env as /api/subscribe).
-- `lib/booking.ts`: single BOOKING_URL = `NEXT_PUBLIC_BOOKING_URL` || Calendly. Switch to Cal.com by setting the env var on Vercel. Navbar/Footer/CtaBanner/RevenueCalculator use it.
-- All "AI audit" wording → "free audit" (hero, nav, footer, CTA banner, FAQ, metadata, OG image).
-- Not testable locally (no Zoho creds in .env.local); verify with one real submission after deploy.
+### 2026-10-13 (new walkthrough video)
+- Swapped the JourneyVideo for Naufal's new CapCut cut (`~/Videos/capcut final/desktop.mp4`, 135.6 MB, 1080p, 3:28). Re-encoded with Remotion's bundled ffmpeg (naunas-studio node_modules; no system ffmpeg): x264 CRF 24, maxrate 1.8M, AAC 96k, +faststart → `public/media/naunas-client-system.mp4` (14.5 MB, frame crops visually identical to source). New poster from 0:03 (Instagram enquiry frame) → `naunas-client-system-poster.jpg`. Label now "3 min 28 sec". Old video/poster moved to the session scratchpad, not shipped. tsc clean, both files serve 200 locally. Local only.
 
-### 2026-10-11 (case studies → cards + own pages; testimonials → one-row slider)
-- New `src/lib/caseStudies.ts` = single source for all 9 case studies (SITH, Nelia, SNAEB, SAAFI full; RT Spaces, TPC, 360CR short; Alira + E-ctrl kept with their existing copy/figures at Naufal's request). Home `CaseStudies` = 3 featured cards (SITH, Nelia, SNAEB) + "See all work". New routes `/case-studies` (grid) and `/case-studies/[slug]` (static via generateStaticParams; sections render only if present). Shared `CaseStudyShell` (logo header + audit CTA). Sitemap now lists them.
-- `Testimonials` rewritten as a single horizontal scroll-snap row (6 quotes, arrows on sm+, swipe on mobile); old CTA row dropped to shorten the section.
-- Build passes locally (needs any `OPENAI_API_KEY` value at build time because /api/ai-audit instantiates the client at import). Not committed/deployed — awaiting Naufal's review.
+### 2026-10-12 (Leak Map popup copy + 10s delay)
+- Popup now opens 10s after landing (was 5s, which landed on top of Dot's hero intro). Copy: eyebrow "Free · email course + PDF"; small print "A free email course with the 24-page PDF as your resource" (dropped the "8 short emails" promise); success "You're in. The PDF is on its way… the course starts tomorrow". **Don't deploy this copy until the MailerLite automation is ON**: the success line promises the course.
+- Checked live state: DNS at phase8, SPF `include:zohomail.eu` only, no MailerLite DKIM yet; DMARC is `p=quarantine; adkim=s; aspf=s`, so MailerLite DKIM on naunas.co.uk is mandatory or every course email is quarantined. Vercel prod has MAILERLITE_API_TOKEN; LEAK_MAP_COURSE_LIVE unset (fallback PDF email still active, correct for now). Setup steps: vault `09-Content/leak-map-emails/MAILERLITE-SETUP.md`.
+- DNS done same day at names.co.uk (phase8): SPF merged to `v=spf1 include:_spf.mlsend.com include:zohomail.eu ~all` (single record), DKIM CNAME `litesrv._domainkey` → `litesrv._domainkey.mlsend.com` (resolves to MailerLite's key), MailerLite verification TXT. Verified publicly via Google + Cloudflare DNS; Zoho MX untouched. MailerLite account is on the Free plan, so Custom HTML may be unavailable (fallback: rebuild the 10 emails in drag-and-drop).
+- MailerLite automation "map leak" (id 201140911097251330) built by Naufal with all 10 Custom HTML emails; order/delays verified via API (1-day gaps, 3 days before the closer), all eligible_for_sending. Claude fixed email 1 subject and turned on trigger exit_when_no_longer_matches (Cal.com booking stops the course). Automation currently DISABLED. Live test sign-up 18:19 reached the Leak Map group (site side OK) but no course email since it was off; test subscriber deleted. To go live: Naufal activates → set LEAK_MAP_COURSE_LIVE=true on Vercel + redeploy (Claude's attempt was blocked by the permission guard) → re-test. Newsletter "Simple welcome email" automation found disabled (was enabled earlier today).
 
-### 2026-10-10 (real case studies + testimonials, add-only)
-- CaseStudies.tsx: added Soul in the Horn, Nelia Rose Designs, SNAEB, SAAFI ahead of the existing two (now 6 tabs; switcher wraps). `quote`/`author` optional (SNAEB has none). Numbers from the vault drafts: SITH $26,736 (Jul 31 gross, Eventbrite), 37→269 tickets (Oct 2), 100+ dancer purchases, $250 from 2 campaigns.
-- Testimonials.tsx: added Uche (Nelia), Derick (SITH), Abdullah Said (SAAFI) first; stacked column now borders every row but the last.
-- Naufal's instruction: add only, don't fix existing content. Not built (npm registry unreachable), not committed, not deployed.
-### 2026-07-12 (newsletter welcome email)
-- `/api/subscribe`: new MailerLite subscribers (201) now get a welcome/confirmation email from `Naufal at Naunas <contact@naunas.co.uk>` via Zoho SMTP (nodemailer, `after()`, never blocks the signup). Existing subscribers (200 upsert) are NOT re-mailed. Copy: confirmed + what-you-get + six-leaks PDF link + reply invite. Env: ZOHO_SMTP_HOST/PORT/USER/PASS (Vercel prod + .env.local).
-- **Verified e2e on prod** with a Gmail plus-address (fresh 201): welcome landed in the inbox; test subscriber deleted from MailerLite after. Also verified the 200 path correctly skips (its.naunas@gmail.com has existed in the account since 06-12).
-- Newsletter health check: group has 10 real active subscribers, latest 07-10; live subscribe→MailerLite→delete round-trip clean.
-- Note: if a native MailerLite "on joining group" automation is ever set up in their UI, remove this code path to avoid double welcomes.
+### 2026-10-12 (Dot moods)
+- Ported moods from the video Dot (naunas-studio `docs/dot.md`) via `data-mood` on the scene: **delighted** (∩ arc eyes, blush, wider) while the hero audit CTA (`data-cta="audit"`) is hovered/focused; stage arrivals react for 1.8s then relax to curious — Enquiry **focused** (lids 46%), Signed **determined** (lids 42%, inner down 24°), Onboarded **delighted**. Lids are clipped inside each eye (#f97a32) so they never patch the gradient body. Far-away cursor: whole body tilts up to 9° towards it (`--tilt` → `rotate` on .personality); eye travel now scales with Dot size (0.1D x / 0.075D y). Worried/deflated deliberately left out of the hero. Verified with headless-Chrome screenshots. Next candidates: bored after ~8s idle, surprised on first Dot click. tsc clean. Local only.
 
-### 2026-07-12 (CRM Build Guide live on /kit)
-- KitShowcase.tsx: "Build a CRM That Survives Real Users" (£100, gumroad l/ivsdmt) added as the second product card (after Prompt Pack $39, before free Setup Kit — paid-first order kept). Tagline from crm-build-guide-spec positioning. Removed from the "Landing soon" teaser (Automation Pack remains). Same kit_click tracking + ?src forwarding as the other cards.
-- Context: Naufal considered closing Gumroad thinking products weren't linked; confirmed the 07-02 one-slot-on-/links → /kit architecture is live, so the fix was just publishing the third product card. Gumroad stays.
+### 2026-10-12 (Dot follows the cursor)
+- Dot's eyes now track the mouse anywhere in the hero (was: only over the illustration, aimed from scene centre). Aimed from Dot's real position with a soft falloff (max ~15px x / 10px y — first pass at 7/5 was too subtle to notice; eye highlights shift too, and stage changes no longer reset the gaze while tracking). Note: the Leak Map popup (~4s in) overlays the hero, so tracking pauses until it's closed. After 2.5s without movement or on leaving the hero, eyes reset and the idle curiousLook resumes (`data-tracking` on .scene). Mouse only, off under reduced motion. tsc clean. Local only.
 
-### 2026-07-12 (instant lead alert + lead-magnet fix)
-- `/api/qualify`: `after()` now generates the brief (returns it) then fires `sendLeadAlert` → POST to the Naunas Notification Relay (ops lane): subject "Qualified lead: X (£rev)" or "WHALE LEAD: …" for the £15k+ band (whales alert even when not fully qualified; brief only generates for qualified). HTML = answers summary + brief inline. Best-effort, never blocks. Env: NOTIFY_RELAY_URL + NOTIFY_RELAY_SECRET (Vercel prod + .env.local).
-- **Verified e2e on prod**: test submit 10:48:01 → relay email in inbox 10:48:07 with brief; Baserow rows deleted after. Gotcha: piping `£` through bash curl mangles UTF-8 → server-side enum match fails and the lead silently disqualifies; test with a UTF-8 JSON file (`--data-binary @file`).
-- **Lead-magnet placeholder fixed**: prod `NEXT_PUBLIC_LEAD_MAGNET_URL` was `#` (baked into the bundle — the `?? '/six-leaks.pdf'` fallback never fires because `#`/empty isn't nullish). Re-set to `/six-leaks.pdf` (the real 4-page PDF already in public/ and serving), redeployed, verified the string in the live chunk.
-- MailerLite test subscriber confirmed already deleted (API 404 on lookup).
-### 2026-07-02 (Gumroad products → new /kit page)
-- Decision: don't stack each Gumroad product on /links (congests the tree, catalog grows to 4). Collapse into ONE enticing linktree slot → dedicated /kit showcase page. Own-brand, scales, keeps source attribution.
-- New /kit page (`src/app/kit/page.tsx` + `src/components/sections/KitShowcase.tsx`): hook as H1 ("You vibe-coded an app. Now make it survive real users."), product cards paid-first / free-at-bottom per Naufal — Builder Prompt Pack $39 (l/fuxpbw, "Start here" text tag) then Setup Kit Free (l/vzrehp). Each card → Gumroad new-tab, ?src=kit-<src> forwarded, track('kit_click', target). "Landing soon" teaser lists CRM Build Guide + Automation Pack. Footer cross-sell → /newsletter. No pills/rounded-full (brand rule), no em dash. Matches /managed visual language.
-- /links (LinksHub.tsx): the two direct product buttons I'd added earlier were REPLACED by one secondary "Make your app survive real users" → /kit?src=links-<src> (track 'kit'). Unused URL consts removed.
-- Note: Gumroad doesn't surface arbitrary ?src= params in its dashboard — real attribution is the Vercel kit_click/link_click events. Products per digital-products-spec.md (Prompt Pack = Phase 1 paid validator, Setup Kit = free newsletter feeder).
-- Verified: clean `tsc --noEmit` + `next build` (/kit and /links both prerender static). Committed + deployed (Vercel auto-deploys master).
+### 2026-10-12 (proof row hover → reviews)
+- Hero "Trusted by" proof row (already an <a> to #testimonials) now has a hover/focus state: peach card behind it (pseudo-element, no layout shift), avatars fan out, "Read the reviews ↓" cue fades in beside the stars (always shown on touch). Smooth-scrolls via shared `scrollToHash` (also used by See how it works). Reduced motion respected. tsc clean. Local only.
 
-### 2026-06-24 (Managed waitlist — formerly "Roster")
-- New /managed waitlist page (`src/app/managed/page.tsx` + `src/components/sections/ManagedWaitlist.tsx`) for the Managed app (AI talent manager for creators; **renamed from Roster mid-session, no "roster" left in src**). Mirrors /newsletter visual language (radial glow, framer-motion fade-up, same input/button classes). Email (required) + optional @handle, success state. Reads ?src= (default 'managed').
-- New `/api/managed-waitlist` route: validates email, writes to the EXISTING Baserow Contacts table (919893) with `Path: 'managed-waitlist'` (Name=handle||email, Website=handle, Source=src, Date=ISO). Plain-text fields, so no new table/fields needed — Baserow MCP can't create tables/fields anyway (token is row-only; schema needs UI/JWT). Reuses BASEROW_TOKEN + BASEROW_TABLE_ID already on Vercel → works in prod on deploy, no new env vars. Filter waitlist signups in the CRM by `Path = managed-waitlist`.
-- /links (LinksHub.tsx): added a "Managed: AI talent manager" secondary button after the newsletter (→ /managed?src=links-<src>, track('link_click', target:'managed')). No em dash (used colon) per brand rule.
-- Verified: clean `next build` (/managed prerenders static, /api/managed-waitlist dynamic); live Baserow write smoke-tested via MCP under the old name (row 108, Path populated, then deleted). NOT committed, NOT deployed.
+### 2026-10-12 (hero secondary CTA → See how it works)
+- Hero secondary CTA "See our client work" (/case-studies) → "See how it works" with a peach play circle + slow pulse ring; smooth-scrolls to the walkthrough video (#see-the-system), instant scroll + no pulse under reduced motion. Underline now sits under the label only. Smaller circle at the mobile/short-screen breakpoints. tsc clean. Local only.
 
+### 2026-10-12 (double underline)
+- Added a second curved orange headline underline with slightly staggered draw timing. Local only.
 
+### 2026-10-12 (drawn headline underline)
+- Changed Less chasing. to black with curved orange SVG underline: draws on arrival and redraws on hover, disabled for reduced motion. CTA text/arrows stay black. Local only.
+
+### 2026-10-12 (case studies order and video microcopy)
+- Moved Case Studies immediately above The Client System; removed duration/sound microcopy below the walkthrough CTA. Local only.
+
+### 2026-10-12 (centred video play button)
+- Centred circular play control precisely in the video frame, with label and duration underneath. Local only.
+
+### 2026-10-12 (trusted-by avatar badge)
+- Added Trusted by label above hero avatars and user-requested +10 badge at the cluster top-right. Kept quote and stars alongside. Local only.
+
+### 2026-10-12 (annotated refinements)
+- Removed video and problem section eyebrows, removed problem row divider lines (interpreting marked line break), and replaced hero review-link text with five decorative orange stars at user request. No numeric rating or count added. Discussed selectable existing client testimonials as next option. Local only.
+
+### 2026-10-12 (working card previews and review link)
+- Added enquiry message, drawn signature and sequential onboarding checklist previews; clearer titles, consistent padding, single status pills, short bead connectors and hover/focus/tap explanations. Removed duplicate title checks.
+- Added Read client reviews with a speech-bubble icon beneath the quote, linking to testimonials rather than suggesting an unsupported five-star rating. Desktop/mobile fit, tap details, TypeScript and lint pass. Local only.
+
+### 2026-10-12 (Dot personality and dark video layout)
+- Restored integration banner directly after hero, removed cross-section rope, and changed video to black two-column text-left/video-right layout with walkthrough CTA; stacked on mobile. Hero rope now exits right.
+- Added idle breathing/blinks/glances, anticipation before travel, curve lean, stage reactions, responsive shadow, scroll departure and return bounce. Stage cards stay stationary; user interaction interrupts intro; reduced motion disables gestures.
+- TypeScript/lint pass. Verified section order, desktop/phone fit, scroll departure/return and video CTA playback with sound plus keyboard pause. Local only.
+
+### 2026-10-12 (complete journey interactions and video)
+- Extended rope beyond top viewport and continuously into new video section; smoothed bend, refined lighting, softened grid and enlarged card text. Dot travels using actual SVG curve coordinates, reacts to pointer and clicks, and settles centrally after a single intro sequence. Pulse arrival triggers enquiry, signature and checklist animations; reduced-motion preferences disable those animations.
+- Added supplied 3:27 MP4 and extracted poster under public/media. Playback requires explicit click, starts with sound and exposes native controls; no video autoplay/preload. Desktop playback and keyboard pause verified; desktop/phone hero fit and TypeScript/lint checks pass. No deployment.
+
+### 2026-10-12 (CTA and proof grouping)
+- Moved hero CTAs directly below supporting copy, with testimonial proof beneath the buttons in the left column. Mobile follows the same content order before the illustration. Local only.
 

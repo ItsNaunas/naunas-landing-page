@@ -4,12 +4,6 @@ import Image from 'next/image';
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 
-const STATS = [
-  { value: '9', label: 'Client builds shipped' },
-  { value: 'US + UK', label: 'Owners I work with' },
-  { value: '100%', label: 'Built in your accounts' },
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -73,21 +67,6 @@ export function About() {
             >
               See how it works
             </button>
-          </div>
-
-          {/* Stat row */}
-          <div
-            className="flex flex-wrap gap-x-10 gap-y-4 pt-6 mt-2"
-            style={{ borderTop: '1px solid rgba(0,0,0,0.1)' }}
-          >
-            {STATS.map((s) => (
-              <div key={s.value} className="flex flex-col gap-0.5">
-                <span className="text-xl font-bold" style={{ color: '#0C0C0C' }}>{s.value}</span>
-                <span className="text-xs" style={{ color: '#888' }}>
-                  {s.label}
-                </span>
-              </div>
-            ))}
           </div>
         </motion.div>
 
@@ -191,3 +170,4 @@ export function About() {
     </section>
   );
 }
+

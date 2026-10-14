@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { track } from '@vercel/analytics';
 import { getAttribution } from '@/lib/attribution';
 
-// Free-resource pop-up: offers the Leak Map ~5s after landing, once per visitor.
+// Free-resource pop-up: offers the Leak Map ~10s after landing (after Dot's hero intro has played), once per visitor.
 // Not auto-shown on /audit (they're already mid-enquiry) or /links (it has its own Leak Map button).
 const SEEN_KEY = 'leakmap_popup_seen_v1';
 const HIDDEN_ON = ['/audit', '/links'];
@@ -40,7 +40,7 @@ export function LeadMagnetPopup() {
       setOpen(true);
       markSeen();
       track('leakmap_popup_shown');
-    }, 5000);
+    }, 10000);
     return () => clearTimeout(t);
   }, [pathname]);
 
@@ -117,7 +117,7 @@ export function LeadMagnetPopup() {
         </div>
 
         <div className="p-6 sm:p-8">
-          <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: '#F2613F' }}>Free · 24-page guide</span>
+          <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: '#F2613F' }}>Free · email course + PDF</span>
           <h3 id="leakmap-title" className="text-2xl font-semibold text-[var(--fg)] mt-2 leading-tight">
             The Leak Map
           </h3>
@@ -127,7 +127,7 @@ export function LeadMagnetPopup() {
 
           {status === 'done' ? (
             <div className="mt-6 flex flex-col gap-3">
-              <p className="text-base font-semibold text-[var(--fg)]">It&apos;s on its way to your inbox.</p>
+              <p className="text-base font-semibold text-[var(--fg)]">You&apos;re in. The PDF is on its way to your inbox, and the course starts tomorrow.</p>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>Or grab it right now:</p>
               <a
                 href="/leak-map.pdf"
@@ -161,7 +161,7 @@ export function LeadMagnetPopup() {
                 No thanks
               </button>
               <p className="text-[11px] text-center" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                Plus 8 short emails, one leak a day. Unsubscribe any time.
+                A free email course with the 24-page PDF as your resource. Unsubscribe any time.
               </p>
             </form>
           )}

@@ -1,6 +1,5 @@
 'use client';
 
-import { BOOKING_URL } from '@/lib/booking';
 import { useState, useEffect } from 'react';
 
 const NAV_LINKS = [
@@ -67,18 +66,12 @@ export function Navbar({ onAuditClick }: NavbarProps) {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-4">
-          <button
+<button
             onClick={onAuditClick}
-            className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors"
-          >
-            Free Audit
-          </button>
-          <a
-            href={BOOKING_URL}
                         className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[#0C0C0C] text-sm font-semibold px-5 py-2.5 rounded-full transition-colors glow-accent"
           >
             Book your free audit
-          </a>
+          </button>
         </div>
 
         {/* Mobile toggle */}
@@ -115,18 +108,12 @@ export function Navbar({ onAuditClick }: NavbarProps) {
             ))}
           </ul>
           <div className="flex flex-col gap-3 mt-6">
-            <button
+<button
               onClick={() => { setMenuOpen(false); onAuditClick(); }}
-              className="text-sm text-[var(--muted)] hover:text-[var(--fg)] transition-colors text-left"
-            >
-              Free Audit
-            </button>
-            <a
-              href={BOOKING_URL}
                             className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--fg)] text-sm font-medium px-5 py-2.5 rounded-full transition-colors text-center glow-accent"
             >
               Book your free audit
-            </a>
+            </button>
           </div>
         </div>
       )}
