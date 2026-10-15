@@ -19,6 +19,7 @@ type Payload = { object: string; entry: { id: string; changes?: Change[]; messag
 // Subscription handshake when the webhook is added in the Meta dashboard.
 export function GET(req: NextRequest) {
   const p = req.nextUrl.searchParams;
+  console.info('[instagram-webhook] verify', { mode: p.get('hub.mode'), tokenMatches: p.get('hub.verify_token') === process.env.IG_VERIFY_TOKEN });
   const token = process.env.IG_VERIFY_TOKEN;
   if (token && p.get('hub.mode') === 'subscribe' && p.get('hub.verify_token') === token) {
     return new NextResponse(p.get('hub.challenge') ?? '', { status: 200 });
@@ -92,9 +93,12 @@ export async function POST(req: NextRequest) {
   if (!secret || !process.env.IG_ACCESS_TOKEN) return NextResponse.json({ error: 'Not configured' }, { status: 503 });
   const raw = await req.text();
   if (!validSignature(raw, req.headers.get('x-hub-signature-256'), secret)) {
+    console.warn('[instagram-webhook] bad signature', { hasHeader: !!req.headers.get('x-hub-signature-256'), bytes: raw.length });
     return NextResponse.json({ error: 'Bad signature' }, { status: 401 });
   }
   const payload = JSON.parse(raw) as Payload;
+  // One line per delivery (no message text): proves Meta is calling and what it sent.
+  console.info('[instagram-webhook]', payload.object, (payload.entry ?? []).map((e) => ({ account: e.id, changes: e.changes?.map((c) => c.field), messaging: e.messaging?.length ?? 0 })));
   if (payload.object !== 'instagram') return NextResponse.json({ ok: true });
   after(async () => {
     for (const entry of payload.entry ?? []) {
