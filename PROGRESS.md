@@ -13,11 +13,17 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-15 (Stripe webhook covers everything; n8n Stripe alerts retired)
+- Live £1 test reached `/api/stripe-webhook` (signature OK, Telegram "Payment received… no deal matched": link opened without client_reference_id, paid as its.naunas@gmail.com). Matched path (Won + onboarding) still to test with `?client_reference_id=526993965271&prefilled_email=its.naunas%2Bstripe1015%40gmail.com`.
+- Webhook now handles: checkout completed/async succeeded (deposit) + async failed + expired (opened link, didn't pay, only when tied to a person), payment_intent.payment_failed, invoice.paid, invoice.payment_failed, customer.subscription.deleted, charge.dispute.created, charge.refunded. Each → Telegram + the vault-sync email (`Stripe: <event>`, "PAYMENT RECEIVED" / "ACTION NEEDED — …") to VAULT_ALERT_TO (default its.naunas@gmail.com) from contact@.
+- Replaces n8n "Stripe Alerts to Email (Naunas)" (id Mfy0QMJ5DzJ8sOe1), which sent from info@soulinthehorn.com and reported amount 0 / customer unknown. Vault inconsistency: spec-instant-vs-pulse.md says the n8n "SITH" Gmail cred = its.naunas@gmail.com; live email proves it's info@soulinthehorn.com.
+
 ### 2026-10-15 (phase 2: conversion)
 - `/api/stripe-webhook`: checkout.session.completed/async_payment_succeeded, manual HMAC verify (no SDK) with STRIPE_WEBHOOK_SECRET → deal Won + amount (client_reference_id = deal id, else payer's open deal by email) → onboarding email (Zoho) → HubSpot note → 💰 Telegram. Idempotent (already-Won skips). Unmatched payment → Telegram asking to handle by hand. Inactive until STRIPE_WEBHOOK_SECRET is set + endpoint created in Stripe.
 - Pre-call brief (`src/lib/brief.ts`): on booking, emailed to BRIEF_TO (default contact@) + note on the deal: answers, likely leaks (their words vs the 8 layers), questions, links. Claude routine adds research.
 - No-show: Cal webhook now subscribed to BOOKING_NO_SHOW_UPDATED → rebook email + HubSpot note + Telegram.
 - HubSpot: deals/companies owned by Naufal (owner 100890550); company linked by website domain on enquiry + booking; notes can attach to deals; markDealWon/openDealForEmail.
+- Claude routine "Naunas funnel operator" (trig_01N9LKgkPiRCBtzTgJuWeQCX, daily 10:00 UTC = 13:00 Zanzibar, Sonnet 5.5): reply triage in contact@ (stops ML sequences, HubSpot note, drafts reply), pre-call web research for calls in next 30h (Google Calendar → HubSpot note), post-call recap + proposal Google Doc from Fathom (deal → Audit done); one digest email to its.naunas@gmail.com only when there's something. Never contacts leads. Cal.com isn't a claude.ai connector, so calls come from Google Calendar.
 - Proposal research: best performer = Soul in the Horn (won $1,500 + retainer; same-day "next steps + contract + deposit invoice" email mirroring the call's scope bullets). Template + SOP in vault (99-Templates/template-proposal.md, 04-Business-Brain/SOPs/sop-proposal-generation.md); price from pricing.md, USD pricing undecided → flag, never invent.
 
 ### 2026-10-15 (phase 1 live + readable alerts)
