@@ -15,9 +15,9 @@ const SECTIONS: { h: string; body: React.ReactNode }[] = [
     h: 'Who we are',
     body: (
       <p>
-        Naunas (naunas.co.uk) builds client systems for service businesses. Naunas is the controller of the
-        personal data described here. For anything about your data, email{' '}
-        <a href="mailto:contact@naunas.co.uk">contact@naunas.co.uk</a>.
+        Naunas (naunas.co.uk) builds client systems for service businesses. Naunas is run by Naufal, who is the
+        controller of the personal data described here. Postal address: 7 Claymond Road. For anything about your
+        data, email <a href="mailto:contact@naunas.co.uk">contact@naunas.co.uk</a>.
       </p>
     ),
   },
