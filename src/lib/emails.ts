@@ -22,6 +22,39 @@ ${sign}
 
 export type Email = { subject: string; html: string; text: string };
 
+/** Sent when an attendee is marked as a no-show in Cal.com: no guilt, one link to rebook. */
+export function noShowEmail({ firstName, rebookUrl }: { firstName?: string; rebookUrl: string }): Email {
+  const name = firstName || 'there';
+  const html = wrap('No worries, here’s a link to pick a new time.', [
+    p(`Hi ${escapeHtml(name)},`),
+    p('Looks like we missed each other today. No worries at all, things come up.'),
+    p(`If you still want the audit, grab whatever time suits you: <a href="${escapeHtml(rebookUrl)}" style="color:#F2613F">pick a new time</a>.`),
+    p('Or just reply with a couple of times that work and I’ll make one of them happen.'),
+  ]);
+  const text = [`Hi ${name},`, 'Looks like we missed each other today. No worries at all, things come up.', `If you still want the audit, grab whatever time suits you: ${rebookUrl}`, 'Or just reply with a couple of times that work and I’ll make one of them happen.', 'Naufal\nNaunas · naunas.co.uk'].join('\n\n');
+  return { subject: 'Missed you today', html, text };
+}
+
+/** Sent once, when the deposit is paid: welcome, what happens next, what we need. */
+export function onboardingEmail({ firstName }: { firstName?: string }): Email {
+  const name = firstName || 'there';
+  const steps = [
+    '<b>Within 1 working day:</b> I’ll send a short kick-off form (logins, brand assets, who’s involved).',
+    '<b>Kick-off call:</b> 30 minutes to lock the plan and the first milestone. I’ll send times with the form.',
+    '<b>Then the build:</b> you’ll get an update at every milestone, in one place, so you never have to chase me.',
+  ];
+  const html = wrap('Deposit received. Here’s exactly what happens next.', [
+    p(`Hi ${escapeHtml(name)},`),
+    p('Deposit received, thank you. We’re officially underway.'),
+    p('Here’s exactly what happens next:'),
+    list(steps),
+    p('To save time, start gathering: logins for the tools you use today (email, CRM or spreadsheet, booking, payments) and your logo/brand files. Don’t send passwords by email: I’ll share a secure way to pass them over.'),
+    p('Any questions before then, just reply here. It comes straight to me.'),
+  ]);
+  const text = [`Hi ${name},`, 'Deposit received, thank you. We’re officially underway.', `Here’s exactly what happens next:\n${steps.map((s, i) => `${i + 1}. ${s.replace(/<\/?b>/g, '')}`).join('\n')}`, 'To save time, start gathering: logins for the tools you use today (email, CRM or spreadsheet, booking, payments) and your logo/brand files. Don’t send passwords by email: I’ll share a secure way to pass them over.', 'Any questions before then, just reply here. It comes straight to me.', 'Naufal\nNaunas · naunas.co.uk'].join('\n\n');
+  return { subject: 'You’re in: what happens next', html, text };
+}
+
 /** Sent the moment someone books (and again with the new time if they reschedule). */
 export function preCallEmail({ firstName, callTime, rescheduled }: { firstName?: string; callTime?: string; rescheduled?: boolean }): Email {
   const name = escapeHtml(firstName || 'there');

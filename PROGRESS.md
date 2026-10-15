@@ -13,6 +13,18 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-15 (phase 2: conversion)
+- `/api/stripe-webhook`: checkout.session.completed/async_payment_succeeded, manual HMAC verify (no SDK) with STRIPE_WEBHOOK_SECRET → deal Won + amount (client_reference_id = deal id, else payer's open deal by email) → onboarding email (Zoho) → HubSpot note → 💰 Telegram. Idempotent (already-Won skips). Unmatched payment → Telegram asking to handle by hand. Inactive until STRIPE_WEBHOOK_SECRET is set + endpoint created in Stripe.
+- Pre-call brief (`src/lib/brief.ts`): on booking, emailed to BRIEF_TO (default contact@) + note on the deal: answers, likely leaks (their words vs the 8 layers), questions, links. Claude routine adds research.
+- No-show: Cal webhook now subscribed to BOOKING_NO_SHOW_UPDATED → rebook email + HubSpot note + Telegram.
+- HubSpot: deals/companies owned by Naufal (owner 100890550); company linked by website domain on enquiry + booking; notes can attach to deals; markDealWon/openDealForEmail.
+- Proposal research: best performer = Soul in the Horn (won $1,500 + retainer; same-day "next steps + contract + deposit invoice" email mirroring the call's scope bullets). Template + SOP in vault (99-Templates/template-proposal.md, 04-Business-Brain/SOPs/sop-proposal-generation.md); price from pricing.md, USD pricing undecided → flag, never invent.
+
+### 2026-10-15 (phase 1 live + readable alerts)
+- Pushed 648c427 / 246b991 / 467c99a. Live: pre-call email from the site (ML "before we talk" paused, "Newsletter: welcome" active = 3/3 free slots), Telegram alerts, daily health cron (06:00 UTC, `?ping=1` forces all-green). TELEGRAM_* + CRON_SECRET set in Vercel (Naufal didn't save CRON_SECRET: Vercel "Run" works without it; regenerate + save in Bitwarden for manual runs).
+- Alerts redesigned (`src/lib/alert.ts` notify(): Telegram HTML, bold title, icon-labelled lines, quote block, 👉 next step, inline buttons). Lead alerts now fire after HubSpot and link to the deal/contact; errors show Where / Error / Impact + Open logs; health check is a ✓/✗ checklist. Live test (high-value enquiry) sent with no Telegram errors.
+- HubSpot test records to delete by hand: Hubspot Tester, Telegram Test, Sarah Example (+ deals).
+
 ### 2026-10-15 (Client System plan, phase 1 code)
 - Plan approved: `~/.claude/plans/abundant-jumping-dijkstra.md` (free stack: MailerLite = sequences only, 3 slots: course · nudges · newsletter welcome; one-off emails from the site via Zoho; Telegram alerts; Vercel cron health check; Stripe deposits; IG later). Phases 1-4.
 - Phase 1 code (committed, NOT yet pushed: push only after Naufal pauses the MailerLite "Audit booked: before we talk" automation, or bookings get the pre-call email twice):

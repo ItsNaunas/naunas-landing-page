@@ -1,4 +1,5 @@
-// HubSpot CRM writes (private app token in HUBSPOT_TOKEN). Every call is best-effort: the site
+// HubSpot CRM writes (service key in HUBSPOT_TOKEN: contacts/deals/companies read+write, owners read;
+// private apps are disabled on this portal). Every call is best-effort: the site
 // never fails a visitor's submission because HubSpot is slow or down.
 
 import type { Attribution } from '@/lib/attribution';
@@ -16,6 +17,8 @@ export const STAGE = {
   lost: '6213348573',
 } as const;
 const OPEN_STAGES = [STAGE.newEnquiry, STAGE.contacted];
+// Naufal's HubSpot owner id: new deals and companies are assigned to him.
+const OWNER_ID = '100890550';
 
 export type LeadSource =
   | 'audit_questionnaire' | 'leak_map_popup' | 'cold_email' | 'instagram_dm'
@@ -148,6 +151,7 @@ export async function ensureDeal(opts: { contactId: string; name: string; stage:
         deal_lead_source: opts.leadSource,
         naunas_deal_priority: opts.priority,
         deal_source: [a.first_touch_source, a.first_touch_medium].filter(Boolean).join(' / ') || undefined,
+        hubspot_owner_id: OWNER_ID,
       }),
       associations: [{ to: { id: opts.contactId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }] }],
     }),
@@ -155,15 +159,65 @@ export async function ensureDeal(opts: { contactId: string; name: string; stage:
   return deal.id;
 }
 
-/** Add a note to the contact's timeline (e.g. full questionnaire answers). */
-export async function addNote(contactId: string, html: string) {
+/** Add a note to the contact's timeline (e.g. full questionnaire answers), and to the deal's when given. */
+export async function addNote(contactId: string, html: string, dealId?: string) {
+  const associations = [{ to: { id: contactId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }] }];
+  if (dealId) associations.push({ to: { id: dealId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 214 }] });
   await hs('/crm/v3/objects/notes', {
     method: 'POST',
-    body: JSON.stringify({
-      properties: { hs_timestamp: new Date().toISOString(), hs_note_body: html },
-      associations: [{ to: { id: contactId }, types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 202 }] }],
-    }),
+    body: JSON.stringify({ properties: { hs_timestamp: new Date().toISOString(), hs_note_body: html }, associations }),
   });
+}
+
+/** "https://www.Studio.com/about" or "studio.com" → "studio.com". Instagram handles and junk → undefined. */
+export function domainOf(website?: string): string | undefined {
+  if (!website || website.startsWith('@') || /instagram\.com|tiktok\.com|facebook\.com|linktr\.ee/i.test(website)) return undefined;
+  try {
+    const host = new URL(/^https?:\/\//.test(website) ? website : `https://${website}`).hostname.toLowerCase().replace(/^www\./, '');
+    return host.includes('.') ? host : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Find or create the business as a HubSpot company (by website domain) and link it to the contact and deal. */
+export async function linkCompany(opts: { website?: string; name?: string; contactId: string; dealId?: string }): Promise<string | undefined> {
+  const domain = domainOf(opts.website);
+  if (!domain) return undefined;
+  const found = await hs<{ results: { id: string }[] }>('/crm/v3/objects/companies/search', {
+    method: 'POST',
+    body: JSON.stringify({ filterGroups: [{ filters: [{ propertyName: 'domain', operator: 'EQ', value: domain }] }], limit: 1 }),
+  });
+  const companyId = found.results[0]?.id
+    ?? (await hs<{ id: string }>('/crm/v3/objects/companies', { method: 'POST', body: JSON.stringify({ properties: clean({ domain, name: opts.name || domain, hubspot_owner_id: OWNER_ID }) }) })).id;
+  // v4 "default" associations: no type ids to get wrong.
+  await hs(`/crm/v4/objects/contact/${opts.contactId}/associations/default/company/${companyId}`, { method: 'PUT' });
+  if (opts.dealId) await hs(`/crm/v4/objects/deal/${opts.dealId}/associations/default/company/${companyId}`, { method: 'PUT' });
+  return companyId;
+}
+
+/** The contact's most recent deal still in play (any stage before Won/Lost), by email. */
+export async function openDealForEmail(email: string): Promise<{ contactId: string; dealId: string | null } | null> {
+  try {
+    const contact = await hs<{ id: string }>(`/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`);
+    return { contactId: contact.id, dealId: await openDealFor(contact.id) };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Deposit paid: deal → Won with the amount. Returns alreadyWon=true when it was Won before (Stripe retries
+ * a webhook until it gets a 200, so the onboarding email must only go out once).
+ */
+export async function markDealWon(dealId: string, amount: number, currency: string): Promise<{ alreadyWon: boolean; dealName: string }> {
+  const deal = await hs<{ properties: { dealstage: string; dealname: string } }>(`/crm/v3/objects/deals/${dealId}?properties=dealstage,dealname`);
+  if (deal.properties.dealstage === STAGE.won) return { alreadyWon: true, dealName: deal.properties.dealname };
+  await hs(`/crm/v3/objects/deals/${dealId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ properties: { dealstage: STAGE.won, amount: String(amount), deal_currency_code: currency.toUpperCase(), closedate: new Date().toISOString() } }),
+  });
+  return { alreadyWon: false, dealName: deal.properties.dealname };
 }
 
 export function splitName(full: string) {

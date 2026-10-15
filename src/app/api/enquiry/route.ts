@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { getMailer, escapeHtml, textToHtml } from '@/lib/mailer';
 import { CAL_URL, isQualified, priorityOf } from '@/lib/booking';
-import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE, hubspotUrl } from '@/lib/hubspot';
+import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE, hubspotUrl, linkCompany } from '@/lib/hubspot';
 import { addToGroup, ENQUIRED_GROUP } from '@/lib/mailerlite';
 import { notify, line, alertError } from '@/lib/alert';
 import type { Attribution } from '@/lib/attribution';
@@ -111,6 +111,7 @@ export async function POST(req: NextRequest) {
       await addNote(contactId, `<p><strong>${isContactForm ? 'Contact form' : 'Free-audit questionnaire'}</strong> (${escapeHtml(src)})</p>`
         + `<p>${escapeHtml(message)}</p><p>${qualified ? 'Shown the booking calendar.' : 'Below threshold: reply by email.'}</p>`);
       if (qualified) dealId = await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution, priority: priorityOf(clientValue, revenue) });
+      await linkCompany({ website, contactId, dealId }).catch((err) => alertError('Enquiry: HubSpot company', err, 'The lead and deal are fine; only the company record is missing.'));
     } catch (err) {
       await alertError('Enquiry: HubSpot', err, 'The lead got their reply and nudges, but is NOT in HubSpot yet.');
     }

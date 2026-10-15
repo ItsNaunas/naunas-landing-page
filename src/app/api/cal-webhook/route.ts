@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { addToGroup, removeFromGroup, LEAK_MAP_GROUP, ENQUIRED_GROUP, BOOKED_GROUP } from '@/lib/mailerlite';
-import { upsertContact, ensureDeal, splitName, STAGE, hubspotUrl } from '@/lib/hubspot';
-import { priorityOf } from '@/lib/booking';
+import { upsertContact, ensureDeal, splitName, STAGE, hubspotUrl, linkCompany, addNote, openDealForEmail } from '@/lib/hubspot';
+import { priorityOf, CAL_URL } from '@/lib/booking';
 import { getMailer } from '@/lib/mailer';
-import { preCallEmail } from '@/lib/emails';
+import { preCallEmail, noShowEmail } from '@/lib/emails';
+import { preCallBrief } from '@/lib/brief';
 import { notify, line, alertError } from '@/lib/alert';
 
 // Naufal's own time zone, for the call time in his alerts.
@@ -38,11 +39,45 @@ export async function POST(req: NextRequest) {
   const ok = sig.length === expected.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
   if (!ok) return NextResponse.json({ error: 'Bad signature' }, { status: 401 });
 
-  const event = JSON.parse(raw) as { triggerEvent?: string; payload?: { attendees?: { email?: string; name?: string; timeZone?: string }[]; responses?: Record<string, { value?: unknown }>; startTime?: string } };
+  const event = JSON.parse(raw) as { triggerEvent?: string; payload?: { attendees?: { email?: string; name?: string; timeZone?: string; noShow?: boolean }[]; responses?: Record<string, { value?: unknown }>; startTime?: string; metadata?: { videoCallUrl?: string }; location?: string } };
   const trigger = event.triggerEvent;
-  if (trigger !== 'BOOKING_CREATED' && trigger !== 'BOOKING_RESCHEDULED' && trigger !== 'BOOKING_CANCELLED') return NextResponse.json({ ignored: true });
+  if (trigger !== 'BOOKING_CREATED' && trigger !== 'BOOKING_RESCHEDULED' && trigger !== 'BOOKING_CANCELLED' && trigger !== 'BOOKING_NO_SHOW_UPDATED') return NextResponse.json({ ignored: true });
 
-  const attendees = (event.payload?.attendees ?? []).filter((a): a is { email: string; name?: string; timeZone?: string } => !!a.email);
+  const attendees = (event.payload?.attendees ?? []).filter((a): a is { email: string; name?: string; timeZone?: string; noShow?: boolean } => !!a.email);
+
+  // No-show (Naufal marks the attendee absent in Cal.com; Google Meet can't detect it): a no-guilt rebook
+  // email from contact@, a HubSpot note, and a heads-up on Telegram. Unmarking sends nothing.
+  if (trigger === 'BOOKING_NO_SHOW_UPDATED') {
+    const mailer = getMailer();
+    const absent = attendees.filter((a) => a.noShow);
+    for (const a of absent) {
+      const firstName = a.name?.split(/\s+/)[0];
+      if (mailer) {
+        const mail = noShowEmail({ firstName, rebookUrl: `${CAL_URL}?email=${encodeURIComponent(a.email)}` });
+        try {
+          await mailer.transporter.sendMail({ from: `Naufal at Naunas <${mailer.from}>`, to: a.email, subject: mail.subject, text: mail.text, html: mail.html });
+        } catch (err) {
+          await alertError('CalWebhook: no-show email', err, `${a.email} did NOT get the rebook email.`);
+        }
+      }
+      let dealId: string | undefined;
+      try {
+        const found = await openDealForEmail(a.email);
+        dealId = found?.dealId ?? undefined;
+        if (found) await addNote(found.contactId, '<p><strong>No-show</strong> on the free audit. Rebook email sent.</p>', dealId);
+      } catch (err) {
+        await alertError('CalWebhook: HubSpot no-show note', err);
+      }
+      await notify({
+        level: 'lead',
+        title: 'No-show: rebook email sent',
+        lines: [line('👤', 'Name', a.name), line('✉️', 'Email', a.email)],
+        next: 'If they don’t rebook within 2 days, a personal message usually does it.',
+        buttons: [{ text: dealId ? 'Open deal in HubSpot' : 'Open HubSpot', url: dealId ? hubspotUrl.deal(dealId) : hubspotUrl.contacts() }],
+      });
+    }
+    return NextResponse.json({ success: true, noShows: absent.length });
+  }
   const callTime = (timeZone?: string) => formatCallTime(event.payload?.startTime, timeZone);
 
   // Cancelled: leave the "Audit booked" group. Nothing else changes (the HubSpot deal stays put for Naufal).
@@ -93,9 +128,10 @@ export async function POST(req: NextRequest) {
   const priority = priorityOf(val('client-value'), val('monthly-revenue'));
   if (booker?.email) {
     let dealId: string | undefined;
+    let contactId: string | undefined;
+    const business = val('business-type');
     try {
-      const business = val('business-type');
-      const contactId = await upsertContact({
+      contactId = await upsertContact({
         email: booker.email, ...splitName(booker.name ?? val('name') ?? ''), website: val('website'),
         business_type: business, client_value: val('client-value'), monthly_revenue_band: val('monthly-revenue'),
         whats_not_working: val('whats-not-working'), leadSource: 'audit_questionnaire',
@@ -103,6 +139,35 @@ export async function POST(req: NextRequest) {
       dealId = await ensureDeal({ contactId, name: `${booker.name ?? booker.email}${business ? ` · ${business}` : ''}`, stage: STAGE.auditBooked, leadSource: 'audit_questionnaire', priority });
     } catch (err) {
       await alertError('CalWebhook: HubSpot', err, 'The booking and pre-call email went through, but the deal is NOT updated in HubSpot.');
+    }
+    if (contactId) {
+      try {
+        await linkCompany({ website: val('website'), contactId, dealId });
+      } catch (err) {
+        await alertError('CalWebhook: HubSpot company', err, 'The deal is fine; only the company record is missing.');
+      }
+    }
+
+    // Pre-call brief: emailed to Naufal and pinned to the deal, so he walks in prepared.
+    const brief = preCallBrief({
+      name: booker.name ?? val('name') ?? booker.email, email: booker.email, callTime: formatCallTime(event.payload?.startTime, OWNER_TZ),
+      business, clientValue: val('client-value'), revenue: val('monthly-revenue'), website: val('website'), whatsNotWorking: val('whats-not-working'),
+      meetingUrl: event.payload?.metadata?.videoCallUrl ?? (event.payload?.location?.startsWith('http') ? event.payload.location : undefined),
+      dealUrl: dealId ? hubspotUrl.deal(dealId) : undefined,
+    });
+    if (mailer) {
+      try {
+        await mailer.transporter.sendMail({ from: `Naunas briefs <${mailer.from}>`, to: process.env.BRIEF_TO || mailer.from, subject: brief.subject, html: brief.html });
+      } catch (err) {
+        await alertError('CalWebhook: pre-call brief email', err, 'The booking is fine; only your brief email failed.');
+      }
+    }
+    if (contactId) {
+      try {
+        await addNote(contactId, brief.html, dealId);
+      } catch (err) {
+        await alertError('CalWebhook: HubSpot brief note', err);
+      }
     }
     // High-value bookings ping Naufal's phone with the call time in his own time zone.
     if (priority === 'high') {
