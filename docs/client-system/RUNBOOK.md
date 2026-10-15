@@ -150,7 +150,7 @@ Automation names must match `mailerlite.automations` exactly. The health check a
    - Each campaign has keywords, comments and/or DMs, optional post IDs, the DM text with `{link}`, the destination URL and an end date.
    - `{link}` becomes `/go/<campaign>`, which counts the click and adds the utm tags.
    - The default campaign lives in `funnel.ts` and keeps working if Blob is down.
-4. **Routine reports:** set `ROUTINE_REPORT_SECRET` and put the same value in the routine's environment variables. The routine then POSTs a summary to `/api/routine-report` at the end of every run.
+4. **Routine reports:** the routine logs each run as a HubSpot note on the internal contact `routine.logEmail` (body starts with `NAUNAS_ROUTINE_REPORT` + JSON), and the dashboard reads them. No extra secret, and nothing for the routine's network sandbox to block.
 
 ## 9. Env vars (Vercel → Settings → Environment Variables, Production; copy each into Bitwarden)
 
@@ -169,7 +169,6 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `IG_ACCESS_TOKEN`, `META_APP_SECRET`, `IG_VERIFY_TOKEN` | step 8 | Instagram only |
 | `BLOB_READ_WRITE_TOKEN` | step 8b (auto) | dashboard editing + stats |
 | `DASHBOARD_PASSWORD` | step 8b | dashboard |
-| `ROUTINE_REPORT_SECRET` | step 8b | routine → dashboard |
 
 Secrets never go in the repo, in chat, or in `funnel.ts`. Redeploy after changing env vars.
 

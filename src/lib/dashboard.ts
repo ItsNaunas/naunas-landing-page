@@ -1,11 +1,10 @@
-import { crmSearch, STAGE } from '@/lib/hubspot';
+import { crmSearch, STAGE, routineReports } from '@/lib/hubspot';
 import { isTest } from '@/lib/scoreboard';
-import { listJSON } from '@/lib/store';
 import { getCampaigns, getStats, type Campaign } from '@/lib/campaigns';
 import { FUNNEL } from '@/config/funnel';
 
 // Everything /dashboard shows, read live from HubSpot + Blob (read-only). HubSpot is the source of truth
-// for people and deals; Blob only holds campaigns, click/DM counters and routine reports.
+// for people and deals (and routine run reports, logged as notes); Blob only holds campaigns + counters.
 
 const DAY = 86_400_000;
 export const OPEN_STAGES: [string, string][] = [
@@ -50,7 +49,10 @@ export async function dashboardData() {
     hs('Instagram leads', 'contacts', [{ propertyName: 'instagram_campaign', operator: 'HAS_PROPERTY' }], ['instagram_campaign', 'instagram_post', 'num_associated_deals']),
     getCampaigns(),
     getStats(),
-    listJSON<RoutineReport>('routine/runs/', 7, 30),
+    routineReports<RoutineReport>(FUNNEL.routine.logEmail, 7).catch((err) => {
+      errors.push(`Routine reports: ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`);
+      return [] as RoutineReport[];
+    }),
     ...OPEN_STAGES.map(([stage, label]) => hs(label, 'deals', [{ propertyName: 'dealstage', operator: 'EQ', value: stage }], ['dealname', 'amount', 'createdate'])),
   ]);
 

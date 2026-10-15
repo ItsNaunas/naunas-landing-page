@@ -2,7 +2,7 @@
 // connected to the project). Holds dashboard-editable config and counters, never secrets or lead data
 // (HubSpot stays the source of truth for people). Reads never throw: callers get the fallback.
 
-import { get, put, list, del } from '@vercel/blob';
+import { get, put } from '@vercel/blob';
 
 export const storeReady = () => !!process.env.BLOB_READ_WRITE_TOKEN;
 
@@ -30,18 +30,4 @@ export async function updateJSON<T>(path: string, fallback: T, fn: (current: T) 
   const next = fn(await getJSON(path, fallback));
   await putJSON(path, next);
   return next;
-}
-
-/** Newest-first JSON documents under a prefix (e.g. routine reports), keeping only the latest `keep`. */
-export async function listJSON<T>(prefix: string, take: number, keep?: number): Promise<T[]> {
-  if (!storeReady()) return [];
-  try {
-    const { blobs } = await list({ prefix });
-    const sorted = blobs.sort((a, b) => b.pathname.localeCompare(a.pathname));
-    if (keep && sorted.length > keep) await del(sorted.slice(keep).map((b) => b.url));
-    return Promise.all(sorted.slice(0, take).map((b) => getJSON<T>(b.pathname, null as T)));
-  } catch (err) {
-    console.warn('[store] list failed', prefix, err instanceof Error ? err.message : err);
-    return [];
-  }
 }

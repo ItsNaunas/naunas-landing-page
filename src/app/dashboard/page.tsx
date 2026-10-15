@@ -206,7 +206,7 @@ export default async function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="Routine · funnel operator" aside={<a href="https://claude.ai/code/routines/trig_01N9LKgkPiRCBtzTgJuWeQCX" target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white">Open ↗</a>}>
+        <Panel title="Routine · funnel operator" aside={<a href={FUNNEL.routine.url} target="_blank" rel="noopener noreferrer" className="text-xs text-white/50 hover:text-white">Open ↗</a>}>
           {stale && <p className="text-sm text-[#F2613F]">{lastRun ? 'No report in the last 26 hours: check the routine.' : 'No reports yet. The routine reports here after its next run (13:00 Zanzibar).'}</p>}
           {lastRun && (
             <>

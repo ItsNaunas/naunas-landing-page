@@ -253,6 +253,43 @@ export async function upsertInstagramContact(
   return { id: created.id, isNew: true };
 }
 
+/**
+ * Routine run reports: the Claude routine logs each run as a note on an internal contact
+ * (FUNNEL.routine.logEmail) whose body starts with "NAUNAS_ROUTINE_REPORT" followed by JSON.
+ * Newest first. Notes that don't parse are skipped.
+ */
+export async function routineReports<T>(logEmail: string, take: number): Promise<T[]> {
+  let contactId: string;
+  try {
+    contactId = (await hs<{ id: string }>(`/crm/v3/objects/contacts/${encodeURIComponent(logEmail)}?idProperty=email`)).id;
+  } catch {
+    return []; // no run logged yet
+  }
+  const assoc = await hs<{ results: { toObjectId: number }[] }>(`/crm/v4/objects/contacts/${contactId}/associations/notes?limit=100`);
+  if (!assoc.results.length) return [];
+  const notes = await hs<{ results: { properties: { hs_note_body?: string; hs_timestamp?: string } }[] }>('/crm/v3/objects/notes/batch/read', {
+    method: 'POST',
+    body: JSON.stringify({ properties: ['hs_note_body', 'hs_timestamp'], inputs: assoc.results.map((a) => ({ id: String(a.toObjectId) })) }),
+  });
+  const decode = (html: string) => html
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+  return notes.results
+    .sort((a, b) => Date.parse(b.properties.hs_timestamp ?? '') - Date.parse(a.properties.hs_timestamp ?? ''))
+    .flatMap((n) => {
+      const text = decode(n.properties.hs_note_body ?? '');
+      const at = text.indexOf('NAUNAS_ROUTINE_REPORT');
+      if (at < 0) return [];
+      try {
+        const json = text.slice(text.indexOf('{', at), text.lastIndexOf('}') + 1);
+        return [{ runAt: n.properties.hs_timestamp, ...JSON.parse(json) } as T];
+      } catch {
+        return [];
+      }
+    })
+    .slice(0, take);
+}
+
 export function splitName(full: string) {
   const parts = full.trim().split(/\s+/);
   return { firstname: parts[0], lastname: parts.slice(1).join(' ') || undefined };
