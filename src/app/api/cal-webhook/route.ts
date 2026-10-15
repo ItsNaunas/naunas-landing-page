@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { addToGroup, removeFromGroup, LEAK_MAP_GROUP, ENQUIRED_GROUP, BOOKED_GROUP } from '@/lib/mailerlite';
-import { upsertContact, ensureDeal, splitName, STAGE } from '@/lib/hubspot';
+import { upsertContact, ensureDeal, splitName, STAGE, hubspotUrl } from '@/lib/hubspot';
 import { priorityOf } from '@/lib/booking';
 import { getMailer } from '@/lib/mailer';
 import { preCallEmail } from '@/lib/emails';
-import { alert, alertError } from '@/lib/alert';
+import { notify, line, alertError } from '@/lib/alert';
 
 // Naufal's own time zone, for the call time in his alerts.
 const OWNER_TZ = 'Africa/Dar_es_Salaam';
@@ -66,10 +66,10 @@ export async function POST(req: NextRequest) {
       try {
         await mailer.transporter.sendMail({ from: `Naufal at Naunas <${mailer.from}>`, to: a.email, subject: email.subject, text: email.text, html: email.html });
       } catch (err) {
-        await alertError('CalWebhook: pre-call email', err);
+        await alertError('CalWebhook: pre-call email', err, `The booking is fine, but ${a.email} did NOT get the pre-call email.`);
       }
     } else {
-      await alertError('CalWebhook: pre-call email', new Error('Missing ZOHO_SMTP_* env'));
+      await alertError('CalWebhook: pre-call email', new Error('Missing ZOHO_SMTP_* env'), `The booking is fine, but ${a.email} did NOT get the pre-call email.`);
     }
     try {
       await addToGroup({ email: a.email, name: firstName, group: BOOKED_GROUP, fields: { call_time: when } });
@@ -91,10 +91,8 @@ export async function POST(req: NextRequest) {
   const val = (k: string) => (typeof r[k]?.value === 'string' ? (r[k]!.value as string) : undefined);
   const booker = event.payload?.attendees?.[0];
   const priority = priorityOf(val('client-value'), val('monthly-revenue'));
-  if (booker?.email && priority === 'high') {
-    await alert(`High-value audit booked: ${booker.name ?? booker.email}\n${val('business-type') ?? ''} · client worth ${val('client-value') ?? '?'} · ${val('monthly-revenue') ?? '?'}/mo\nCall: ${formatCallTime(event.payload?.startTime, OWNER_TZ) ?? '?'}\n“${(val('whats-not-working') ?? '').slice(0, 200)}”`, 'lead');
-  }
   if (booker?.email) {
+    let dealId: string | undefined;
     try {
       const business = val('business-type');
       const contactId = await upsertContact({
@@ -102,9 +100,28 @@ export async function POST(req: NextRequest) {
         business_type: business, client_value: val('client-value'), monthly_revenue_band: val('monthly-revenue'),
         whats_not_working: val('whats-not-working'), leadSource: 'audit_questionnaire',
       });
-      await ensureDeal({ contactId, name: `${booker.name ?? booker.email}${business ? ` · ${business}` : ''}`, stage: STAGE.auditBooked, leadSource: 'audit_questionnaire', priority });
+      dealId = await ensureDeal({ contactId, name: `${booker.name ?? booker.email}${business ? ` · ${business}` : ''}`, stage: STAGE.auditBooked, leadSource: 'audit_questionnaire', priority });
     } catch (err) {
-      await alertError('CalWebhook: HubSpot', err);
+      await alertError('CalWebhook: HubSpot', err, 'The booking and pre-call email went through, but the deal is NOT updated in HubSpot.');
+    }
+    // High-value bookings ping Naufal's phone with the call time in his own time zone.
+    if (priority === 'high') {
+      await notify({
+        level: 'lead',
+        title: 'High-value audit booked',
+        lines: [
+          line('🗓️', 'Call', formatCallTime(event.payload?.startTime, OWNER_TZ)),
+          line('👤', 'Name', booker.name ?? val('name')),
+          line('✉️', 'Email', booker.email),
+          line('🏢', 'Business', val('business-type')),
+          line('💰', 'Client value', val('client-value')),
+          line('📈', 'Revenue', val('monthly-revenue') ? `${val('monthly-revenue')} a month` : undefined),
+          line('🌐', 'Website', val('website')),
+        ],
+        quote: val('whats-not-working'),
+        next: 'Pre-call email sent. Look at their site before the call.',
+        buttons: [{ text: dealId ? 'Open deal in HubSpot' : 'Open HubSpot', url: dealId ? hubspotUrl.deal(dealId) : hubspotUrl.contacts() }],
+      });
     }
   }
   return NextResponse.json({ success: true, stopped: stopped.length });

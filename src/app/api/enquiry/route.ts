@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { getMailer, escapeHtml, textToHtml } from '@/lib/mailer';
 import { CAL_URL, isQualified, priorityOf } from '@/lib/booking';
-import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE } from '@/lib/hubspot';
+import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE, hubspotUrl } from '@/lib/hubspot';
 import { addToGroup, ENQUIRED_GROUP } from '@/lib/mailerlite';
-import { alert, alertError } from '@/lib/alert';
+import { notify, line, alertError } from '@/lib/alert';
 import type { Attribution } from '@/lib/attribution';
 
 // The free-audit questionnaire (and the contact section). No database: the answers are emailed to
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const mailer = getMailer();
   if (!mailer) {
-    await alertError('Enquiry: email', new Error('Missing ZOHO_SMTP_* env'));
+    await alertError('Enquiry: email', new Error('Missing ZOHO_SMTP_* env'), 'The visitor saw an error and their answers were NOT saved.');
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join('\n'),
     });
   } catch (err) {
-    await alertError('Enquiry: notify email', err);
+    await alertError('Enquiry: notify email', err, `The visitor saw an error and their answers were NOT saved. Lead: ${name} <${email}>.`);
     return NextResponse.json({ error: 'Could not send your answers.' }, { status: 500 });
   }
 
@@ -82,11 +82,6 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  // High-value leads ping Naufal's phone straight away (he's 7-10 hours ahead of US buyers; email waits).
-  if (priorityOf(clientValue, revenue) === 'high') {
-    after(() => alert(`High-value enquiry: ${name} <${email}>\n${business || 'business not given'} · client worth ${clientValue || '?'} · ${revenue || '?'}/mo\n${website ? `${website}\n` : ''}“${message.slice(0, 300)}”`, 'lead'));
-  }
-
   // Booking nudge: qualified questionnaire leads join the MailerLite group whose automation sends two
   // "grab a time" emails (24h, day 3). The Cal.com webhook removes them the moment they book.
   if (qualified && src !== 'contact-section') {
@@ -100,21 +95,46 @@ export async function POST(req: NextRequest) {
   }
 
   // CRM: contact always; deal only for qualified questionnaire leads and contact-form messages.
+  // High-value leads then ping Naufal's phone (he's 7-10 hours ahead of US buyers; email waits),
+  // linking straight to the deal when HubSpot succeeded.
   after(async () => {
+    let contactId: string | undefined;
+    let dealId: string | undefined;
     try {
       const isContactForm = src === 'contact-section';
       const leadSource = inferLeadSource(isContactForm ? 'contact_form' : 'audit_questionnaire', attribution);
-      const contactId = await upsertContact({
+      contactId = await upsertContact({
         email, ...splitName(name), website, business_type: business || undefined,
         client_value: clientValue || undefined, monthly_revenue_band: revenue || undefined,
         whats_not_working: message, leadSource, attribution,
       });
       await addNote(contactId, `<p><strong>${isContactForm ? 'Contact form' : 'Free-audit questionnaire'}</strong> (${escapeHtml(src)})</p>`
         + `<p>${escapeHtml(message)}</p><p>${qualified ? 'Shown the booking calendar.' : 'Below threshold: reply by email.'}</p>`);
-      if (qualified) await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution, priority: priorityOf(clientValue, revenue) });
+      if (qualified) dealId = await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution, priority: priorityOf(clientValue, revenue) });
     } catch (err) {
-      await alertError('Enquiry: HubSpot', err);
+      await alertError('Enquiry: HubSpot', err, 'The lead got their reply and nudges, but is NOT in HubSpot yet.');
     }
+    if (priorityOf(clientValue, revenue) !== 'high') return;
+    const site = website ? (/^https?:\/\//.test(website) ? website : `https://${website.replace(/^@/, 'instagram.com/')}`) : undefined;
+    await notify({
+      level: 'lead',
+      title: 'High-value enquiry',
+      lines: [
+        line('👤', 'Name', name),
+        line('✉️', 'Email', email),
+        line('🏢', 'Business', business),
+        line('💰', 'Client value', clientValue),
+        line('📈', 'Revenue', revenue ? `${revenue} a month` : undefined),
+        line('🌐', 'Website', website),
+        line('🧭', 'Source', src),
+      ],
+      quote: message,
+      next: 'Shown the calendar. If they haven’t booked within the hour, reply personally.',
+      buttons: [
+        { text: dealId ? 'Open deal in HubSpot' : 'Open HubSpot', url: dealId ? hubspotUrl.deal(dealId) : contactId ? hubspotUrl.contact(contactId) : hubspotUrl.contacts() },
+        ...(site ? [{ text: 'Visit their website', url: site }] : []),
+      ],
+    });
   });
 
   return NextResponse.json({ success: true, qualified });

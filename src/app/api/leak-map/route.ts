@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { after } from 'next/server';
 import { addToGroup, LEAK_MAP_GROUP } from '@/lib/mailerlite';
 import { getMailer, textToHtml } from '@/lib/mailer';
-import { upsertContact, inferLeadSource, splitName } from '@/lib/hubspot';
+import { upsertContact, inferLeadSource, splitName, hubspotUrl } from '@/lib/hubspot';
 import type { Attribution } from '@/lib/attribution';
-import { alert, alertError } from '@/lib/alert';
+import { notify, line, alertError } from '@/lib/alert';
 
 // Pop-up sign-up for the Leak Map. Adds the person to the MailerLite "Leak Map" group, which
 // starts the 8-day course (day 0 delivers the PDF). Until that automation is switched on
@@ -52,18 +52,24 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // CRM, then (for a sign-up who says a client is worth $25k+) a Telegram ping: they deserve a personal
+  // note from Naufal on day 1, not just the course.
   after(async () => {
+    let contactId: string | undefined;
     try {
-      await upsertContact({ email, ...splitName(name), client_value: clientValue || undefined, leadSource: inferLeadSource('leak_map_popup', attribution), attribution });
+      contactId = await upsertContact({ email, ...splitName(name), client_value: clientValue || undefined, leadSource: inferLeadSource('leak_map_popup', attribution), attribution });
     } catch (err) {
-      await alertError('LeakMap: HubSpot', err);
+      await alertError('LeakMap: HubSpot', err, 'They got the Leak Map and the course, but are NOT in HubSpot yet.');
     }
+    if (clientValue !== '$25k-100k' && clientValue !== '$100k+') return;
+    await notify({
+      level: 'lead',
+      title: 'High-value Leak Map sign-up',
+      lines: [line('👤', 'Name', name), line('✉️', 'Email', email), line('💰', 'Client value', clientValue), line('🧭', 'Source', src)],
+      next: 'They’re in the email course. Send a short personal note today.',
+      buttons: [{ text: 'Open in HubSpot', url: contactId ? hubspotUrl.contact(contactId) : hubspotUrl.contacts() }],
+    });
   });
-
-  // A sign-up who says a client is worth $25k+ deserves a personal note from Naufal on day 1, not just the course.
-  if (clientValue === '$25k-100k' || clientValue === '$100k+') {
-    after(() => alert(`High-value Leak Map sign-up: ${name} <${email}>\nClient worth ${clientValue} · source ${src}\nWorth a personal email today.`, 'lead'));
-  }
 
   return NextResponse.json({ success: true, pdf: '/leak-map.pdf' });
 }

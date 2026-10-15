@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMailer } from '@/lib/mailer';
 import { checkHubSpot } from '@/lib/hubspot';
 import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
-import { alert } from '@/lib/alert';
+import { notify, esc } from '@/lib/alert';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -51,10 +51,17 @@ export async function GET(req: NextRequest) {
   ]);
 
   const failed = checks.filter((c) => !c.ok);
+  const checklist = checks.map((c) => (c.ok ? `✓ ${esc(c.name)}` : `✗ <b>${esc(c.name)}</b>\n    <code>${esc(c.detail ?? 'failed')}</code>`));
   if (failed.length) {
-    await alert(`Funnel health check: ${failed.length} problem${failed.length > 1 ? 's' : ''}\n${failed.map((c) => `• ${c.name}: ${c.detail}`).join('\n')}`, 'error');
+    await notify({
+      level: 'error',
+      title: `Daily health check: ${failed.length} problem${failed.length > 1 ? 's' : ''}`,
+      lines: checklist,
+      next: 'Leads may be slipping through until this is fixed.',
+      buttons: [{ text: 'Open logs', url: 'https://vercel.com/itsnaunas-projects/naunas-landing-page/logs' }],
+    });
   } else if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('ping') === '1') {
-    await alert(`Funnel health check: all green (${checks.map((c) => c.name).join(', ')})`, 'info');
+    await notify({ level: 'ok', title: 'Daily health check: all green', lines: checklist });
   }
   return NextResponse.json({ ok: failed.length === 0, checks }, { status: failed.length ? 503 : 200 });
 }

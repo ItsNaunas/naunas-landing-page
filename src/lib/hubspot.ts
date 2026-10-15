@@ -32,6 +32,14 @@ async function hs<T = unknown>(path: string, init: RequestInit = {}): Promise<T>
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
+// Links into the HubSpot UI (portal "Naunas Systems"), used by the Telegram alert buttons.
+const PORTAL_ID = '149523755';
+export const hubspotUrl = {
+  contact: (id: string) => `https://app.hubspot.com/contacts/${PORTAL_ID}/record/0-1/${id}`,
+  deal: (id: string) => `https://app.hubspot.com/contacts/${PORTAL_ID}/record/0-3/${id}`,
+  contacts: () => `https://app.hubspot.com/contacts/${PORTAL_ID}/objects/0-1/views/all/list`,
+};
+
 /** Health check: proves the key is accepted and can read contacts (the 401 that went unnoticed for 3 days). */
 export async function checkHubSpot(): Promise<void> {
   await hs('/crm/v3/objects/contacts?limit=1');
