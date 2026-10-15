@@ -32,6 +32,11 @@ async function hs<T = unknown>(path: string, init: RequestInit = {}): Promise<T>
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
 
+/** Health check: proves the key is accepted and can read contacts (the 401 that went unnoticed for 3 days). */
+export async function checkHubSpot(): Promise<void> {
+  await hs('/crm/v3/objects/contacts?limit=1');
+}
+
 function clean(props: Record<string, string | number | undefined | null>) {
   return Object.fromEntries(Object.entries(props).filter(([, v]) => v !== undefined && v !== null && v !== '')) as Record<string, string>;
 }

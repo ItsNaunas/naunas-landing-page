@@ -4,6 +4,7 @@ import { getMailer, escapeHtml, textToHtml } from '@/lib/mailer';
 import { CAL_URL, isQualified, priorityOf } from '@/lib/booking';
 import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE } from '@/lib/hubspot';
 import { addToGroup, ENQUIRED_GROUP } from '@/lib/mailerlite';
+import { alert, alertError } from '@/lib/alert';
 import type { Attribution } from '@/lib/attribution';
 
 // The free-audit questionnaire (and the contact section). No database: the answers are emailed to
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   const mailer = getMailer();
   if (!mailer) {
-    console.error('[Enquiry] Missing ZOHO_SMTP_* env');
+    await alertError('Enquiry: email', new Error('Missing ZOHO_SMTP_* env'));
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
 
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       ].filter(Boolean).join('\n'),
     });
   } catch (err) {
-    console.error('[Enquiry] Notify email failed:', err);
+    await alertError('Enquiry: notify email', err);
     return NextResponse.json({ error: 'Could not send your answers.' }, { status: 500 });
   }
 
@@ -77,9 +78,14 @@ export async function POST(req: NextRequest) {
     try {
       await mailer.transporter.sendMail({ from: `Naufal at Naunas <${mailer.from}>`, to: email, subject: 'Got your answers', text, html: textToHtml(text) });
     } catch (err) {
-      console.error('[Enquiry] Auto-reply failed:', err);
+      await alertError('Enquiry: auto-reply', err);
     }
   });
+
+  // High-value leads ping Naufal's phone straight away (he's 7-10 hours ahead of US buyers; email waits).
+  if (priorityOf(clientValue, revenue) === 'high') {
+    after(() => alert(`High-value enquiry: ${name} <${email}>\n${business || 'business not given'} · client worth ${clientValue || '?'} · ${revenue || '?'}/mo\n${website ? `${website}\n` : ''}“${message.slice(0, 300)}”`, 'lead'));
+  }
 
   // Booking nudge: qualified questionnaire leads join the MailerLite group whose automation sends two
   // "grab a time" emails (24h, day 3). The Cal.com webhook removes them the moment they book.
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
       try {
         await addToGroup({ email, name: name.split(/\s+/)[0], clientValue, source: src, group: ENQUIRED_GROUP, fields: { business_type: business, whats_not_working: message } });
       } catch (err) {
-        console.error('[Enquiry] MailerLite nudge group failed:', err);
+        await alertError('Enquiry: MailerLite nudge group', err);
       }
     });
   }
@@ -107,7 +113,7 @@ export async function POST(req: NextRequest) {
         + `<p>${escapeHtml(message)}</p><p>${qualified ? 'Shown the booking calendar.' : 'Below threshold: reply by email.'}</p>`);
       if (qualified) await ensureDeal({ contactId, name: `${name}${business ? ` · ${business}` : ''}`, stage: STAGE.newEnquiry, leadSource, attribution, priority: priorityOf(clientValue, revenue) });
     } catch (err) {
-      console.error('[Enquiry] HubSpot failed:', err);
+      await alertError('Enquiry: HubSpot', err);
     }
   });
 

@@ -4,6 +4,7 @@ import { addToGroup, LEAK_MAP_GROUP } from '@/lib/mailerlite';
 import { getMailer, textToHtml } from '@/lib/mailer';
 import { upsertContact, inferLeadSource, splitName } from '@/lib/hubspot';
 import type { Attribution } from '@/lib/attribution';
+import { alert, alertError } from '@/lib/alert';
 
 // Pop-up sign-up for the Leak Map. Adds the person to the MailerLite "Leak Map" group, which
 // starts the 8-day course (day 0 delivers the PDF). Until that automation is switched on
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   try {
     await addToGroup({ email, name, clientValue, source: src, group: LEAK_MAP_GROUP });
   } catch (err) {
-    console.error('[LeakMap] MailerLite failed:', err);
+    await alertError('LeakMap: MailerLite', err);
     // Still deliver the PDF by email below; the sign-up itself shouldn't fail for the visitor.
   }
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       try {
         await mailer.transporter.sendMail({ from: `Naufal at Naunas <${mailer.from}>`, to: email, subject: 'Your Leak Map', text, html: textToHtml(text) });
       } catch (err) {
-        console.error('[LeakMap] Fallback email failed:', err);
+        await alertError('LeakMap: fallback email', err);
       }
     });
   }
@@ -55,9 +56,14 @@ export async function POST(req: NextRequest) {
     try {
       await upsertContact({ email, ...splitName(name), client_value: clientValue || undefined, leadSource: inferLeadSource('leak_map_popup', attribution), attribution });
     } catch (err) {
-      console.error('[LeakMap] HubSpot failed:', err);
+      await alertError('LeakMap: HubSpot', err);
     }
   });
+
+  // A sign-up who says a client is worth $25k+ deserves a personal note from Naufal on day 1, not just the course.
+  if (clientValue === '$25k-100k' || clientValue === '$100k+') {
+    after(() => alert(`High-value Leak Map sign-up: ${name} <${email}>\nClient worth ${clientValue} · source ${src}\nWorth a personal email today.`, 'lead'));
+  }
 
   return NextResponse.json({ success: true, pdf: '/leak-map.pdf' });
 }

@@ -5,7 +5,8 @@ const API = 'https://connect.mailerlite.com/api';
 export const LEAK_MAP_GROUP = 'Leak Map';
 // Qualified questionnaire leads who haven't booked yet: starts the 2-email booking nudge. Booking removes them.
 export const ENQUIRED_GROUP = 'Audit enquiry: not booked';
-// Booked the free audit: starts the "before we talk" email. Cancelling removes them.
+// Booked the free audit (holds call_time). The pre-call email itself is sent by the site, not an automation,
+// to keep within MailerLite's free automation limit. Cancelling removes them.
 export const BOOKED_GROUP = 'Audit booked';
 
 function headers() {
@@ -58,6 +59,14 @@ export async function addToGroup(opts: { email: string; name?: string; clientVal
   for (const [key, value] of Object.entries(opts.fields ?? {})) if (value) fields[key] = value.slice(0, 500);
   // Upsert: 201 new, 200 existing. Adding to the group starts the course automation.
   await ml('/subscribers', { method: 'POST', body: JSON.stringify({ email: opts.email, fields, groups: [groupId] }) });
+}
+
+// The automations that must stay switched on (MailerLite free allows 3). The daily health check alerts if any is off.
+export const EXPECTED_AUTOMATIONS = ['map leak', 'Audit enquiry: booking nudge', 'Newsletter: welcome'];
+
+export async function listAutomations(): Promise<{ name: string; enabled: boolean }[]> {
+  const res = await ml<{ data: { name: string; enabled: boolean }[] }>('/automations?limit=50');
+  return res.data.map((a) => ({ name: a.name, enabled: a.enabled }));
 }
 
 export async function removeFromGroup(email: string, group: string): Promise<boolean> {

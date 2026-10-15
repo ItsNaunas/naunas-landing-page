@@ -13,6 +13,26 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-15 (Client System plan, phase 1 code)
+- Plan approved: `~/.claude/plans/abundant-jumping-dijkstra.md` (free stack: MailerLite = sequences only, 3 slots: course · nudges · newsletter welcome; one-off emails from the site via Zoho; Telegram alerts; Vercel cron health check; Stripe deposits; IG later). Phases 1-4.
+- Phase 1 code (committed, NOT yet pushed: push only after Naufal pauses the MailerLite "Audit booked: before we talk" automation, or bookings get the pre-call email twice):
+  - `src/lib/emails.ts` preCallEmail(); `cal-webhook` now sends it from contact@ on CREATED/RESCHEDULED.
+  - `src/lib/alert.ts` (Telegram, no-op + log until TELEGRAM_BOT_TOKEN/CHAT_ID set); every catch in enquiry/leak-map/cal-webhook now alerts; ⭐ alerts for high-priority enquiries, bookings and $25k+ Leak Map sign-ups.
+  - `src/app/api/health/route.ts` + `vercel.json` cron 06:00 UTC: env vars, HubSpot key, MailerLite EXPECTED_AUTOMATIONS enabled, Zoho verify; Telegram on failure, Monday all-green. Needs CRON_SECRET.
+- tsc + next build clean.
+
+### 2026-10-15 (booking flow verified, welcome email rebuilt, HubSpot sync broken)
+- Booking flow verified end to end on prod by Naufal's own test: booked → "Audit booked" with call_time "Thursday 15 October at 11:00 am (Dar es Salaam time)" → "Before we talk" delivered; cancelled → removed from group.
+- New MailerLite automation "Newsletter: welcome" (id 201346641278534822) in the Leak Map design, from contact@, subject "You're in (and here's the Leak Map)"; copy in docs/emails/newsletter-welcome.html. Created OFF. Old one renamed "OLD welcome (replaced, safe to delete)". Nothing feeds the Naunas Newsletter group yet (no site form, no ML forms).
+- **HubSpot sync has never worked**: every call 401 "Authentication credentials not found" (Vercel logs, LeakMap + CalWebhook). Code sends Bearer correctly and the custom properties exist in portal 149523755, so the HUBSPOT_TOKEN value on Vercel is wrong. Errors are caught, so sign-ups/emails were unaffected. Cause: the value was the HubSpot *Developer API Key* (app config only). **FIXED same night:** private/legacy apps are disabled on this new portal, so Naufal created a HubSpot *Service key* (contacts/deals/companies read+write, owners.read) → HUBSPOT_TOKEN → redeploy. Live questionnaire test created contact (lead source, client value, priority High) + note + deal, no errors. HubSpot connector can't delete records: test contact "Hubspot Tester" + its deal to delete by hand.
+- Cal.com host profile tz is Europe/London (explains 04:00–11:30 New York availability).
+
+### 2026-10-15 (shipped + live tests)
+- Pushed `ab216e4` to master (hero, Dot, video, popup, funnel phase 1); Vercel prod deploy Ready, live site serves new hero + video. Video re-encoded to 720p (9.3 MB): the 15 MB 1080p file kept dropping the GitHub push over the Zanzibar connection.
+- Live: LEAK_MAP_COURSE_LIVE=true on Vercel; MailerLite automations ON: map leak, Audit enquiry: booking nudge, Audit booked: before we talk. Newsletter "Simple welcome email" still OFF.
+- Tested on prod: Leak Map sign-up → exactly one email 1 from MailerLite, inbox, dkim=pass (naunas.co.uk) + spf=pass + dmarc=pass. Questionnaire → "Audit enquiry: not booked" with fields, nudge queued. Test booking blocked by Claude's permission guard: Naufal to book with its.naunas+aq1015@gmail.com to verify booked→pre-call + nudge removal, then cancel.
+- Found: footer `{$address}` renders blank (postal address not set / wrong tag). Cal.com availability is 04:00–11:30 New York = 01:00–08:30 LA, poor for US buyers. Test HubSpot contacts/deal (Leak Test, Audit Tester) to delete after the booking test.
+
 ### 2026-10-14 (funnel phase 1: nudges + pre-call)
 - Plan agreed with Naufal: HubSpot deal stage = source of truth; site webhooks move people between MailerLite groups (option B) + Claude as operator for briefs/drafts (option C). No HubSpot Workflows (Pro tier); no n8n.
 - Code: `/api/enquiry` adds qualified questionnaire leads to MailerLite group "Audit enquiry: not booked" (first name, business_type, whats_not_working). `/api/cal-webhook` now handles CREATED (→ "Audit booked" with call_time in booker's tz, removes from Leak Map + not-booked), RESCHEDULED (updates call_time), CANCELLED (removes from booked). New fields auto-created in `lib/mailerlite.ts`. Email copy + builder in `docs/emails/` (nudge-1, nudge-2, pre-call). tsc clean.
