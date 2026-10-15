@@ -13,6 +13,11 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-15 (phase 2 loose ends + phase 3 start)
+- Stripe connector = account "naunas" (acct_1RbXWWEYEJRPyjHS, live). Our endpoint has all 10 events. **n8n endpoint we_1ThE1r… DISABLED** in Stripe (reversible) so nothing sends from info@soulinthehorn.com any more. Test payment link: buy.stripe.com/aFa00j9Xr8MC0NSceUbsc01.
+- HubSpot deal property `naunas_lost_reason` (dropdown) created.
+- Phase 3: footer newsletter sign-up (`NewsletterSignup` + `/api/subscribe`, required opt-in tick) → ML "Naunas Newsletter" (starts "Newsletter: welcome") + HubSpot contact (lead source "Other": the dropdown has no Newsletter option, the connector can't edit existing properties). Weekly scoreboard (`src/lib/scoreboard.ts`) sent Mondays via the health cron: new leads by source, won (£), lost + reasons, pipeline snapshot by stage. HubSpot's API doesn't expose stage-entered dates for the custom pipeline, so it's a snapshot, not stage-movement counts. Health env check now includes STRIPE_WEBHOOK_SECRET.
+
 ### 2026-10-15 (Stripe webhook covers everything; n8n Stripe alerts retired)
 - Live £1 test reached `/api/stripe-webhook` (signature OK, Telegram "Payment received… no deal matched": link opened without client_reference_id, paid as its.naunas@gmail.com). Matched path (Won + onboarding) still to test with `?client_reference_id=526993965271&prefilled_email=its.naunas%2Bstripe1015%40gmail.com`.
 - Webhook now handles: checkout completed/async succeeded (deposit) + async failed + expired (opened link, didn't pay, only when tied to a person), payment_intent.payment_failed, invoice.paid, invoice.payment_failed, customer.subscription.deleted, charge.dispute.created, charge.refunded. Each → Telegram + the vault-sync email (`Stripe: <event>`, "PAYMENT RECEIVED" / "ACTION NEEDED — …") to VAULT_ALERT_TO (default its.naunas@gmail.com) from contact@.

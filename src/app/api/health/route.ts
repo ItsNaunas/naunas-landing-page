@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMailer } from '@/lib/mailer';
 import { checkHubSpot } from '@/lib/hubspot';
 import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
-import { notify, esc } from '@/lib/alert';
+import { notify, esc, alertError } from '@/lib/alert';
+import { weeklyScoreboard } from '@/lib/scoreboard';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -12,7 +13,7 @@ import { notify, esc } from '@/lib/alert';
 
 const REQUIRED_ENV = [
   'ZOHO_SMTP_HOST', 'ZOHO_SMTP_USER', 'ZOHO_SMTP_PASS', 'MAILERLITE_API_TOKEN', 'HUBSPOT_TOKEN',
-  'CAL_WEBHOOK_SECRET', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID',
+  'CAL_WEBHOOK_SECRET', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'STRIPE_WEBHOOK_SECRET',
 ];
 
 type Check = { name: string; ok: boolean; detail?: string };
@@ -62,6 +63,14 @@ export async function GET(req: NextRequest) {
     });
   } else if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('ping') === '1') {
     await notify({ level: 'ok', title: 'Daily health check: all green', lines: checklist });
+  }
+  // Mondays (or ?scoreboard=1): the weekly scoreboard rides on this cron instead of needing its own.
+  if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('scoreboard') === '1') {
+    try {
+      await notify(await weeklyScoreboard());
+    } catch (err) {
+      await alertError('Health: weekly scoreboard', err, 'Nothing is broken for leads; only this week’s scoreboard is missing.');
+    }
   }
   return NextResponse.json({ ok: failed.length === 0, checks }, { status: failed.length ? 503 : 200 });
 }

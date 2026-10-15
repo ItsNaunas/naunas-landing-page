@@ -2,6 +2,7 @@
 
 import { BOOKING_URL } from '@/lib/booking';
 import { useInView } from '@/hooks/useInView';
+import { NewsletterSignup } from '@/components/ui/NewsletterSignup';
 
 interface FooterProps {
   onAuditClick: () => void;
@@ -28,6 +29,7 @@ export function Footer({ onAuditClick }: FooterProps) {
               The client system behind businesses that sell big projects: from first enquiry
               to final handover, and the referral after it. Built in your own accounts.
             </p>
+            <NewsletterSignup />
           </div>
 
           {/* Links */}

@@ -8,6 +8,8 @@ export const ENQUIRED_GROUP = 'Audit enquiry: not booked';
 // Booked the free audit (holds call_time). The pre-call email itself is sent by the site, not an automation,
 // to keep within MailerLite's free automation limit. Cancelling removes them.
 export const BOOKED_GROUP = 'Audit booked';
+// Opted-in newsletter readers (footer sign-up). Joining starts the "Newsletter: welcome" automation.
+export const NEWSLETTER_GROUP = 'Naunas Newsletter';
 
 function headers() {
   const token = process.env.MAILERLITE_API_TOKEN;

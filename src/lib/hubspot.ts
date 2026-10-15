@@ -43,6 +43,15 @@ export const hubspotUrl = {
   contacts: () => `https://app.hubspot.com/contacts/${PORTAL_ID}/objects/0-1/views/all/list`,
 };
 
+type Filter = { propertyName: string; operator: string; value?: string; values?: string[] };
+/** Search CRM records (for reporting). Returns the match total and up to 200 rows with the requested properties. */
+export async function crmSearch(object: 'contacts' | 'deals', filters: Filter[], properties: string[] = []) {
+  return hs<{ total: number; results: { id: string; properties: Record<string, string | null> }[] }>(`/crm/v3/objects/${object}/search`, {
+    method: 'POST',
+    body: JSON.stringify({ filterGroups: [{ filters }], properties, limit: 200 }),
+  });
+}
+
 /** Health check: proves the key is accepted and can read contacts (the 401 that went unnoticed for 3 days). */
 export async function checkHubSpot(): Promise<void> {
   await hs('/crm/v3/objects/contacts?limit=1');
