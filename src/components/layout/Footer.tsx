@@ -43,6 +43,7 @@ export function Footer({ onAuditClick }: FooterProps) {
               { l: 'Free Leak Map', href: '/leak-map.pdf' },
               { l: 'Free audit', href: '/audit?src=footer' },
               { l: 'FAQ', href: '/#faq' },
+              { l: 'Privacy', href: '/privacy' },
             ].map(({ l, href }) => (
               <a
                 key={l}
