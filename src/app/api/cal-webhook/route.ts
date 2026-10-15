@@ -7,9 +7,10 @@ import { getMailer } from '@/lib/mailer';
 import { preCallEmail, noShowEmail } from '@/lib/emails';
 import { preCallBrief } from '@/lib/brief';
 import { notify, line, alertError } from '@/lib/alert';
+import { FUNNEL } from '@/config/funnel';
 
-// Naufal's own time zone, for the call time in his alerts.
-const OWNER_TZ = 'Africa/Dar_es_Salaam';
+// The owner's time zone, for the call time in alerts.
+const OWNER_TZ = FUNNEL.ownerTz;
 
 // Cal.com webhook (BOOKING_CREATED / RESCHEDULED / CANCELLED), signed with CAL_WEBHOOK_SECRET.
 // Booking stops the Leak Map course and the questionnaire nudges (MailerLite sequences, started and

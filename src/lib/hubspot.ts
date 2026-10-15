@@ -4,21 +4,14 @@
 
 import type { Attribution } from '@/lib/attribution';
 import { priorityOf } from '@/lib/booking';
+import { FUNNEL } from '@/config/funnel';
 
 const API = 'https://api.hubapi.com';
-const PIPELINE = 'default'; // "Client System sales"
-export const STAGE = {
-  newEnquiry: '6213348567',
-  contacted: '6213348568',
-  auditBooked: '6213348569',
-  auditDone: '6213348570',
-  scopeSent: '6213348571',
-  won: '6213348572',
-  lost: '6213348573',
-} as const;
+const PIPELINE = FUNNEL.hubspot.pipeline;
+export const STAGE = FUNNEL.hubspot.stages;
 const OPEN_STAGES = [STAGE.newEnquiry, STAGE.contacted];
-// Naufal's HubSpot owner id: new deals and companies are assigned to him.
-const OWNER_ID = '100890550';
+// New deals and companies are assigned to the owner in the funnel config.
+const OWNER_ID = FUNNEL.hubspot.ownerId;
 
 export type LeadSource =
   | 'audit_questionnaire' | 'leak_map_popup' | 'cold_email' | 'instagram_dm'
@@ -36,7 +29,7 @@ async function hs<T = unknown>(path: string, init: RequestInit = {}): Promise<T>
 }
 
 // Links into the HubSpot UI (portal "Naunas Systems"), used by the Telegram alert buttons.
-const PORTAL_ID = '149523755';
+const PORTAL_ID = FUNNEL.hubspot.portalId;
 export const hubspotUrl = {
   contact: (id: string) => `https://app.hubspot.com/contacts/${PORTAL_ID}/record/0-1/${id}`,
   deal: (id: string) => `https://app.hubspot.com/contacts/${PORTAL_ID}/record/0-3/${id}`,
@@ -227,6 +220,26 @@ export async function markDealWon(dealId: string, amount: number, currency: stri
     body: JSON.stringify({ properties: { dealstage: STAGE.won, amount: String(amount), deal_currency_code: currency.toUpperCase(), closedate: new Date().toISOString() } }),
   });
   return { alreadyWon: false, dealName: deal.properties.dealname };
+}
+
+/**
+ * Instagram commenter or DM sender → contact keyed by handle (custom `instagram_handle` property), since
+ * there's no email yet. Returns the id and whether it was new; an email later merges via upsertContact.
+ */
+export async function upsertInstagramContact(handle: string, name?: string): Promise<{ id: string; isNew: boolean }> {
+  const found = await crmSearch('contacts', [{ propertyName: 'instagram_handle', operator: 'EQ', value: handle }]);
+  if (found.results[0]) return { id: found.results[0].id, isNew: false };
+  const { firstname, lastname } = name ? splitName(name) : { firstname: `@${handle}`, lastname: undefined };
+  const created = await hs<{ id: string }>('/crm/v3/objects/contacts', {
+    method: 'POST',
+    body: JSON.stringify({
+      properties: clean({
+        instagram_handle: handle, firstname, lastname, naunas_lead_source: 'instagram_dm',
+        first_touch_source: 'instagram', first_touch_medium: 'dm', hubspot_owner_id: OWNER_ID,
+      }),
+    }),
+  });
+  return { id: created.id, isNew: true };
 }
 
 export function splitName(full: string) {

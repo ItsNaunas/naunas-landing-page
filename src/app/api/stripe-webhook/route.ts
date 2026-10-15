@@ -4,6 +4,7 @@ import { getMailer } from '@/lib/mailer';
 import { onboardingEmail } from '@/lib/emails';
 import { markDealWon, openDealForEmail, addNote, hubspotUrl } from '@/lib/hubspot';
 import { notify, line, alertError, type Button } from '@/lib/alert';
+import { FUNNEL } from '@/config/funnel';
 
 // Stripe webhook, signed with STRIPE_WEBHOOK_SECRET. The single place Stripe events land (replaces the n8n
 // "Stripe Alerts to Email" workflow). Every event does two things:
@@ -38,7 +39,7 @@ async function vaultEmail(event: string, kind: 'PAYMENT RECEIVED' | `ACTION NEED
   if (!mailer) return;
   const body = `${kind}: ${event} | ${Object.entries(details).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join(' | ')} | Check Stripe + the vault cockpit.`;
   try {
-    await mailer.transporter.sendMail({ from: `Naunas Stripe alerts <${mailer.from}>`, to: process.env.VAULT_ALERT_TO || 'its.naunas@gmail.com', subject: `Stripe: ${event}`, text: body });
+    await mailer.transporter.sendMail({ from: `Naunas Stripe alerts <${mailer.from}>`, to: process.env.VAULT_ALERT_TO || FUNNEL.alerts.vaultEmail, subject: `Stripe: ${event}`, text: body });
   } catch (err) {
     await alertError('StripeWebhook: vault email', err, 'Telegram and HubSpot are fine; only the vault-sync email failed.');
   }

@@ -1,15 +1,17 @@
 // MailerLite helpers (env MAILERLITE_API_TOKEN). The "Leak Map" group and the custom
 // fields are found or created at runtime, so no IDs need hard-coding.
 
+import { FUNNEL } from '@/config/funnel';
+
 const API = 'https://connect.mailerlite.com/api';
-export const LEAK_MAP_GROUP = 'Leak Map';
+export const LEAK_MAP_GROUP = FUNNEL.mailerlite.groups.leakMap;
 // Qualified questionnaire leads who haven't booked yet: starts the 2-email booking nudge. Booking removes them.
-export const ENQUIRED_GROUP = 'Audit enquiry: not booked';
+export const ENQUIRED_GROUP = FUNNEL.mailerlite.groups.enquired;
 // Booked the free audit (holds call_time). The pre-call email itself is sent by the site, not an automation,
 // to keep within MailerLite's free automation limit. Cancelling removes them.
-export const BOOKED_GROUP = 'Audit booked';
+export const BOOKED_GROUP = FUNNEL.mailerlite.groups.booked;
 // Opted-in newsletter readers (footer sign-up). Joining starts the "Newsletter: welcome" automation.
-export const NEWSLETTER_GROUP = 'Naunas Newsletter';
+export const NEWSLETTER_GROUP = FUNNEL.mailerlite.groups.newsletter;
 
 function headers() {
   const token = process.env.MAILERLITE_API_TOKEN;
@@ -64,7 +66,7 @@ export async function addToGroup(opts: { email: string; name?: string; clientVal
 }
 
 // The automations that must stay switched on (MailerLite free allows 3). The daily health check alerts if any is off.
-export const EXPECTED_AUTOMATIONS = ['map leak', 'Audit enquiry: booking nudge', 'Newsletter: welcome'];
+export const EXPECTED_AUTOMATIONS: readonly string[] = FUNNEL.mailerlite.automations;
 
 export async function listAutomations(): Promise<{ name: string; enabled: boolean }[]> {
   const res = await ml<{ data: { name: string; enabled: boolean }[] }>('/automations?limit=50');

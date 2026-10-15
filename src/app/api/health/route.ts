@@ -4,6 +4,8 @@ import { checkHubSpot } from '@/lib/hubspot';
 import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
 import { notify, esc, alertError } from '@/lib/alert';
 import { weeklyScoreboard } from '@/lib/scoreboard';
+import { FUNNEL } from '@/config/funnel';
+import { igMe, refreshIgToken } from '@/lib/instagram';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -49,6 +51,8 @@ export async function GET(req: NextRequest) {
       if (!mailer) throw new Error('not configured');
       await mailer.transporter.verify();
     }),
+    // Instagram is optional: only checked once its token is set.
+    ...(process.env.IG_ACCESS_TOKEN ? [run('Instagram token', async () => `@${(await igMe()).username}`)] : []),
   ]);
 
   const failed = checks.filter((c) => !c.ok);
@@ -59,7 +63,7 @@ export async function GET(req: NextRequest) {
       title: `Daily health check: ${failed.length} problem${failed.length > 1 ? 's' : ''}`,
       lines: checklist,
       next: 'Leads may be slipping through until this is fixed.',
-      buttons: [{ text: 'Open logs', url: 'https://vercel.com/itsnaunas-projects/naunas-landing-page/logs' }],
+      buttons: [{ text: 'Open logs', url: FUNNEL.logsUrl }],
     });
   } else if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('ping') === '1') {
     await notify({ level: 'ok', title: 'Daily health check: all green', lines: checklist });
@@ -70,6 +74,22 @@ export async function GET(req: NextRequest) {
       await notify(await weeklyScoreboard());
     } catch (err) {
       await alertError('Health: weekly scoreboard', err, 'Nothing is broken for leads; only this week’s scoreboard is missing.');
+    }
+  }
+  // 1st of the month: extend the Instagram token (it dies after 60 days unused-refresh).
+  if (process.env.IG_ACCESS_TOKEN && new Date().getUTCDate() === 1) {
+    try {
+      const r = await refreshIgToken();
+      if (r.changed) {
+        await notify({
+          level: 'error',
+          title: 'Instagram token: new value issued',
+          lines: [`Instagram returned a new token (valid ${r.expiresInDays} days). The old one keeps working until it expires.`],
+          next: 'Generate a fresh long-lived token in the Meta app and replace IG_ACCESS_TOKEN in Vercel + Bitwarden.',
+        });
+      }
+    } catch (err) {
+      await alertError('Health: Instagram token refresh', err, 'Comment DMs and DM capture stop when the token expires.');
     }
   }
   return NextResponse.json({ ok: failed.length === 0, checks }, { status: failed.length ? 503 : 200 });

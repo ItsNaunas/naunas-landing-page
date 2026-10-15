@@ -19,7 +19,9 @@ export type AlertMessage = {
   buttons?: Button[];
 };
 
-const LOGS_URL = 'https://vercel.com/itsnaunas-projects/naunas-landing-page/logs';
+import { FUNNEL } from '@/config/funnel';
+
+const LOGS_URL = FUNNEL.logsUrl;
 
 /** Escape for Telegram HTML mode. */
 export function esc(s: string): string {

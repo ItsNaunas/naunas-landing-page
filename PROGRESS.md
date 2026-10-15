@@ -1,9 +1,12 @@
 # Project Status
 
-**Last updated**: 2026-10-12
-**State**: Local hero has autonomous and scroll-responsive Dot motion; tools banner restored above a black split video section. Pending changes remain uncommitted.
+**Last updated**: 2026-10-15
+**State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [ ] Instagram: approve HubSpot contact property `instagram_handle` (text), create the Meta app (RUNBOOK §8), set IG_ACCESS_TOKEN / META_APP_SECRET / IG_VERIFY_TOKEN, subscribe webhook to comments + messages, test with a second account.
+- [ ] Run `node scripts/funnel-test.mjs` with ML + HubSpot keys from Bitwarden (never run yet: no local keys).
+- [ ] MailerLite UI: add "Action → add to group Naunas Newsletter" as the last step of "map leak".
 - [ ] Review the local white Dot hero at http://localhost:3000 (desktop/mobile checked), then commit/deploy with the other pending changes when ready.
 - [x] **LIVE 2026-10-11** (c1b6e46, c3b1d05). Verified on prod with its.naunas+funneltest@gmail.com: /api/leak-map → MailerLite 'Leak Map' group (+ PDF email fallback), /api/enquiry → contact@ + auto-reply, signed Cal.com webhook removed the tester from the group. `CAL_WEBHOOK_SECRET` set on Vercel; Cal.com webhook registered on event 7431234 → /api/cal-webhook.
 - [ ] MailerLite: build the 'Leak Map' automation (10 emails, vault 09-Content/leak-map-emails), sender domain auth (DNS at phase8, merge SPF), postal address; then set `LEAK_MAP_COURSE_LIVE=true` on Vercel to stop the PDF fallback email.
@@ -13,6 +16,12 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-15 (phase 3 rest + phase 4)
+- `src/config/funnel.ts`: every business-specific ID/name/link (HubSpot portal/owner/stages, ML groups + expected automations, Cal link, owner tz, PDF, logs URL, IG keywords/DM, vault email). Libs re-export from it, so imports are unchanged.
+- `/api/instagram-webhook` + `src/lib/instagram.ts`: Meta verify handshake, X-Hub-Signature-256 check, comment keyword (LEAK/MAP) → one private-reply DM with the Leak Map link + HubSpot contact by handle + Telegram; first DM → HubSpot contact (lead source instagram_dm) + Telegram. Returns 503 until env set. Health cron checks the IG token when set and refreshes it on the 1st of the month.
+- `docs/client-system/RUNBOOK.md` (install from zero, env table, free limits, Vercel Hobby non-commercial warning) and `scripts/funnel-test.mjs` (throwaway +ftest sign-up → checks ML groups + HubSpot → deletes both).
+- Routine "Naunas funnel operator" gained JOB 4 retention: Won deals at 21 days → testimonial/case-study ask draft, 60 days → referral ask draft; digest only, never sent.
+
 ### 2026-10-15 (phase 2 loose ends + phase 3 start)
 - Stripe connector = account "naunas" (acct_1RbXWWEYEJRPyjHS, live). Our endpoint has all 10 events. **n8n endpoint we_1ThE1r… DISABLED** in Stripe (reversible) so nothing sends from info@soulinthehorn.com any more. Test payment link: buy.stripe.com/aFa00j9Xr8MC0NSceUbsc01.
 - HubSpot deal property `naunas_lost_reason` (dropdown) created.

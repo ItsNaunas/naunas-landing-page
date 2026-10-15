@@ -5,6 +5,7 @@ import { getMailer, textToHtml } from '@/lib/mailer';
 import { upsertContact, inferLeadSource, splitName, hubspotUrl } from '@/lib/hubspot';
 import type { Attribution } from '@/lib/attribution';
 import { notify, line, alertError } from '@/lib/alert';
+import { FUNNEL } from '@/config/funnel';
 
 // Pop-up sign-up for the Leak Map. Adds the person to the MailerLite "Leak Map" group, which
 // starts the 8-day course (day 0 delivers the PDF). Until that automation is switched on
@@ -12,7 +13,7 @@ import { notify, line, alertError } from '@/lib/alert';
 // so nobody signs up and gets nothing.
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PDF_URL = 'https://www.naunas.co.uk/leak-map.pdf';
+const PDF_URL = FUNNEL.leadMagnetPdf;
 
 export async function POST(req: NextRequest) {
   const body = (await req.json()) as Record<string, unknown>;
