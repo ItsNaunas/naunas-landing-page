@@ -1,9 +1,11 @@
 # Project Status
 
-**Last updated**: 2026-10-15
+**Last updated**: 2026-10-16
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [ ] Phase 5 setup (Naufal): Vercel → Storage → Blob (**private**) → connect to naunas-landing-page; set `DASHBOARD_PASSWORD` (Vercel + Bitwarden); redeploy. Until Blob is connected the health check flags "Blob store" and campaigns can't be edited (default LEAK campaign still works).
+- [ ] Verify phase 5 live: login, add an AUDIT test campaign, comment it from @nnfl.88, click /go link, check HubSpot instagram_campaign/instagram_post; first routine run report (ops-log@naunas.co.uk note) shows on the dashboard; Monday 19 Oct content drafts.
 - [x] **Instagram LIVE 2026-10-15**: comment LEAK from @nnfl.88 (test account) → DM sent + HubSpot contact 892579131614 (delete: test). Gotcha: the per-account "Webhook Subscription" toggle in API setup §2 must be On or Meta sends nothing. If real public commenters don't trigger, App Review for Advanced Access is next.
 - [ ] Run `node scripts/funnel-test.mjs` with ML + HubSpot keys from Bitwarden (never run yet: no local keys).
 - [ ] MailerLite UI: add "Action → add to group Naunas Newsletter" as the last step of "map leak".
@@ -16,6 +18,12 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-16 (phase 5: Naunas Ops dashboard + keyword campaigns)
+- `/dashboard` (password via DASHBOARD_PASSWORD; `src/proxy.ts` gate + page/server-action re-check; noindex + robots disallow): Today, This week, Goal (£5k/mo from vault goals.md, pipeline coverage 3×), Pipeline, Comment & DM campaigns (editor + stats), Content (top posts by leads, routine drafts), Routine runs, System health (shared `src/lib/health.ts`). Each HubSpot query fails independently and shows a warning.
+- Instagram keyword campaigns (`src/lib/campaigns.ts`, stored in Vercel Blob `campaigns.json`, counters in `stats/campaigns.json`): comment and/or DM keywords, optional post scope, end date, DM text with {link} → `/go/<id>` (counts click, adds utm). Default "leak-map" campaign lives in funnel.ts so LEAK works without Blob. HubSpot contact props `instagram_campaign`, `instagram_post` created. DM keyword replies are allowed (they messaged first).
+- Routine reports: changed from the planned POST endpoint to HubSpot notes on internal contact ops-log@naunas.co.uk (body `NAUNAS_ROUTINE_REPORT {json}`), because cloud routines' network sandbox may block naunas.co.uk and it avoids a new secret. Routine gained JOB 5 (Monday content drafts: 3 posts, Track A leak + hot take, Track B build-in-public, CTA keyword, [PROOF] placeholders, no invented numbers) + the run-report step.
+- Scoreboard: top Instagram campaign line + Dashboard button. RUNBOOK §8b.
+
 ### 2026-10-15 (phase 3 rest + phase 4)
 - `src/config/funnel.ts`: every business-specific ID/name/link (HubSpot portal/owner/stages, ML groups + expected automations, Cal link, owner tz, PDF, logs URL, IG keywords/DM, vault email). Libs re-export from it, so imports are unchanged.
 - `/api/instagram-webhook` + `src/lib/instagram.ts`: Meta verify handshake, X-Hub-Signature-256 check, comment keyword (LEAK/MAP) → one private-reply DM with the Leak Map link + HubSpot contact by handle + Telegram; first DM → HubSpot contact (lead source instagram_dm) + Telegram. Returns 503 until env set. Health cron checks the IG token when set and refreshes it on the 1st of the month.
