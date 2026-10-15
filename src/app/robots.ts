@@ -5,6 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
+      disallow: ['/dashboard', '/go/'],
     },
     sitemap: 'https://www.naunas.co.uk/sitemap.xml',
   };

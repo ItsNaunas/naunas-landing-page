@@ -46,13 +46,22 @@ export const FUNNEL = {
   },
 
   instagram: {
-    /** Comment keywords that trigger the lead-magnet DM (matched as whole words, any case). */
+    /** Default comment keywords (whole words, any case). More campaigns are added from /dashboard. */
     keywords: ['LEAK', 'MAP'],
-    /** Where the DM sends them. utm tags let HubSpot credit Instagram. */
-    dmLink: 'https://www.naunas.co.uk/?utm_source=instagram&utm_medium=comment#leak-map',
-    dmText: (link: string) =>
-      `Here you go 👇\n\nThe Leak Map: the 8 places client businesses lose leads, with a short email course that walks you through it.\n\n${link}\n\nAny questions, just reply here.`,
+    /** Always-on fallback campaign; an edited copy saved from /dashboard takes over. */
+    defaultCampaign: {
+      id: 'leak-map',
+      name: 'Leak Map (default)',
+      url: 'https://www.naunas.co.uk/#leak-map',
+      message:
+        'Here you go 👇\n\nThe Leak Map: the 8 places client businesses lose leads, with a short email course that walks you through it.\n\n{link}\n\nAny questions, just reply here.',
+    },
   },
+
+  /** Targets the dashboard measures against (from the vault's goals.md). */
+  goals: { monthlyRevenue: 5000, mrr: 1000, pipelineCoverage: 3 },
+  /** The vault cockpit (delivery, invoices, capacity), linked from /dashboard. */
+  cockpitUrl: 'https://claude.ai/code/artifact/0ac0a36b-0a85-46ee-8fd4-50c1a283ae5b',
 
   alerts: {
     /** "Stripe: <event>" emails for the owner's own records (vault sync). */

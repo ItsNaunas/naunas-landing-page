@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMailer } from '@/lib/mailer';
-import { checkHubSpot } from '@/lib/hubspot';
-import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
+import { runChecks } from '@/lib/health';
 import { notify, esc, alertError } from '@/lib/alert';
 import { weeklyScoreboard } from '@/lib/scoreboard';
 import { FUNNEL } from '@/config/funnel';
-import { igMe, refreshIgToken } from '@/lib/instagram';
+import { refreshIgToken } from '@/lib/instagram';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -13,47 +11,13 @@ import { igMe, refreshIgToken } from '@/lib/instagram';
 // (as does any manual run with ?ping=1, to test the alert path).
 // Vercel cron calls it with `Authorization: Bearer $CRON_SECRET`.
 
-const REQUIRED_ENV = [
-  'ZOHO_SMTP_HOST', 'ZOHO_SMTP_USER', 'ZOHO_SMTP_PASS', 'MAILERLITE_API_TOKEN', 'HUBSPOT_TOKEN',
-  'CAL_WEBHOOK_SECRET', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'STRIPE_WEBHOOK_SECRET',
-];
-
-type Check = { name: string; ok: boolean; detail?: string };
-
-async function run(name: string, fn: () => Promise<string | void>): Promise<Check> {
-  try {
-    const detail = await fn();
-    return { name, ok: true, detail: detail || undefined };
-  } catch (err) {
-    return { name, ok: false, detail: (err instanceof Error ? err.message : String(err)).slice(0, 300) };
-  }
-}
-
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const checks: Check[] = await Promise.all([
-    run('Env vars', async () => {
-      const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
-      if (missing.length) throw new Error(`missing ${missing.join(', ')}`);
-    }),
-    run('HubSpot key', () => checkHubSpot()),
-    run('MailerLite automations', async () => {
-      const all = await listAutomations();
-      const off = EXPECTED_AUTOMATIONS.filter((name) => !all.find((a) => a.name === name && a.enabled));
-      if (off.length) throw new Error(`not running: ${off.join(', ')}`);
-    }),
-    run('Zoho SMTP', async () => {
-      const mailer = getMailer();
-      if (!mailer) throw new Error('not configured');
-      await mailer.transporter.verify();
-    }),
-    // Instagram is optional: only checked once its token is set.
-    ...(process.env.IG_ACCESS_TOKEN ? [run('Instagram token', async () => `@${(await igMe()).username}`)] : []),
-  ]);
+  const checks = await runChecks();
 
   const failed = checks.filter((c) => !c.ok);
   const checklist = checks.map((c) => (c.ok ? `✓ ${esc(c.name)}` : `✗ <b>${esc(c.name)}</b>\n    <code>${esc(c.detail ?? 'failed')}</code>`));

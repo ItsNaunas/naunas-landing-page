@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^1.6.1",
+    "@vercel/blob": "^2.8.2",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "gsap": "^3.14.2",

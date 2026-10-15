@@ -226,15 +226,26 @@ export async function markDealWon(dealId: string, amount: number, currency: stri
  * Instagram commenter or DM sender → contact keyed by handle (custom `instagram_handle` property), since
  * there's no email yet. Returns the id and whether it was new; an email later merges via upsertContact.
  */
-export async function upsertInstagramContact(handle: string, name?: string): Promise<{ id: string; isNew: boolean }> {
+export async function upsertInstagramContact(
+  handle: string,
+  opts: { name?: string; campaign?: string; postUrl?: string } = {},
+): Promise<{ id: string; isNew: boolean }> {
+  const { name } = opts;
+  // Latest keyword campaign + post they came through (instagram_campaign / instagram_post), for reporting.
+  const touch = clean({ instagram_campaign: opts.campaign, instagram_post: opts.postUrl });
   const found = await crmSearch('contacts', [{ propertyName: 'instagram_handle', operator: 'EQ', value: handle }]);
-  if (found.results[0]) return { id: found.results[0].id, isNew: false };
+  if (found.results[0]) {
+    if (Object.keys(touch).length) {
+      await hs(`/crm/v3/objects/contacts/${found.results[0].id}`, { method: 'PATCH', body: JSON.stringify({ properties: touch }) });
+    }
+    return { id: found.results[0].id, isNew: false };
+  }
   const { firstname, lastname } = name ? splitName(name) : { firstname: `@${handle}`, lastname: undefined };
   const created = await hs<{ id: string }>('/crm/v3/objects/contacts', {
     method: 'POST',
     body: JSON.stringify({
       properties: clean({
-        instagram_handle: handle, firstname, lastname, naunas_lead_source: 'instagram_dm',
+        instagram_handle: handle, firstname, lastname, naunas_lead_source: 'instagram_dm', ...touch,
         first_touch_source: 'instagram', first_touch_medium: 'dm', hubspot_owner_id: OWNER_ID,
       }),
     }),

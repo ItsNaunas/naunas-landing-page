@@ -143,6 +143,15 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 - A first DM from someone new → CRM contact (by handle) plus Telegram.
 - The token is refreshed on the 1st of each month by the health cron. If Instagram ever issues a new value, Telegram says so.
 
+## 8b. Dashboard, campaigns and storage
+1. **Blob store:** Vercel → Storage → Create → **Blob**, set to **private**, then connect it to the project. This adds `BLOB_READ_WRITE_TOKEN` automatically.
+2. Set `DASHBOARD_PASSWORD`. The owner signs in at `/dashboard`. Changing the password signs everyone out.
+3. **Comment and DM campaigns** are edited on the dashboard and go live with no deploy:
+   - Each campaign has keywords, comments and/or DMs, optional post IDs, the DM text with `{link}`, the destination URL and an end date.
+   - `{link}` becomes `/go/<campaign>`, which counts the click and adds the utm tags.
+   - The default campaign lives in `funnel.ts` and keeps working if Blob is down.
+4. **Routine reports:** set `ROUTINE_REPORT_SECRET` and put the same value in the routine's environment variables. The routine then POSTs a summary to `/api/routine-report` at the end of every run.
+
 ## 9. Env vars (Vercel → Settings → Environment Variables, Production; copy each into Bitwarden)
 
 | Var | From | Required |
@@ -158,6 +167,9 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `BRIEF_TO` | where pre-call briefs go (default: the mailbox) | no |
 | `VAULT_ALERT_TO` | overrides `alerts.vaultEmail` | no |
 | `IG_ACCESS_TOKEN`, `META_APP_SECRET`, `IG_VERIFY_TOKEN` | step 8 | Instagram only |
+| `BLOB_READ_WRITE_TOKEN` | step 8b (auto) | dashboard editing + stats |
+| `DASHBOARD_PASSWORD` | step 8b | dashboard |
+| `ROUTINE_REPORT_SECRET` | step 8b | routine → dashboard |
 
 Secrets never go in the repo, in chat, or in `funnel.ts`. Redeploy after changing env vars.
 

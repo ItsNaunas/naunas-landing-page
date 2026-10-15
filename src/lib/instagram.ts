@@ -25,6 +25,16 @@ export function privateReply(commentId: string, text: string) {
   return ig('/me/messages', { method: 'POST', body: JSON.stringify({ recipient: { comment_id: commentId }, message: { text } }) });
 }
 
+/** A normal DM, only as a reply to someone who messaged us (Instagram's 24-hour window). */
+export function sendDm(igsid: string, text: string) {
+  return ig('/me/messages', { method: 'POST', body: JSON.stringify({ recipient: { id: igsid }, message: { text } }) });
+}
+
+/** Public link of one of our posts (for reporting which post a lead came from). */
+export function igMedia(mediaId: string) {
+  return ig<{ permalink?: string; caption?: string }>(`/${mediaId}?fields=permalink,caption`);
+}
+
 /** Health check: the token still works. */
 export function igMe() {
   return ig<{ username: string }>('/me?fields=username');
