@@ -4,7 +4,7 @@
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
-- [ ] Instagram: approve HubSpot contact property `instagram_handle` (text), create the Meta app (RUNBOOK §8), set IG_ACCESS_TOKEN / META_APP_SECRET / IG_VERIFY_TOKEN, subscribe webhook to comments + messages, test with a second account.
+- [ ] Instagram: Meta app "Naunas-dm-Automation-IG" (naunas_builds) keys set in Vercel, HubSpot `instagram_handle` created, /privacy live. Left: callback URL -> /api/instagram-webhook, Publish app (privacy URL), Webhook Subscription On, test comment LEAK from a tester account; App Review for Advanced Access if public commenters don't trigger.
 - [ ] Run `node scripts/funnel-test.mjs` with ML + HubSpot keys from Bitwarden (never run yet: no local keys).
 - [ ] MailerLite UI: add "Action → add to group Naunas Newsletter" as the last step of "map leak".
 - [ ] Review the local white Dot hero at http://localhost:3000 (desktop/mobile checked), then commit/deploy with the other pending changes when ready.
