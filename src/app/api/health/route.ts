@@ -6,7 +6,8 @@ import { alert } from '@/lib/alert';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
-// the MailerLite sequences are switched on. Any failure → Telegram. Mondays also get an "all green".
+// the MailerLite sequences are switched on. Any failure → Telegram. Mondays also get an "all green"
+// (as does any manual run with ?ping=1, to test the alert path).
 // Vercel cron calls it with `Authorization: Bearer $CRON_SECRET`.
 
 const REQUIRED_ENV = [
@@ -52,7 +53,7 @@ export async function GET(req: NextRequest) {
   const failed = checks.filter((c) => !c.ok);
   if (failed.length) {
     await alert(`Funnel health check: ${failed.length} problem${failed.length > 1 ? 's' : ''}\n${failed.map((c) => `• ${c.name}: ${c.detail}`).join('\n')}`, 'error');
-  } else if (new Date().getUTCDay() === 1) {
+  } else if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('ping') === '1') {
     await alert(`Funnel health check: all green (${checks.map((c) => c.name).join(', ')})`, 'info');
   }
   return NextResponse.json({ ok: failed.length === 0, checks }, { status: failed.length ? 503 : 200 });
