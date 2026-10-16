@@ -281,25 +281,46 @@ export async function notesForContact(contactId: string): Promise<{ id: string; 
  * Newest first. Notes that don't parse are skipped.
  */
 export async function routineReports<T>(logEmail: string, take: number): Promise<T[]> {
+  return opsNotes<T>(logEmail, 'NAUNAS_ROUTINE_REPORT', take);
+}
+
+/**
+ * Structured notes the Claude routine writes on the internal ops-log contact: body = MARKER + one JSON
+ * object. Newest first, each with runAt (the note time). Notes that don't parse are skipped.
+ */
+export async function opsNotes<T>(logEmail: string, marker: string, take: number): Promise<T[]> {
   let contactId: string;
   try {
     contactId = (await hs<{ id: string }>(`/crm/v3/objects/contacts/${encodeURIComponent(logEmail)}?idProperty=email`)).id;
   } catch {
-    return []; // no run logged yet
+    return []; // nothing logged yet
   }
   return (await notesForContact(contactId))
     .flatMap((n) => {
-      const text = n.text;
-      const at = text.indexOf('NAUNAS_ROUTINE_REPORT');
+      const at = n.text.indexOf(marker);
       if (at < 0) return [];
       try {
-        const json = text.slice(text.indexOf('{', at), text.lastIndexOf('}') + 1);
+        const json = n.text.slice(n.text.indexOf('{', at), n.text.lastIndexOf('}') + 1);
         return [{ runAt: n.at, ...JSON.parse(json) } as T];
       } catch {
         return [];
       }
     })
     .slice(0, take);
+}
+
+/** Set contact properties (e.g. naunas_outreach_status). */
+export async function updateContact(id: string, properties: Record<string, string>) {
+  await hs(`/crm/v3/objects/contacts/${id}`, { method: 'PATCH', body: JSON.stringify({ properties }) });
+}
+
+/** Move a deal to a stage (Lost may carry a reason; Won/Lost set the close date). */
+export async function setDealStage(dealId: string, stage: string, lostReason?: string) {
+  const closing = stage === STAGE.won || stage === STAGE.lost;
+  await hs(`/crm/v3/objects/deals/${dealId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ properties: clean({ dealstage: stage, naunas_lost_reason: lostReason, closedate: closing ? new Date().toISOString() : undefined }) }),
+  });
 }
 
 export function splitName(full: string) {

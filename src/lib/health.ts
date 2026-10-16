@@ -3,6 +3,9 @@ import { checkHubSpot } from '@/lib/hubspot';
 import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
 import { igMe } from '@/lib/instagram';
 import { storeReady } from '@/lib/store';
+import { checkInbox } from '@/lib/inbox';
+import { checkFathom } from '@/lib/fathom';
+import { checkApify } from '@/lib/apify';
 
 // The read-only checks behind the daily health cron and the /dashboard health panel: every service the
 // funnel depends on still accepts our keys, and the MailerLite sequences are switched on.
@@ -42,6 +45,9 @@ export function runChecks(): Promise<Check[]> {
     }),
     // Optional pieces: only checked once they are set up.
     ...(process.env.IG_ACCESS_TOKEN ? [run('Instagram token', async () => `@${(await igMe()).username}`)] : []),
+    ...(process.env.ZOHO_SMTP_PASS ? [run('Zoho inbox (IMAP)', () => checkInbox())] : []),
+    ...(process.env.FATHOM_API_KEY ? [run('Fathom', () => checkFathom())] : []),
+    ...(process.env.APIFY_TOKEN ? [run('Apify', () => checkApify())] : []),
     ...(storeReady() ? [] : [run('Blob store', async () => { throw new Error('not connected: campaigns can\'t be edited, stats aren\'t kept'); })]),
   ]);
 }

@@ -171,6 +171,10 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `DASHBOARD_PASSWORD` | step 8b | dashboard |
 | `CAL_API_KEY` | Cal.com → Settings → Developer → API keys | dashboard Calls tab (optional) |
 | `STRIPE_READ_KEY` | Stripe restricted key, READ only: Charges, PaymentIntents, Checkout Sessions, Invoices, Subscriptions, Balance | dashboard Money tab (optional) |
+| `FATHOM_API_KEY` | Fathom → Settings → API Access | call recordings + recaps on lead pages (optional) |
+| `FATHOM_WEBHOOK_SECRET` | Fathom → API Access → Manage → Add Webhook (URL `/api/fathom-webhook`, include summary + action items) | same-day recap to HubSpot + Telegram (optional) |
+| `APIFY_TOKEN` | Apify → Settings → Integrations | Outreach → Find prospects (optional, monthly cap in dashboard) |
+| (none) IMAP | Zoho Mail → Settings → Mail Accounts → IMAP Access ON (same app password) | email threads, outreach replies, sequence stop-on-reply |
 
 Secrets never go in the repo, in chat, or in `funnel.ts`. Redeploy after changing env vars.
 

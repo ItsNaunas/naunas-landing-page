@@ -213,5 +213,81 @@ export const demo = {
     errors: [] as string[],
     drafts: reports.flatMap((r) => r.items.filter((i) => i.job === 'content').map((i) => ({ ...i, runAt: r.runAt }))),
     topPosts: demo.instagram().posts.filter((p) => p.leads).slice(0, 6),
+    posts: demo.instagram().posts.map((p) => ({ timestamp: p.timestamp })),
+  }),
+  leadProfile: (id: string) => {
+    const base = demo.person(id).person;
+    return {
+      errors: [] as string[],
+      profile: {
+        ...base,
+        stageLabel: 'Audit booked', idle: 1, waiting: true,
+        next: { title: 'Reply to them', why: 'They emailed 0d ago and haven’t had an answer.', tone: 'bad' as const },
+        journey: [
+          { label: 'Came in', done: true, at: ago(22) }, { label: 'Email course', done: true, at: ago(22) },
+          { label: 'Booked a call', done: true, at: ago(20) }, { label: 'Call held', done: false }, { label: 'Proposal sent', done: false }, { label: 'Paid', done: false },
+        ],
+        brief: 'Research brief\n\nWhat they sell: full-service interior design for homeowners in Austin, mostly whole-home renovations.\n\nHow enquiries reach them: website form + Instagram DMs ("DM to book a consult" in bio).\n\nLikely leaks:\n- 2 Capture: the form promises a reply "within a week".\n- 4 Follow-up: no sign of a nurture after the consult.\n\nQuestions:\n1. What happens between the consult and the proposal?\n2. How many enquiries a month never get a reply?\n3. Where do your best clients come from?\n\nQuick win: an instant reply with the booking link on the form.',
+        answers: 'Free-audit questionnaire\n\nEnquiries come in through Instagram and the website and half of them never get a reply within a day.',
+        thread: [
+          { uid: 1, folder: 'inbox' as const, messageId: '<a1@x>', date: ago(26), from: 'mia@oakline.example', fromName: 'Mia Turner', to: ['contact@naunas.co.uk'], subject: 'Re: Your Leak Map', text: 'Hi Naufal, layer 4 hit home. We lose people after the consult. Would love to chat.' },
+          { uid: 2, folder: 'sent' as const, messageId: '<s1@x>', date: ago(24), from: 'contact@naunas.co.uk', fromName: 'Naufal', to: ['mia@oakline.example'], subject: 'Re: Your Leak Map', text: 'Hi Mia, that’s the most common one I see. Grab a slot here and I’ll map it with you: naunas.co.uk/audit\n\nNaufal' },
+          { uid: 3, folder: 'inbox' as const, messageId: '<a2@x>', date: ago(3), from: 'mia@oakline.example', fromName: 'Mia Turner', to: ['contact@naunas.co.uk'], subject: 'Re: Your Leak Map', text: 'Booked for Friday! Quick question: how long does an install usually take?' },
+        ],
+        lastInbound: { messageId: '<a2@x>', subject: 'Re: Your Leak Map', references: ['<a1@x>', '<s1@x>'] },
+        meetings: [] as { title: string; at: string; url: string; summary: string; actions: string[] }[],
+        connected: { inbox: true, fathom: true },
+      },
+    };
+  },
+  outreach: () => {
+    const mk = (i: number, firm: string, status: string, fit: number, extra: Record<string, unknown> = {}) => ({
+      id: `pr${i}`, firm, website: `https://${firm.toLowerCase().replace(/[^a-z]+/g, '')}.example`, domain: `${firm.toLowerCase().replace(/[^a-z]+/g, '')}.example`,
+      email: fit >= 3 ? `hello@${firm.toLowerCase().replace(/[^a-z]+/g, '')}.example` : undefined, instagram: fit >= 5 ? firm.toLowerCase().replace(/[^a-z]+/g, '.') : undefined,
+      city: ['Nashville', 'Austin', 'Scottsdale'][i % 3], state: ['TN', 'TX', 'AZ'][i % 3], tz: 'America/Chicago', rating: 4.9, reviews: 12 + i * 5,
+      category: 'Interior designer', fit, fitWhy: fit >= 5 ? ['Design practice', 'Direct email', 'On Instagram', `${12 + i * 5} reviews`] : ['Design practice', 'No Instagram found'],
+      searchId: 's1', createdAt: ago(30 + i), status, ...extra,
+    });
+    const drafts = { dossier: 'Owner-led studio; enquiry form promises a reply "within 5 business days".', firstName: 'Kate', subject: 'the 5-day reply on your form', steps: ['Hi Kate,\n\nYour Hillsboro kitchen is lovely. Noticed your form says replies take up to 5 business days. Is that by design, or just capacity?\n\nNaufal', 'Hi Kate, one pattern from studios like yours: ...', 'Hi Kate, I recorded a 2-minute teardown of your enquiry flow. Want me to send it?', 'Hi Kate, I’ll leave it here. If enquiries ever pile up, the Leak Map is free: naunas.co.uk'], dm: 'Hi Kate, your Hillsboro kitchen is lovely. Genuine question: how do you handle the enquiries that come in over the weekend?' };
+    const p = [
+      mk(1, 'Hillsboro Interiors', 'new', 7), mk(2, 'Pine & Linen Design', 'new', 6), mk(3, 'Studio Marlowe', 'new', 5), mk(4, 'The Design Loft', 'new', 3),
+      mk(5, 'Cedar House Interiors', 'approved', 6), mk(6, 'Kate Moss Design Co', 'drafted', 7, { drafts }),
+      mk(7, 'Arden Interiors', 'scheduled', 6, { drafts }), mk(8, 'Whitfield Studio', 'active', 6, { drafts, startedAt: ago(80), sent: [{ step: 0, at: ago(80), messageId: '<m>' }] }),
+      mk(9, 'Oakline Interiors', 'replied', 7, { drafts, startedAt: ago(200), repliedAt: ago(5), contactId: 'p1' }),
+    ];
+    const by = (s: string) => p.filter((x) => x.status === s);
+    return {
+      errors: [] as string[],
+      settings: { sending: false, dailyNew: 15, dailyTotal: 25, monthlyCapUsd: 10 },
+      searches: [{ id: 's1', term: 'interior designer', location: 'Nashville, TN', max: 30, runId: 'r', datasetId: 'd', status: 'SUCCEEDED', createdAt: ago(30), found: 30, added: 12, costUsd: 0.21 }],
+      spent: 0.21,
+      queue: { review: by('new'), approved: by('approved'), drafted: by('drafted'), scheduled: by('scheduled'), active: by('active'), replied: by('replied'), finished: by('finished') },
+      dmList: [p[5], p[6]],
+      reps: { emails: 6, emailTarget: 15, dms: 4, dmTarget: 10 },
+      stats: { emailed: 34, replied: 5, positive: 3, withDeal: 2, replyRate: 15, statuses: { emailed: 12, followed_up: 17, replied: 2, interested: 2, audit_booked: 1, not_interested: 0 } },
+      replies: [
+        { uid: 1, folder: 'inbox' as const, messageId: '<r1>', date: ago(5), from: 'hello@oaklineinteriors.example', fromName: 'Mia', to: [], subject: 'Re: the 5-day reply on your form', text: 'Ha, capacity honestly. What would you suggest?', who: 'Oakline Interiors', href: '/dashboard/leads/p1' },
+      ],
+      connected: { apify: true, inbox: true },
+    };
+  },
+  contentPlus: () => ({
+    errors: [] as string[],
+    plan: [
+      { day: 'Mon', a: 'Hot take', b: 'Build-with-me · AI news' }, { day: 'Tue', a: 'Leak', b: 'Behind the build' }, { day: 'Wed', a: 'System demo', b: 'Build-with-me · Win' },
+      { day: 'Thu', a: 'Proof / case study', b: 'AI news' }, { day: 'Fri', a: 'Leak + audit CTA', b: 'Build-with-me · Win' }, { day: 'Sat', a: 'Repurpose the week’s best', b: 'AI news' }, { day: 'Sun', a: 'Hot take', b: 'What I’m building' },
+    ],
+    todayIdx: (new Date().getDay() + 6) % 7, postsThisWeek: 9, weeklyTarget: 21,
+    coverage: ['Attention', 'Capture', 'Pipeline', 'Follow-up', 'Conversion', 'Fulfilment', 'Retention', 'Attribution'].map((name, i) => ({ n: i + 1, name, drafts: [2, 3, 0, 4, 1, 0, 0, 1][i] })),
+    ideas: [
+      { text: 'Enquiries come in through Instagram and the website and half never get a reply within a day.', who: 'Interior design studio', at: ago(22) },
+      { text: 'We send proposals and then it goes quiet. I never know when to chase.', who: 'Kitchen design', at: ago(60) },
+      { text: 'No idea which of our marketing actually brings the big projects.', who: 'Design-build', at: ago(140) },
+    ],
+    hooks: [
+      { hook: 'I cancelled HubSpot, Airtable AND Zoho last month. On purpose.', note: 'Most-commented Track A post' },
+      { hook: 'A lead goes cold in 48 hours, and your follow-up is you remembering.', note: 'Track A' },
+      { hook: '6 things between “interested” and “closed” that kill deals.', note: 'Track A' },
+    ],
   }),
 };

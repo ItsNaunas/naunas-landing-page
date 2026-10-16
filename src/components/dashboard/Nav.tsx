@@ -8,6 +8,7 @@ const ICONS: Record<string, React.ReactNode> = {
   today: <path d="M4 5h16v15H4zM4 10h16M9 3v4M15 3v4" />,
   leads: <path d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 19v-1a4 4 0 0 0-3-3.9M15.5 3.1a3.5 3.5 0 0 1 0 6.8" />,
   pipeline: <path d="M4 5h4v14H4zM10 5h4v9h-4zM16 5h4v5h-4z" />,
+  outreach: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />,
   calls: <path d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" />,
   instagram: <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17.5 6.5h.01" />,
   email: <path d="M3 6h18v12H3zM3 7l9 6 9-6" />,
@@ -22,6 +23,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
   { label: 'Run the day', items: [
     { href: '/dashboard', label: 'Today', icon: 'today' },
     { href: '/dashboard/leads', label: 'Leads', icon: 'leads' },
+    { href: '/dashboard/outreach', label: 'Outreach', icon: 'outreach' },
     { href: '/dashboard/pipeline', label: 'Pipeline', icon: 'pipeline' },
     { href: '/dashboard/calls', label: 'Calls', icon: 'calls' },
   ] },
@@ -37,7 +39,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
   ] },
 ];
 const ALL = NAV_GROUPS.flatMap((g) => g.items);
-const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/pipeline', '/dashboard/instagram'];
+const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach', '/dashboard/pipeline'];
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   return (

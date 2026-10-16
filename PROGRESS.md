@@ -4,6 +4,9 @@
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [ ] Turn on IMAP in Zoho Mail (Settings → Mail Accounts → IMAP Access) — outreach sequences refuse to send without it (stop-on-reply safety).
+- [ ] Fathom webhook: Fathom → API Access → Manage → Add Webhook → https://www.naunas.co.uk/api/fathom-webhook (summary + action items) → put its whsec_ secret in Vercel as FATHOM_WEBHOOK_SECRET.
+- [ ] Outreach: run a first search, approve, review the routine's drafts next day, then flip Sending ON at /dashboard/outreach. Vault email engine finishes wave-1 E4s only (email-engine.md banner).
 - [ ] Optional dashboard keys: `CAL_API_KEY` (Calls tab) and `STRIPE_READ_KEY` (Money tab, restricted read-only). Tabs show a Connect card until set.
 - [ ] Phase 5 setup (Naufal): Vercel → Storage → Blob (**private**) → connect to naunas-landing-page; set `DASHBOARD_PASSWORD` (Vercel + Bitwarden); redeploy. Until Blob is connected the health check flags "Blob store" and campaigns can't be edited (default LEAK campaign still works).
 - [ ] Verify phase 5 live: login, add an AUDIT test campaign, comment it from @nnfl.88, click /go link, check HubSpot instagram_campaign/instagram_post; first routine run report (ops-log@naunas.co.uk note) shows on the dashboard; Monday 19 Oct content drafts.
@@ -19,6 +22,12 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-16 (outreach moved into the site + lead profile)
+- /dashboard/outreach: Apify Google Maps search (compass/crawler-google-places, website-only + contact enrichment, per-run charge cap + monthly cap) → fit score 0-7 → approve/skip → routine JOB 6 drafts (reads /api/outreach/feed/<key>, writes NAUNAS_OUTREACH_DRAFTS notes on ops-log) → review/edit → schedule → daily cron /api/outreach/run 14:00 UTC sends E1–E4 (days 0/3/7/14, threaded, 15 new/25 total a day, 7am–8pm their time), stops on reply via IMAP + Telegram; E1 creates the HubSpot contact/company (cold_email). Sending OFF by default. Prospects/searches/settings in Blob (outreach/*.json). IG DMs stay manual (copy opener, mark sent).
+- Lead profile page /dashboard/leads/[id]: journey strip, next-step banner, tabs Overview (their words, research brief, last call, details) / Emails (IMAP thread + reply box sending from contact@ on click, logged to HubSpot) / Calls (Fathom summaries, action items, recordings) / Timeline; side panel: deal stage (+lost reason), outreach status, MailerLite sequences take-out/add, notes, booking link.
+- Fathom webhook /api/fathom-webhook (standard-webhooks signature) → HubSpot note + Telegram. Health/System now check IMAP, Fathom, Apify. HubSpot: naunas_outreach_status property; 5 wave-1 contacts set followed_up. Routine: owns all replies (drafts only), JOB 6 outreach drafts. Vault email-engine.md: winding down (finish wave-1 E4s, no new firms, no replies).
+- Content: weekly plan, posting count, Leak Map coverage, idea bank from leads' words, hook bank.
+
 ### 2026-10-16 (Ops v3 finish)
 - 2-minute read-through cache on every dashboard API call (src/lib/ops/cache.ts, unstable_cache tag "ops"); any logged event expires it (revalidateTag in lib/events), Refresh purges it (updateTag server action). Time windows rounded to 2 min (nowish) so keys repeat.
 - Range pickers: Pipeline (30/90/180/365d), Instagram (7/30/90/all; posts + leads), Money (3/6/12 months; Stripe charges paginated to 500). Email notes MailerLite totals are lifetime.

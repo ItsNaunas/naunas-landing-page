@@ -64,7 +64,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
                 {list.rows.map((r) => (
                   <tr key={r.id} className={`border-t border-white/[0.04] hover:bg-white/[0.025] ${sp.person === r.id ? 'bg-white/[0.04]' : ''}`}>
                     <td className="px-5 py-3">
-                      <a href={qs({ person: r.id })} className="block group">
+                      <a href={`/dashboard/leads/${r.id}`} className="block group">
                         <span className="font-medium group-hover:text-[#F2613F]">{r.name}</span>
                         <span className="block text-xs text-white/40 truncate max-w-[260px]">{r.business || r.email || (r.ig ? `@${r.ig}` : '')}</span>
                       </a>
@@ -95,7 +95,8 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
           }
           footer={
             <div className="flex flex-wrap gap-2">
-              <a href={hubspotUrl.contact(p.id)} {...linkProps} className="rounded-full bg-white text-black text-sm font-medium px-4 py-2">Open in HubSpot</a>
+              <a href={`/dashboard/leads/${p.id}`} className="rounded-full bg-[#F2613F] text-[#0C0C0C] text-sm font-semibold px-4 py-2">Open full profile</a>
+              <a href={hubspotUrl.contact(p.id)} {...linkProps} className="rounded-full border border-white/15 text-sm px-4 py-2 hover:border-white/30">HubSpot ↗</a>
               {p.email && <a href={`mailto:${p.email}`} className="rounded-full border border-white/15 text-sm px-4 py-2 hover:border-white/30">Email</a>}
               {p.ig && <a href={`https://instagram.com/${p.ig}`} {...linkProps} className="rounded-full border border-white/15 text-sm px-4 py-2 hover:border-white/30">Instagram</a>}
               {p.email && <a href={`https://cal.com/${FUNNEL.cal.link}?email=${encodeURIComponent(p.email)}&name=${encodeURIComponent(p.name)}`} {...linkProps} className="rounded-full border border-white/15 text-sm px-4 py-2 hover:border-white/30">Booking link</a>}

@@ -345,6 +345,10 @@ export async function systemData() {
       { name: 'Instagram', role: 'Keyword DMs + posts', ok: has('IG_ACCESS_TOKEN'), env: 'IG_ACCESS_TOKEN' },
       { name: 'Telegram', role: 'Alerts to your phone', ok: has('TELEGRAM_BOT_TOKEN'), env: 'TELEGRAM_BOT_TOKEN' },
       { name: 'Vercel Blob', role: 'Campaigns, stats, activity feed', ok: has('BLOB_READ_WRITE_TOKEN'), env: 'BLOB_READ_WRITE_TOKEN' },
+      { name: 'Fathom API', role: 'Call recordings + recaps', ok: has('FATHOM_API_KEY'), env: 'FATHOM_API_KEY' },
+      { name: 'Fathom webhook', role: 'Same-day recap on Telegram + HubSpot', ok: has('FATHOM_WEBHOOK_SECRET'), env: 'FATHOM_WEBHOOK_SECRET' },
+      { name: 'Apify', role: 'Find prospects (Google Maps)', ok: has('APIFY_TOKEN'), env: 'APIFY_TOKEN' },
+      { name: 'Zoho inbox (IMAP)', role: 'Email threads, outreach replies', ok: has('ZOHO_SMTP_PASS'), env: 'IMAP on in Zoho' },
       { name: 'Claude routine', role: 'Daily drafts + run reports', ok: true, env: 'claude.ai routine' },
     ],
   };
@@ -361,5 +365,6 @@ export async function contentData() {
     errors: [...errors, ...ig.errors],
     drafts: reports.flatMap((r) => r.items.filter((i) => i.job === 'content').map((i) => ({ ...i, runAt: r.runAt }))),
     topPosts: [...ig.posts].filter((p) => p.leads).sort((a, b) => b.leads - a.leads).slice(0, 6),
+    posts: ig.posts.map((p) => ({ timestamp: p.timestamp })),
   };
 }

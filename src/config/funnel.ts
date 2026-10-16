@@ -63,6 +63,11 @@ export const FUNNEL = {
   /** The vault cockpit (delivery, invoices, capacity), linked from /dashboard. */
   cockpitUrl: 'https://claude.ai/code/artifact/0ac0a36b-0a85-46ee-8fd4-50c1a283ae5b',
 
+  outreach: {
+    /** Path secret for the feed the Claude routine reads (approved prospects needing drafts; public business data only). */
+    feedKey: 'cb2df696a4278612e3bc835e',
+  },
+
   routine: {
     /** Internal HubSpot contact the Claude routine logs each run on (as a note). Excluded from stats. */
     logEmail: 'ops-log@naunas.co.uk',

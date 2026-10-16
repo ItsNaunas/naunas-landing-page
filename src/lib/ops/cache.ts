@@ -1,6 +1,8 @@
 import { unstable_cache } from 'next/cache';
 import { routineReports, notesForContact } from '@/lib/hubspot';
 import * as raw from './sources';
+import { threadWith, recentInbound } from '@/lib/inbox';
+import { meetingsWith, fathomMeetings } from '@/lib/fathom';
 
 // Read-through cache for the dashboard's external API calls: 2 minutes, tag "ops". The Refresh button
 // purges it (updateTag), and every logged event expires it (revalidateTag in lib/events), so new
@@ -36,4 +38,8 @@ export const src = {
   stripeOpenInvoices: c('stripeOpenInvoices', raw.stripeOpenInvoices),
   stripeSubscriptions: c('stripeSubscriptions', raw.stripeSubscriptions),
   stripeSessions: c('stripeSessions', raw.stripeSessions),
+  threadWith: c('threadWith', threadWith),
+  recentInbound: c('recentInbound', recentInbound),
+  meetingsWith: c('meetingsWith', meetingsWith),
+  fathomMeetings: c('fathomMeetings', fathomMeetings),
 };
