@@ -2,7 +2,7 @@ import { callsData } from '@/lib/ops/tabs';
 import { hubspotUrl } from '@/lib/hubspot';
 import { FUNNEL } from '@/config/funnel';
 import { PageHeader, Errors, Badge, Card, Kpi, Empty, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, ConnectCard, when, untilOrAgo } from '@/components/dashboard/kit';
+import { SectionTitle, ConnectCard, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +49,7 @@ export default async function Calls() {
       </div>
 
       <SectionTitle>Coming up</SectionTitle>
+      <SectionError errors={errFor(d.errors, 'Upcoming')} />
       <Card pad={false}>
         {d.upcoming.length ? (
           <ul className="divide-y divide-white/[0.05]">
@@ -76,6 +77,7 @@ export default async function Calls() {
       </Card>
 
       <SectionTitle>Recent calls</SectionTitle>
+      <SectionError errors={errFor(d.errors, 'Past', 'Cancelled')} />
       <Card pad={false}>
         {d.past.length ? (
           <table className="w-full text-[13px]">

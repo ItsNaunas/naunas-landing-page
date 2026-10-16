@@ -1,12 +1,13 @@
-import { STAGE, routineReports, notesForContact, hubspotUrl, crmSearch } from '@/lib/hubspot';
+import { STAGE, hubspotUrl } from '@/lib/hubspot';
 import { isTest } from '@/lib/scoreboard';
 import { listEvents, type OpsEvent } from '@/lib/events';
 import { getCampaigns, getStats } from '@/lib/campaigns';
 import { runChecks, type Check } from '@/lib/health';
 import { getJSON } from '@/lib/store';
 import { FUNNEL } from '@/config/funnel';
-import { DAY, num, ts, tally, monthStart, OPEN_STAGES, collector, connected, type RoutineReport } from './common';
-import * as src from './sources';
+import { DAY, num, ts, tally, monthStart, OPEN_STAGES, collector, connected, nowish, type RoutineReport } from './common';
+import { src } from './cache';
+import type { CalBooking, IgMedia, Charge } from './sources';
 import { demo, demoOn } from './demo';
 
 // One function per /dashboard tab. Read-only; every source fails independently (errors[] on the page).
@@ -14,21 +15,22 @@ import { demo, demoOn } from './demo';
 const nameOf = (p: Record<string, string | null>) =>
   [p.firstname, p.lastname].filter(Boolean).join(' ') || (p.instagram_handle ? `@${p.instagram_handle}` : p.email) || 'Unknown';
 const lastActivity = (p: Record<string, string | null>) => Math.max(ts(p.notes_last_updated), ts(p.hs_lastmodifieddate), ts(p.lastmodifieddate));
+const reportsFor = src.routineReports as (email: string, take: number) => Promise<RoutineReport[]>;
 const EMPTY = { total: 0, results: [] as { id: string; properties: Record<string, string | null> }[] };
 
 // ---------------------------------------------------------------- Today
 export async function todayData(lastVisit: number) {
   if (demoOn()) return demo.today(lastVisit) as never;
   const { errors, safe } = collector();
-  const now = Date.now();
+  const now = nowish();
   const [contacts, open, won, events, reports, checks, upcoming] = await Promise.all([
     safe('Leads', src.searchContacts({ since: now - 14 * DAY, limit: 200 }), EMPTY),
     safe('Pipeline', src.openDeals(), EMPTY),
     safe('Won deals', src.searchDeals([STAGE.won], monthStart()), EMPTY),
     safe('Activity', listEvents(40), [] as OpsEvent[]),
-    safe('Routine', routineReports<RoutineReport>(FUNNEL.routine.logEmail, 1), [] as RoutineReport[]),
+    safe('Routine', reportsFor(FUNNEL.routine.logEmail, 1), [] as RoutineReport[]),
     runChecks().catch(() => [] as Check[]),
-    connected.cal() ? safe('Cal.com', src.calBookings('upcoming', 10), [] as src.CalBooking[]) : Promise.resolve(null),
+    connected.cal() ? safe('Cal.com', src.calBookings('upcoming', 10), [] as CalBooking[]) : Promise.resolve(null),
   ]);
   const leads = contacts.results.filter((c) => !isTest(c.properties.email));
   const inRange = (a: number, b: number) => leads.filter((c) => ts(c.properties.createdate) >= a && ts(c.properties.createdate) < b).length;
@@ -74,7 +76,7 @@ export async function todayData(lastVisit: number) {
 export async function leadsData(opts: { q?: string; source?: string; stage?: string; range: number }) {
   if (demoOn()) return demo.leads(opts) as never;
   const { errors, safe } = collector();
-  const since = opts.range ? Date.now() - opts.range * DAY : undefined;
+  const since = opts.range ? nowish() - opts.range * DAY : undefined;
   const contacts = await safe('Leads', src.searchContacts({ since: opts.q ? undefined : since, query: opts.q, limit: 100 }), EMPTY);
   const people = contacts.results.filter((c) => opts.q || !isTest(c.properties.email));
   const deals = await safe('Deals', src.dealsForContacts(people.map((c) => c.id)), {} as Awaited<ReturnType<typeof src.dealsForContacts>>);
@@ -102,7 +104,7 @@ export async function personData(id: string) {
   const p = contact.properties;
   const email = p.email && !p.email.endsWith('@naunas.co.uk') ? p.email : '';
   const [notes, deals, sub, bookings, charges] = await Promise.all([
-    safe('Notes', notesForContact(id), []),
+    safe('Notes', src.notesForContact(id), []),
     safe('Deal', src.dealsForContacts([id]), {} as Awaited<ReturnType<typeof src.dealsForContacts>>),
     email ? safe('MailerLite', src.mlSubscriber(email), null) : Promise.resolve(null),
     email && connected.cal() ? safe('Cal.com', Promise.all([src.calBookings('upcoming', 10, email), src.calBookings('past', 10, email)]).then(([a, b]) => [...a, ...b]), []) : Promise.resolve([]),
@@ -132,14 +134,14 @@ export async function personData(id: string) {
 }
 
 // ---------------------------------------------------------------- Pipeline
-export async function pipelineData() {
+export async function pipelineData(days = 90) {
   if (demoOn()) return demo.pipeline() as never;
   const { errors, safe } = collector();
-  const now = Date.now();
+  const now = nowish();
   const [open, closed, created] = await Promise.all([
     safe('Open deals', src.openDeals(), EMPTY),
-    safe('Closed deals', src.closedDeals(now - 90 * DAY), EMPTY),
-    safe('New deals', src.dealsCreatedSince(now - 90 * DAY), EMPTY),
+    safe('Closed deals', src.closedDeals(now - days * DAY), EMPTY),
+    safe('New deals', src.dealsCreatedSince(now - days * DAY), EMPTY),
   ]);
   const stages = OPEN_STAGES.map(([id, label]) => {
     const deals = open.results.filter((d) => d.properties.dealstage === id).map((d) => ({
@@ -164,7 +166,7 @@ export async function pipelineData() {
     errors, stages,
     totals: { open: open.total, value: stages.reduce((s, st) => s + st.value, 0), stale: stages.flatMap((s) => s.deals).filter((d) => d.idle >= 7).length },
     conversion: [
-      { label: 'New deals (90d)', value: created.total },
+      { label: `New deals (${days}d)`, value: created.total },
       { label: 'Reached audit booked', value: reached(STAGE.auditBooked) },
       { label: 'Reached audit done', value: reached(STAGE.auditDone) },
       { label: 'Reached scope sent', value: reached(STAGE.scopeSent) },
@@ -186,12 +188,12 @@ export async function callsData() {
     return { errors, connected: false as const, booked: open.results.filter((d) => d.properties.dealstage === STAGE.auditBooked).map((d) => ({ id: d.id, name: d.properties.dealname ?? '' })) };
   }
   const [upcoming, past, cancelled] = await Promise.all([
-    safe('Upcoming', src.calBookings('upcoming', 30), [] as src.CalBooking[]),
-    safe('Past', src.calBookings('past', 50), [] as src.CalBooking[]),
-    safe('Cancelled', src.calBookings('cancelled', 50), [] as src.CalBooking[]),
+    safe('Upcoming', src.calBookings('upcoming', 30), [] as CalBooking[]),
+    safe('Past', src.calBookings('past', 50), [] as CalBooking[]),
+    safe('Cancelled', src.calBookings('cancelled', 50), [] as CalBooking[]),
   ]);
   const held = past.filter((b) => !b.attendees.some((a) => a.absent));
-  const recent = (xs: src.CalBooking[]) => xs.filter((b) => ts(b.start) > Date.now() - 90 * DAY);
+  const recent = (xs: CalBooking[]) => xs.filter((b) => ts(b.start) > nowish() - 90 * DAY);
   return {
     errors, connected: true as const, upcoming, past: past.slice(0, 20),
     stats: {
@@ -227,37 +229,39 @@ export async function emailData() {
 }
 
 // ---------------------------------------------------------------- Instagram
-export async function instagramData() {
+export async function instagramData(days = 30) {
   if (demoOn()) return demo.instagram() as never;
   const { errors, safe } = collector();
   const ok = connected.instagram();
-  const [profile, media, campaigns, stats, igLeads] = await Promise.all([
+  const since = days ? nowish() - days * DAY : undefined;
+  const [profile, media, campaigns, stats, igLeads, insights] = await Promise.all([
     ok ? safe('Instagram profile', src.igProfileStats(), null) : Promise.resolve(null),
-    ok ? safe('Instagram posts', src.igRecentMedia(12), [] as src.IgMedia[]) : Promise.resolve([] as src.IgMedia[]),
+    ok ? safe('Instagram posts', src.igRecentMedia(25), [] as IgMedia[]) : Promise.resolve([] as IgMedia[]),
     getCampaigns(), getStats(),
-    safe('Instagram leads', crmSearch('contacts', [{ propertyName: 'instagram_campaign', operator: 'HAS_PROPERTY' }], ['instagram_campaign', 'instagram_post', 'num_associated_deals']), EMPTY),
+    safe('Instagram leads', src.instagramLeads(since), EMPTY),
+    ok ? src.igInsights(Math.min(30, days || 30)).catch(() => null) : Promise.resolve(null),
   ]);
   const leadsByPost = tally(igLeads.results.map((c) => c.properties.instagram_post ?? '').filter(Boolean));
   const leadsByCampaign = tally(igLeads.results.map((c) => c.properties.instagram_campaign ?? ''));
   const dealsByCampaign = tally(igLeads.results.filter((c) => num(c.properties.num_associated_deals) > 0).map((c) => c.properties.instagram_campaign ?? ''));
   return {
-    errors, connected: ok, profile,
-    posts: media.map((m) => ({ ...m, leads: leadsByPost[m.permalink] ?? 0 })),
+    errors, connected: ok, profile, insights, days,
+    posts: media.filter((m) => !since || ts(m.timestamp) >= since).map((m) => ({ ...m, leads: leadsByPost[m.permalink] ?? 0 })),
     campaigns: campaigns.map((c) => ({ ...c, stats: { ...(stats[c.id] ?? { comments: 0, dms: 0, clicks: 0 }), leads: leadsByCampaign[c.id] ?? 0, deals: dealsByCampaign[c.id] ?? 0 } })),
     totalLeads: igLeads.total,
   };
 }
 
 // ---------------------------------------------------------------- Money
-export async function moneyData() {
+export async function moneyData(monthsBack = 6) {
   if (demoOn()) return demo.money() as never;
   const { errors, safe } = collector();
   if (!connected.stripe()) {
-    const won = await safe('Won deals', src.searchDeals([STAGE.won], Date.now() - 180 * DAY), EMPTY);
+    const won = await safe('Won deals', src.searchDeals([STAGE.won], nowish() - 180 * DAY), EMPTY);
     return { errors, connected: false as const, wonMonth: won.results.filter((d) => ts(d.properties.closedate) >= monthStart()).reduce((s, d) => s + num(d.properties.amount), 0) };
   }
   const [charges, balance, invoices, subs, sessions] = await Promise.all([
-    safe('Charges', src.stripeCharges(180), [] as src.Charge[]),
+    safe('Charges', src.stripeCharges(monthsBack * 31), [] as Charge[]),
     safe('Balance', src.stripeBalance(), null),
     safe('Invoices', src.stripeOpenInvoices(), []),
     safe('Subscriptions', src.stripeSubscriptions(), []),
@@ -265,9 +269,9 @@ export async function moneyData() {
   ]);
   const dealByPi = new Map(sessions.filter((s) => s.payment_intent && s.client_reference_id).map((s) => [s.payment_intent!, s.client_reference_id!]));
   const paid = charges.filter((c) => c.paid && c.status === 'succeeded');
-  const net = (c: src.Charge) => (c.amount - c.amount_refunded) / 100;
-  const months = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (5 - i));
+  const net = (c: Charge) => (c.amount - c.amount_refunded) / 100;
+  const months = Array.from({ length: monthsBack }, (_, i) => {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (monthsBack - 1 - i));
     const start = monthStart(d); const end = monthStart(new Date(d.getFullYear(), d.getMonth() + 1, 1));
     return { label: d.toLocaleDateString('en-GB', { month: 'short' }), value: paid.filter((c) => c.created * 1000 >= start && c.created * 1000 < end).reduce((s, c) => s + net(c), 0) };
   });
@@ -277,7 +281,7 @@ export async function moneyData() {
     const perMonth = r.interval === 'year' ? amt / (12 * r.interval_count) : r.interval === 'week' ? amt * 4.33 / r.interval_count : amt / r.interval_count;
     return t + perMonth;
   }, 0), 0);
-  const thisMonth = months[5].value;
+  const thisMonth = months[months.length - 1].value;
   return {
     errors, connected: true as const,
     kpis: {
@@ -285,7 +289,7 @@ export async function moneyData() {
       available: (balance?.available ?? []).reduce((s, b) => s + b.amount / 100, 0), pending: (balance?.pending ?? []).reduce((s, b) => s + b.amount / 100, 0),
       outstanding: invoices.reduce((s, i) => s + i.amount_due / 100, 0),
     },
-    months,
+    months, monthsBack,
     payments: charges.slice(0, 25).map((c) => ({
       id: c.id, at: new Date(c.created * 1000).toISOString(), amount: c.amount / 100, currency: c.currency, who: c.billing_details.name ?? c.billing_details.email ?? 'Unknown',
       status: c.disputed ? 'disputed' : c.refunded ? 'refunded' : c.amount_refunded ? 'part-refunded' : c.paid ? 'paid' : 'failed',
@@ -301,7 +305,7 @@ export async function automationsData(kind?: string) {
   if (demoOn()) return demo.automations(kind) as never;
   const { errors, safe } = collector();
   const [reports, autos, events, health] = await Promise.all([
-    safe('Routine', routineReports<RoutineReport>(FUNNEL.routine.logEmail, 10), [] as RoutineReport[]),
+    safe('Routine', reportsFor(FUNNEL.routine.logEmail, 10), [] as RoutineReport[]),
     safe('MailerLite', src.mlAutomations(), []),
     safe('Activity', listEvents(500), [] as OpsEvent[]),
     getJSON<{ at?: string; ok?: boolean }>('meta/health.json', {}),
@@ -348,7 +352,7 @@ export async function contentData() {
   if (demoOn()) return demo.content() as never;
   const { errors, safe } = collector();
   const [reports, ig] = await Promise.all([
-    safe('Routine', routineReports<RoutineReport>(FUNNEL.routine.logEmail, 10), [] as RoutineReport[]),
+    safe('Routine', reportsFor(FUNNEL.routine.logEmail, 10), [] as RoutineReport[]),
     instagramData(),
   ]);
   return {

@@ -3,6 +3,8 @@ import { STAGE } from '@/lib/hubspot';
 // Shared bits for the /dashboard data layer.
 
 export const DAY = 86_400_000;
+/** Now, rounded down to 2 minutes, so time-window queries share cache keys. */
+export const nowish = () => Math.floor(Date.now() / 120_000) * 120_000;
 export const num = (v?: string | number | null) => Number(v ?? 0) || 0;
 export const ts = (v?: string | null) => Date.parse(v ?? '') || 0;
 export const tally = (xs: string[]) => xs.reduce<Record<string, number>>((a, x) => ({ ...a, [x]: (a[x] ?? 0) + 1 }), {});

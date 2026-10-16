@@ -1,7 +1,7 @@
 import { moneyData } from '@/lib/ops/tabs';
 import { hubspotUrl } from '@/lib/hubspot';
 import { PageHeader, Errors, Badge, Card, Kpi, Empty, gbp, compactGbp, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, ConnectCard, Meter, when } from '@/components/dashboard/kit';
+import { SectionTitle, ConnectCard, Meter, when, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +10,11 @@ const STATUS: Record<string, { label: string; tone: 'good' | 'bad' | 'neutral' |
   'part-refunded': { label: 'Part refunded', tone: 'neutral' }, disputed: { label: 'Disputed', tone: 'bad' },
 };
 
-export default async function Money() {
-  const d = await moneyData();
+const RANGES = [['3', '3 months'], ['6', '6 months'], ['12', '12 months']] as const;
+
+export default async function Money({ searchParams }: { searchParams: Promise<{ months?: string }> }) {
+  const months = (await searchParams).months ?? '6';
+  const d = await moneyData(Number(months) || 6);
 
   if (!d.connected) {
     return (
@@ -37,12 +40,15 @@ export default async function Money() {
   }
 
   const k = d.kpis;
+  const range = <RangeChips path="/dashboard/money" param="months" value={months} options={RANGES} />;
   const top = Math.max(1, k.goal, ...d.months.map((m) => m.value));
   return (
     <>
       <PageHeader title="Money" sub="Payments, retainers, outstanding invoices and revenue by month."
         action={<a href="https://dashboard.stripe.com/payments" {...linkProps} className="text-sm rounded-full border border-white/10 px-4 py-2 text-white/70 hover:text-white hover:border-white/25">Open Stripe ↗</a>} />
       <Errors errors={d.errors} />
+      <SectionError errors={errFor(d.errors, 'Balance', 'Subscriptions')} />
+      {range}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         <Kpi label="Paid this month" value={compactGbp(k.thisMonth)} foot={<span className="text-xs text-white/40">{Math.round((k.thisMonth / k.goal) * 100)}% of {compactGbp(k.goal)}</span>} />
@@ -66,6 +72,7 @@ export default async function Money() {
       <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
         <div className="lg:col-span-2 flex flex-col gap-3 min-w-0">
           <SectionTitle>Payments</SectionTitle>
+          <SectionError errors={errFor(d.errors, 'Charges', 'Checkout')} />
           <Card pad={false}>
             {d.payments.length ? (
               <div className="overflow-x-auto">
@@ -83,11 +90,12 @@ export default async function Money() {
                   </tbody>
                 </table>
               </div>
-            ) : <Empty>No payments in the last 6 months.</Empty>}
+            ) : <Empty>No payments in this period.</Empty>}
           </Card>
         </div>
         <div className="flex flex-col gap-3 min-w-0">
           <SectionTitle>Open invoices</SectionTitle>
+          <SectionError errors={errFor(d.errors, 'Invoices')} />
           <Card>
             {d.invoices.length ? (
               <ul className="flex flex-col divide-y divide-white/[0.05] -my-2">

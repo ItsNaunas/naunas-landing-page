@@ -1,7 +1,7 @@
 import { automationsData } from '@/lib/ops/tabs';
 import { FUNNEL } from '@/config/funnel';
 import { PageHeader, Errors, Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, Feed, Chips, EVENT_META, when } from '@/components/dashboard/kit';
+import { SectionTitle, Feed, Chips, EVENT_META, when, SectionError, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +27,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
 
       <div className="grid md:grid-cols-2 gap-3 md:gap-4">
         <Card title="Claude funnel operator" action={<a href={FUNNEL.routine.url} {...linkProps} className="text-xs text-white/40 hover:text-white">Open ↗</a>}>
+          <SectionError errors={errFor(d.errors, 'Routine')} />
           <div className="flex items-center gap-2 mb-3">
             <Badge tone={stale ? 'bad' : 'good'}>{stale ? 'No run in 26h' : 'Running'}</Badge>
             <span className="text-xs text-white/40">{last ? `last run ${ago(last.runAt)}` : 'no runs logged yet'} · daily 13:00 Zanzibar</span>
@@ -41,6 +42,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
         </Card>
 
         <Card title="Email sequences (MailerLite)" action={<a href="https://dashboard.mailerlite.com/automations" {...linkProps} className="text-xs text-white/40 hover:text-white">Open ↗</a>}>
+          <SectionError errors={errFor(d.errors, 'MailerLite')} />
           <ul className="flex flex-col divide-y divide-white/[0.05] -my-2">
             {d.mailerlite.map((a) => (
               <li key={a.name} className="py-2.5 flex items-center justify-between gap-3 text-[13px]">
@@ -106,7 +108,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
         { label: 'Everything', href: '/dashboard/automations' },
         ...Object.entries(d.kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: EVENT_META[k]?.label ?? k, href: `/dashboard/automations?kind=${k}`, count: n })),
       ]} />
-      <Card>{d.feed.length ? <Feed events={d.feed} /> : <Empty>No activity yet.</Empty>}</Card>
+      <Card><SectionError errors={errFor(d.errors, 'Activity')} />{d.feed.length ? <Feed events={d.feed} /> : <Empty>No activity yet.</Empty>}</Card>
     </>
   );
 }

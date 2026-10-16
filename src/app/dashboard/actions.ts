@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, updateTag } from 'next/cache';
 import { DASH_COOKIE, DASH_MAX_AGE, passwordMatches, sessionToken, validSession } from '@/lib/dashAuth';
 import { storeReady } from '@/lib/store';
 import { getCampaigns, saveCampaigns, slugify, DEFAULT_CAMPAIGN, type Campaign, type Channel } from '@/lib/campaigns';
@@ -79,4 +79,10 @@ export async function deleteCampaign(form: FormData) {
   if (id === DEFAULT_CAMPAIGN.id) return; // the default can be edited or paused, not removed
   await saveCampaigns((await getCampaigns()).filter((c) => c.id !== id));
   revalidatePath('/dashboard', 'layout');
+}
+
+/** Dashboard Refresh button: drop the cached API data so the next render fetches fresh. */
+export async function refreshOps() {
+  await requireSession();
+  updateTag('ops');
 }

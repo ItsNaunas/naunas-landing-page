@@ -4,7 +4,7 @@ import { demoOn } from '@/lib/ops/demo';
 import { DEFAULT_CAMPAIGN } from '@/lib/campaigns';
 import { FUNNEL } from '@/config/funnel';
 import { PageHeader, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, ConnectCard } from '@/components/dashboard/kit';
+import { SectionTitle, ConnectCard, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
 import { toggleCampaign, deleteCampaign } from '../../actions';
 import { CampaignEditor } from './CampaignEditor';
 
@@ -13,8 +13,12 @@ export const dynamic = 'force-dynamic';
 const rate = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '—');
 const TYPE: Record<string, string> = { VIDEO: 'Reel', CAROUSEL_ALBUM: 'Carousel', IMAGE: 'Post' };
 
-export default async function Instagram() {
-  const d = await instagramData();
+const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['0', 'All time']] as const;
+
+export default async function Instagram({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
+  const range = (await searchParams).range ?? '30';
+  const d = await instagramData(Number(range));
+  const span = RANGES.find(([v]) => v === range)?.[1] ?? 'All time';
   const ready = storeReady() || demoOn();
   const t = d.campaigns.reduce((s, c) => ({ triggers: s.triggers + c.stats.comments, dms: s.dms + c.stats.dms, clicks: s.clicks + c.stats.clicks }), { triggers: 0, dms: 0, clicks: 0 });
 
@@ -24,16 +28,20 @@ export default async function Instagram() {
         sub={d.profile ? `@${d.profile.username} · keyword campaigns and which posts bring leads` : 'Keyword campaigns and which posts bring leads'}
         action={<CampaignEditor site={FUNNEL.site} disabled={!ready} />} />
       <Errors errors={d.errors} />
+      <RangeChips path="/dashboard/instagram" param="range" value={range} options={RANGES} />
       {!d.connected && <ConnectCard title="Connect Instagram" why="Needed for keyword DMs and post stats." steps={['Follow RUNBOOK §8 (Meta app, Instagram API with Instagram Login)']} env="IG_ACCESS_TOKEN" />}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Followers" value={d.profile?.followers_count?.toLocaleString('en-GB') ?? '—'} foot={d.profile?.media_count ? <span className="text-xs text-white/40">{d.profile.media_count} posts</span> : undefined} />
+        <Kpi label="Followers" value={d.profile?.followers_count?.toLocaleString('en-GB') ?? '—'} foot={<span className="text-xs text-white/40">{d.insights ? `${(d.insights.reach ?? 0).toLocaleString('en-GB')} reach · ${(d.insights.profile_views ?? 0).toLocaleString('en-GB')} profile views (${Math.min(30, Number(range) || 30)}d)` : d.profile?.media_count ? `${d.profile.media_count} posts` : ''}</span>} />
         <Kpi label="Keyword triggers" value={t.triggers} foot={<span className="text-xs text-white/40">{t.dms} DMs sent</span>} />
         <Kpi label="Link clicks" value={t.clicks} foot={<span className="text-xs text-white/40">{rate(t.clicks, t.dms)} of DMs</span>} />
-        <Kpi label="Leads from Instagram" value={d.totalLeads} foot={<span className="text-xs text-white/40">tagged in HubSpot</span>} href="/dashboard/leads?source=instagram_dm&range=0" />
+        <Kpi label={`Leads from Instagram · ${span}`} value={d.totalLeads} foot={<span className="text-xs text-white/40">tagged in HubSpot</span>} href={`/dashboard/leads?source=instagram_dm&range=${range}`} />
       </div>
 
+      {d.connected && !d.insights && <p className="text-xs text-white/35 -mt-2">Reach and profile views appear here once the Meta app has the <code className="text-white/55">instagram_business_manage_insights</code> permission (then regenerate the token).</p>}
+
       <SectionTitle>Keyword campaigns</SectionTitle>
+      <SectionError errors={errFor(d.errors, 'Instagram leads')} />
       {!ready && <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-sm text-amber-200/90">Storage isn’t connected, so campaigns can’t be edited. The default Leak Map campaign still runs.</div>}
       <Card pad={false}>
         <div className="overflow-x-auto">
@@ -89,7 +97,8 @@ export default async function Instagram() {
         </div>
       </Card>
 
-      <SectionTitle>Recent posts</SectionTitle>
+      <SectionTitle>Posts · {span}</SectionTitle>
+      <SectionError errors={errFor(d.errors, 'Instagram posts', 'Instagram profile')} />
       {d.posts.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           {d.posts.map((p) => (
@@ -107,7 +116,7 @@ export default async function Instagram() {
             </a>
           ))}
         </div>
-      ) : <Card><Empty>No posts loaded yet.</Empty></Card>}
+      ) : <Card><Empty>No posts in this period.</Empty></Card>}
     </>
   );
 }

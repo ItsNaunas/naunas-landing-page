@@ -160,3 +160,27 @@ export function Meter({ value, max = 1, tone = 'accent' }: { value: number; max?
     </div>
   );
 }
+
+/** Errors from collector() whose label matches one of these sources. */
+export const errFor = (errors: string[], ...labels: string[]) => errors.filter((e) => labels.some((l) => e.startsWith(`${l}:`)));
+
+/** Inline error inside the section that failed (the rest of the page still renders). */
+export function SectionError({ errors }: { errors: string[] }) {
+  if (!errors.length) return null;
+  return (
+    <div className="rounded-lg border border-rose-400/20 bg-rose-400/[0.07] px-3 py-2 text-xs text-rose-200/90" role="status">
+      Couldn’t load {[...new Set(errors.map((e) => e.split(':')[0]))].join(', ')} right now. Try Refresh; if it persists, check System.
+    </div>
+  );
+}
+
+/** Date-range chips that keep the page's other query params. */
+export function RangeChips({ path, param, value, options, keep = {} }: {
+  path: string; param: string; value: string; options: readonly (readonly [string, string])[]; keep?: Record<string, string | undefined>;
+}) {
+  const href = (v: string) => {
+    const p = new URLSearchParams(Object.entries({ ...keep, [param]: v }).filter(([, x]) => x) as [string, string][]);
+    return `${path}?${p}`;
+  };
+  return <Chips active={href(value)} items={options.map(([v, l]) => ({ label: l, href: href(v) }))} />;
+}

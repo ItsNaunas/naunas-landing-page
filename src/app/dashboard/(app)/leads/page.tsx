@@ -3,7 +3,7 @@ import { SOURCE_LABEL, STAGE_LABEL, OPEN_STAGES } from '@/lib/ops/common';
 import { hubspotUrl } from '@/lib/hubspot';
 import { FUNNEL } from '@/config/funnel';
 import { PageHeader, Card, Badge, Empty, Errors, gbp, ago, linkProps } from '@/components/dashboard/ui';
-import { Chips, Drawer, Field, when } from '@/components/dashboard/kit';
+import { Chips, Drawer, Field, when, SectionError, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +30,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
   return (
     <>
       <PageHeader title="Leads" sub={sp.q ? `Results for “${sp.q}”` : 'Everyone who has come into the funnel. Click a person for their full story across every tool.'} />
-      <Errors errors={[...list.errors, ...(detail?.errors ?? [])]} />
+      <Errors errors={list.errors} />
 
       <div className="flex flex-col gap-3">
         {!sp.q && <Chips active={qs({})} items={RANGES.map(([v, l]) => ({ label: l, href: qs({ range: v }) }))} />}
@@ -48,6 +48,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
         ]} />
       </div>
 
+      <SectionError errors={errFor(list.errors, 'Leads', 'Deals')} />
       <Card pad={false}>
         {list.rows.length ? (
           <div className="overflow-x-auto">
@@ -101,6 +102,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
             </div>
           }
         >
+          <SectionError errors={detail?.errors ?? []} />
           <div className="flex flex-wrap gap-1.5">
             {p.priority && PRIORITY[p.priority] && <Badge tone={PRIORITY[p.priority].tone}>{PRIORITY[p.priority].label}</Badge>}
             {p.source && <Badge>{SOURCE_LABEL[p.source] ?? p.source}</Badge>}

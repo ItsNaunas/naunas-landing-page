@@ -3,6 +3,7 @@
 // /dashboard (Today + Automations). Never throws and never blocks the request that logged it.
 // Holds names and record links only: emails and message text stay in HubSpot.
 
+import { revalidateTag } from 'next/cache';
 import { getJSON, updateJSON, storeReady } from '@/lib/store';
 
 export type EventKind =
@@ -19,6 +20,8 @@ export async function logEvent(kind: EventKind, title: string, href?: string): P
   try {
     const ev: OpsEvent = { at: new Date().toISOString(), kind, title: title.slice(0, 160), ...(href ? { href } : {}) };
     await updateJSON<OpsEvent[]>(PATH, [], (list) => [ev, ...list].slice(0, KEEP));
+    // Something happened: the dashboard's 2-minute cache (tag "ops") is now out of date.
+    try { revalidateTag('ops', { expire: 0 }); } catch { /* not in a request context */ }
   } catch (err) {
     console.warn('[events] log failed', kind, err instanceof Error ? err.message : err);
   }

@@ -80,12 +80,17 @@ export function Empty({ children }: { children: React.ReactNode }) {
   return <div className="flex-1 grid place-items-center text-center text-sm text-white/40 py-8 px-4">{children}</div>;
 }
 
+/** Page-level summary of failed sources; the affected sections show their own error too. */
 export function Errors({ errors }: { errors: string[] }) {
   if (!errors.length) return null;
+  const sources = [...new Set(errors.map((e) => e.split(':')[0]))];
   return (
-    <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-sm text-amber-200/90">
-      Some data couldn’t load: {errors.join(' · ')}
-    </div>
+    <details className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-sm text-amber-200/90">
+      <summary className="cursor-pointer">
+        Some data couldn’t load ({sources.join(', ')}). The rest of the page is live; affected sections are marked.
+      </summary>
+      <ul className="mt-2 flex flex-col gap-1 text-xs text-amber-100/70 break-words">{errors.map((e) => <li key={e}>{e}</li>)}</ul>
+    </details>
   );
 }
 

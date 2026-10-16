@@ -161,7 +161,7 @@ export const demo = {
     };
   },
   instagram: () => ({
-    errors: [] as string[], connected: true, profile: { username: 'naunas_builds', followers_count: 1840, media_count: 96 },
+    errors: [] as string[], connected: true, profile: { username: 'naunas_builds', followers_count: 1840, media_count: 96 }, insights: { reach: 12400, profile_views: 830, accounts_engaged: 610 }, days: 30,
     posts: [
       { id: 'm1', caption: 'Your enquiry form is a black hole. Comment LEAK.', media_type: 'VIDEO', permalink: 'https://www.instagram.com/reel/DEMO1/', timestamp: ago(30), like_count: 214, comments_count: 61, leads: 9 },
       { id: 'm2', caption: 'Your CRM isn’t the problem. Your follow-up is.', media_type: 'CAROUSEL_ALBUM', permalink: 'https://www.instagram.com/p/DEMO2/', timestamp: ago(80), like_count: 132, comments_count: 18, leads: 6 },

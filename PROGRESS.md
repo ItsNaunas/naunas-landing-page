@@ -19,6 +19,12 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-16 (Ops v3 finish)
+- 2-minute read-through cache on every dashboard API call (src/lib/ops/cache.ts, unstable_cache tag "ops"); any logged event expires it (revalidateTag in lib/events), Refresh purges it (updateTag server action). Time windows rounded to 2 min (nowish) so keys repeat.
+- Range pickers: Pipeline (30/90/180/365d), Instagram (7/30/90/all; posts + leads), Money (3/6/12 months; Stripe charges paginated to 500). Email notes MailerLite totals are lifetime.
+- Per-section error states (SectionError/errFor) + collapsible page summary. Verified: with every source failing, all 10 pages still render.
+- Instagram reach/profile views via /me/insights when the Meta app has instagram_business_manage_insights; otherwise a hint.
+
 ### 2026-10-16 (Naunas Ops v3)
 - /dashboard rebuilt around usability: grouped sidebar (Run the day: Today, Leads, Pipeline, Calls · Channels: Instagram, Email, Content · Business: Money, Automations, System), mobile bottom tabs + More sheet, global people search (Ctrl K or /), refresh button, loading skeletons.
 - Today: action queue (calls, routine needs-you, payment issues, failing checks, deals quiet 7d+), "since you last looked" (cookie), KPIs, goal ring, live activity, upcoming calls in both time zones.

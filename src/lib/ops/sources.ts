@@ -115,8 +115,18 @@ export type Charge = {
   id: string; amount: number; amount_refunded: number; currency: string; status: string; paid: boolean; refunded: boolean; disputed: boolean;
   created: number; payment_intent?: string; description?: string; receipt_url?: string; billing_details: { name?: string; email?: string };
 };
-export const stripeCharges = (sinceDays = 180) =>
-  stripe<{ data: Charge[] }>(`/charges?limit=100&created[gte]=${Math.floor((Date.now() - sinceDays * DAY) / 1000)}`).then((r) => r.data);
+export async function stripeCharges(sinceDays = 180): Promise<Charge[]> {
+  const gte = Math.floor((Date.now() - sinceDays * DAY) / 1000);
+  const out: Charge[] = [];
+  let after = '';
+  for (let page = 0; page < 5; page++) {
+    const r = await stripe<{ data: Charge[]; has_more: boolean }>(`/charges?limit=100&created[gte]=${gte}${after ? `&starting_after=${after}` : ''}`);
+    out.push(...r.data);
+    if (!r.has_more || !r.data.length) break;
+    after = r.data[r.data.length - 1].id;
+  }
+  return out;
+}
 export const stripeChargesFor = (email: string) =>
   stripe<{ data: Charge[] }>(`/charges/search?limit=20&query=${encodeURIComponent(`billing_details.email:"${email.replace(/"/g, '')}"`)}`).then((r) => r.data);
 export const stripeBalance = () => stripe<{ available: { amount: number; currency: string }[]; pending: { amount: number; currency: string }[] }>('/balance');
@@ -126,3 +136,29 @@ export const stripeSubscriptions = () =>
   stripe<{ data: { id: string; customer: string; items: { data: { quantity?: number; price: { unit_amount?: number; currency: string; recurring?: { interval: string; interval_count: number } } }[] } }[] }>('/subscriptions?status=active&limit=100').then((r) => r.data);
 export const stripeSessions = () =>
   stripe<{ data: { payment_intent?: string; client_reference_id?: string }[] }>('/checkout/sessions?limit=100&status=complete').then((r) => r.data);
+
+/** Account reach, profile views and accounts engaged over the last `days` (max 30). Needs the
+ *  instagram_business_manage_insights permission; returns null when it isn't granted. */
+export async function igInsights(days = 28): Promise<Record<string, number> | null> {
+  const until = Math.floor(Date.now() / 1000);
+  const since = until - Math.min(30, days) * 86_400;
+  try {
+    const r = await ig<{ data: { name: string; total_value?: { value: number } }[] }>(
+      `/me/insights?metric=reach,profile_views,accounts_engaged&period=day&metric_type=total_value&since=${since}&until=${until}`);
+    return Object.fromEntries(r.data.map((m) => [m.name, m.total_value?.value ?? 0]));
+  } catch {
+    return null;
+  }
+}
+
+/** Contacts that came through an Instagram keyword campaign (optionally only those created since). */
+export const instagramLeads = (since?: number) => hs<Search>('/crm/v3/objects/contacts/search', {
+  method: 'POST',
+  body: JSON.stringify({
+    filterGroups: [{ filters: [
+      { propertyName: 'instagram_campaign', operator: 'HAS_PROPERTY' },
+      ...(since ? [{ propertyName: 'createdate', operator: 'GTE', value: String(since) }] : []),
+    ] }],
+    properties: ['instagram_campaign', 'instagram_post', 'num_associated_deals', 'createdate'], limit: 200,
+  }),
+});

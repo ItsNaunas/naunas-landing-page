@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { todayData } from '@/lib/ops/tabs';
 import { Card, Kpi, Delta, Badge, Empty, Errors, compactGbp, gbp, linkProps } from '@/components/dashboard/ui';
-import { Feed, EVENT_META, SectionTitle, when, untilOrAgo, OWNER_TZ } from '@/components/dashboard/kit';
+import { Feed, EVENT_META, SectionTitle, when, untilOrAgo, OWNER_TZ, SectionError, errFor } from '@/components/dashboard/kit';
 import { Sparkline, Ring } from '@/components/dashboard/charts';
 import { MarkSeen } from '@/components/dashboard/client';
 
@@ -54,8 +54,11 @@ export default async function Today() {
         <Kpi label="Open pipeline" value={compactGbp(k.openValue)} foot={<span className="text-xs text-white/40">{k.openCount} open deal{k.openCount === 1 ? '' : 's'}</span>} href="/dashboard/pipeline" />
       </div>
 
+      <SectionError errors={errFor(d.errors, 'Leads', 'Won deals')} />
+
       <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
         <Card title="Your queue" className="lg:col-span-2" action={d.actions.length ? <Badge tone="accent">{d.actions.length}</Badge> : undefined} pad={false}>
+          <div className="px-5"><SectionError errors={errFor(d.errors, 'Pipeline', 'Routine', 'Cal.com')} /></div>
           {d.actions.length ? (
             <ul className="divide-y divide-white/[0.05]">
               {d.actions.map((a, i) => {
@@ -109,7 +112,7 @@ export default async function Today() {
       <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
         <div className="lg:col-span-2 flex flex-col gap-3 min-w-0">
           <SectionTitle action={<a href="/dashboard/automations" className="text-xs text-white/40 hover:text-white">All activity →</a>}>Live activity</SectionTitle>
-          <Card><Feed events={d.feed} /></Card>
+          <Card><SectionError errors={errFor(d.errors, 'Activity')} /><Feed events={d.feed} /></Card>
         </div>
         <div className="flex flex-col gap-3 min-w-0">
           <SectionTitle action={<a href="/dashboard/calls" className="text-xs text-white/40 hover:text-white">Calls →</a>}>Coming up</SectionTitle>
