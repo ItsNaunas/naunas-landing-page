@@ -44,6 +44,7 @@ export function Footer({ onAuditClick }: FooterProps) {
               { l: 'Free audit', href: '/audit?src=footer' },
               { l: 'FAQ', href: '/#faq' },
               { l: 'Privacy', href: '/privacy' },
+              { l: 'Terms', href: '/terms' },
             ].map(({ l, href }) => (
               <a
                 key={l}
