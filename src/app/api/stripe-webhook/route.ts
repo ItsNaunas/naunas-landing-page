@@ -5,6 +5,7 @@ import { onboardingEmail } from '@/lib/emails';
 import { markDealWon, openDealForEmail, addNote, hubspotUrl } from '@/lib/hubspot';
 import { notify, line, alertError, type Button } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
+import { logEvent, type EventKind } from '@/lib/events';
 
 // Stripe webhook, signed with STRIPE_WEBHOOK_SECRET. The single place Stripe events land (replaces the n8n
 // "Stripe Alerts to Email" workflow). Every event does two things:
@@ -64,6 +65,7 @@ export async function POST(req: NextRequest) {
   const event = JSON.parse(raw) as { type?: string; data?: { object?: unknown } };
   const type = event.type ?? '';
   const obj = event.data?.object;
+  await logStripe(type, obj as Record<string, unknown> | undefined);
 
   switch (type) {
     case 'checkout.session.completed':
@@ -141,6 +143,29 @@ export async function POST(req: NextRequest) {
 }
 
 /** Deposit paid via Checkout: HubSpot deal → Won, onboarding email, note, Telegram, vault email. */
+// Activity feed line for every money event we handle (details stay in Stripe + HubSpot).
+const STRIPE_FEED: Record<string, [EventKind, string]> = {
+  'checkout.session.completed': ['payment', 'Payment received'],
+  'checkout.session.async_payment_succeeded': ['payment', 'Bank payment cleared'],
+  'checkout.session.async_payment_failed': ['payment_issue', 'Bank payment failed'],
+  'checkout.session.expired': ['payment_issue', 'Checkout abandoned'],
+  'payment_intent.payment_failed': ['payment_issue', 'Card declined'],
+  'invoice.paid': ['payment', 'Invoice paid'],
+  'invoice.payment_failed': ['payment_issue', 'Invoice payment failed'],
+  'customer.subscription.deleted': ['payment_issue', 'Subscription cancelled'],
+  'charge.dispute.created': ['payment_issue', 'Chargeback opened'],
+  'charge.refunded': ['refund', 'Refund sent'],
+};
+
+async function logStripe(type: string, o?: Record<string, unknown>) {
+  const feed = STRIPE_FEED[type];
+  if (!feed || !o) return;
+  if (type === 'checkout.session.completed' && o.payment_status !== 'paid') return;
+  const cents = [o.amount_total, o.amount_paid, o.amount_due, o.amount_refunded, o.amount].find((v) => typeof v === 'number') as number | undefined;
+  const who = (o.customer_details as { name?: string } | undefined)?.name ?? (o.customer_name as string | undefined);
+  await logEvent(feed[0], `${feed[1]}${cents !== undefined ? ` · ${money(cents, (o.currency as string) ?? 'gbp')}` : ''}${who ? ` · ${who}` : ''}`);
+}
+
 async function deposit(type: string, s: Session) {
   if (!s || s.payment_status !== 'paid') return NextResponse.json({ ignored: 'not paid yet' });
   const email = s.customer_details?.email ?? undefined;

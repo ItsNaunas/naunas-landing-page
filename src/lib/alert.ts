@@ -75,6 +75,7 @@ export async function notify(m: AlertMessage): Promise<void> {
  */
 export async function alertError(where: string, err: unknown, impact = 'The visitor’s request still went through. Only this step failed.'): Promise<void> {
   console.error(`[${where}]`, err);
+  await import('@/lib/events').then((m) => m.logEvent('alert', `Problem: ${where}`)).catch(() => {});
   const detail = (err instanceof Error ? err.message : String(err)).slice(0, 400);
   const [area, step] = where.split(/:\s*/, 2);
   await notify({

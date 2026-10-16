@@ -5,6 +5,7 @@ import { CAL_URL, isQualified, priorityOf } from '@/lib/booking';
 import { upsertContact, ensureDeal, addNote, inferLeadSource, splitName, STAGE, hubspotUrl, linkCompany } from '@/lib/hubspot';
 import { addToGroup, ENQUIRED_GROUP } from '@/lib/mailerlite';
 import { notify, line, alertError } from '@/lib/alert';
+import { logEvent } from '@/lib/events';
 import type { Attribution } from '@/lib/attribution';
 
 // The free-audit questionnaire (and the contact section). No database: the answers are emailed to
@@ -115,6 +116,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       await alertError('Enquiry: HubSpot', err, 'The lead got their reply and nudges, but is NOT in HubSpot yet.');
     }
+    await logEvent('enquiry', `${src === 'contact-section' ? 'Contact form' : 'Audit questionnaire'} · ${name}${business ? ` · ${business}` : ''}`, dealId ? hubspotUrl.deal(dealId) : contactId ? hubspotUrl.contact(contactId) : undefined);
     if (priorityOf(clientValue, revenue) !== 'high') return;
     const site = website ? (/^https?:\/\//.test(website) ? website : `https://${website.replace(/^@/, 'instagram.com/')}`) : undefined;
     await notify({

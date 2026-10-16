@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { addToGroup, NEWSLETTER_GROUP } from '@/lib/mailerlite';
 import { upsertContact, inferLeadSource } from '@/lib/hubspot';
 import { alertError } from '@/lib/alert';
+import { logEvent } from '@/lib/events';
 import type { Attribution } from '@/lib/attribution';
 
 // Footer newsletter sign-up. Explicit opt-in only (the checkbox is required). Joining the MailerLite
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   after(async () => {
+    await logEvent('subscribe', `Newsletter sign-up${name ? ` · ${name}` : ''}`);
     try {
       // HubSpot's "Lead source" dropdown has no Newsletter option yet, so these land as Other
       // (MailerLite keeps the exact source in signup_source).

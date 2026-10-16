@@ -19,7 +19,7 @@ function headers() {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' };
 }
 
-async function ml<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+export async function ml<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API}${path}`, { ...init, headers: { ...headers(), ...(init.headers ?? {}) } });
   if (!res.ok) throw new Error(`MailerLite ${init.method ?? 'GET'} ${path} → ${res.status}: ${await res.text()}`);
   return (res.status === 204 ? undefined : await res.json()) as T;

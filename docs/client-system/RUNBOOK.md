@@ -169,6 +169,8 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `IG_ACCESS_TOKEN`, `META_APP_SECRET`, `IG_VERIFY_TOKEN` | step 8 | Instagram only |
 | `BLOB_READ_WRITE_TOKEN` | step 8b (auto) | dashboard editing + stats |
 | `DASHBOARD_PASSWORD` | step 8b | dashboard |
+| `CAL_API_KEY` | Cal.com → Settings → Developer → API keys | dashboard Calls tab (optional) |
+| `STRIPE_READ_KEY` | Stripe restricted key, READ only: Charges, PaymentIntents, Checkout Sessions, Invoices, Subscriptions, Balance | dashboard Money tab (optional) |
 
 Secrets never go in the repo, in chat, or in `funnel.ts`. Redeploy after changing env vars.
 

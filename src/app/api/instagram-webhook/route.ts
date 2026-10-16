@@ -4,6 +4,7 @@ import { upsertInstagramContact, addNote, hubspotUrl } from '@/lib/hubspot';
 import { igProfile, privateReply, sendDm, igMedia } from '@/lib/instagram';
 import { getCampaigns, matchCampaign, renderMessage, bump } from '@/lib/campaigns';
 import { notify, line, alertError } from '@/lib/alert';
+import { logEvent } from '@/lib/events';
 
 // Instagram webhook (Meta app, "Instagram API with Instagram Login"; subscribed fields: comments, messages).
 //  - Comment containing a campaign keyword (lib/campaigns, edited on /dashboard; LEAK/MAP by default) →
@@ -59,6 +60,7 @@ async function onComment(accountId: string, v: Change['value']) {
     return;
   }
   const postUrl = await postUrlOf(v.media?.id);
+  await logEvent('ig_comment', `Comment ${campaign.keywords[0]} → ${campaign.name} · @${handle ?? v.from.id}`, postUrl);
   let contactUrl: string | undefined;
   if (handle) {
     try {
@@ -102,6 +104,7 @@ async function onMessage(accountId: string, m: Messaging) {
     if (!profile.username) return;
     const c = await upsertInstagramContact(profile.username, { name: profile.name, campaign: campaign?.id });
     if (!c.isNew && !campaign) return; // only the first DM (or a keyword) is news; the chat lives in Instagram
+    await logEvent('ig_dm', campaign ? `DM keyword → ${campaign.name} · @${profile.username}` : `New Instagram DM · @${profile.username}`, hubspotUrl.contact(c.id));
     if (text) await addNote(c.id, `<p>${campaign ? `DM'd keyword → sent the "${campaign.name.replace(/</g, '&lt;')}" reply.` : 'First Instagram DM:'}</p><blockquote>${text.replace(/</g, '&lt;')}</blockquote>`);
     await notify({
       level: 'lead',

@@ -5,6 +5,7 @@ import { getMailer, textToHtml } from '@/lib/mailer';
 import { upsertContact, inferLeadSource, splitName, hubspotUrl } from '@/lib/hubspot';
 import type { Attribution } from '@/lib/attribution';
 import { notify, line, alertError } from '@/lib/alert';
+import { logEvent } from '@/lib/events';
 import { FUNNEL } from '@/config/funnel';
 
 // Pop-up sign-up for the Leak Map. Adds the person to the MailerLite "Leak Map" group, which
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       await alertError('LeakMap: HubSpot', err, 'They got the Leak Map and the course, but are NOT in HubSpot yet.');
     }
+    await logEvent('lead', `Leak Map sign-up · ${name}${clientValue ? ` (${clientValue})` : ''}`, contactId ? hubspotUrl.contact(contactId) : undefined);
     if (clientValue !== '$25k-100k' && clientValue !== '$100k+') return;
     await notify({
       level: 'lead',

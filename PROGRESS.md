@@ -4,6 +4,7 @@
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [ ] Optional dashboard keys: `CAL_API_KEY` (Calls tab) and `STRIPE_READ_KEY` (Money tab, restricted read-only). Tabs show a Connect card until set.
 - [ ] Phase 5 setup (Naufal): Vercel → Storage → Blob (**private**) → connect to naunas-landing-page; set `DASHBOARD_PASSWORD` (Vercel + Bitwarden); redeploy. Until Blob is connected the health check flags "Blob store" and campaigns can't be edited (default LEAK campaign still works).
 - [ ] Verify phase 5 live: login, add an AUDIT test campaign, comment it from @nnfl.88, click /go link, check HubSpot instagram_campaign/instagram_post; first routine run report (ops-log@naunas.co.uk note) shows on the dashboard; Monday 19 Oct content drafts.
 - [x] **Instagram LIVE 2026-10-15**: comment LEAK from @nnfl.88 (test account) → DM sent + HubSpot contact 892579131614 (delete: test). Gotcha: the per-account "Webhook Subscription" toggle in API setup §2 must be On or Meta sends nothing. If real public commenters don't trigger, App Review for Advanced Access is next.
@@ -18,6 +19,13 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-16 (Naunas Ops v3)
+- /dashboard rebuilt around usability: grouped sidebar (Run the day: Today, Leads, Pipeline, Calls · Channels: Instagram, Email, Content · Business: Money, Automations, System), mobile bottom tabs + More sheet, global people search (Ctrl K or /), refresh button, loading skeletons.
+- Today: action queue (calls, routine needs-you, payment issues, failing checks, deals quiet 7d+), "since you last looked" (cookie), KPIs, goal ring, live activity, upcoming calls in both time zones.
+- Leads: filterable list (range/source/stage) with deal stage per person; person drawer = one timeline across HubSpot notes, MailerLite, Cal.com, Stripe + quick actions.
+- Pipeline: board with days-quiet badges, 90-day conversion, win rate by source, lost reasons. Email: per-automation and per-email open/click from MailerLite. Instagram: campaigns (moved from /campaigns) + recent posts with leads attributed. Money/Calls: Stripe/Cal read-only (Connect cards until keys). Automations: routine runs, ML automations, webhook/cron freshness, filterable activity log. System: checks + connected tools.
+- Activity feed: src/lib/events.ts (Blob events.json, last 500) logged from every form, webhook, /go click and alertError. Data layer split into src/lib/ops/{common,sources,tabs,demo}.ts; old src/lib/dashboard*.ts removed; /dashboard/{campaigns,routine,health} redirect.
+
 ### 2026-10-16 (dashboard redesign)
 - /dashboard rebuilt as an app: sidebar (tabs on mobile) + pages Overview (KPIs w/ week-on-week + sparkline, 30-day leads bars, goal ring, funnel, sources + lost reasons, needs-you, latest leads, last routine run), Pipeline (board), Campaigns (KPIs + table + slide-over editor with Instagram-style DM preview), Content, Routine (run history), Health. SVG charts server-rendered (src/components/dashboard/). Demo mode: DASHBOARD_DEMO=1 shows fictional sample data (design work + showing prospects); never set it in production.
 

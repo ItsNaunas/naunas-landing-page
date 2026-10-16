@@ -17,7 +17,7 @@ export type LeadSource =
   | 'audit_questionnaire' | 'leak_map_popup' | 'cold_email' | 'instagram_dm'
   | 'linkedin' | 'referral' | 'contact_form' | 'other';
 
-async function hs<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+export async function hs<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const token = process.env.HUBSPOT_TOKEN;
   if (!token) throw new Error('Missing HUBSPOT_TOKEN');
   const res = await fetch(`${API}${path}`, {
@@ -256,6 +256,25 @@ export async function upsertInstagramContact(
   return { id: created.id, isNew: true };
 }
 
+/** HubSpot note HTML → plain text. */
+export const noteText = (html: string) => html
+  .replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|li|h\d)>/gi, '\n').replace(/<[^>]+>/g, '')
+  .replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+  .replace(/\n{3,}/g, '\n\n').trim();
+
+/** All notes on a contact, newest first, as plain text. */
+export async function notesForContact(contactId: string): Promise<{ id: string; at: string; text: string }[]> {
+  const assoc = await hs<{ results: { toObjectId: number }[] }>(`/crm/v4/objects/contacts/${contactId}/associations/notes?limit=100`);
+  if (!assoc.results.length) return [];
+  const notes = await hs<{ results: { id: string; properties: { hs_note_body?: string; hs_timestamp?: string } }[] }>('/crm/v3/objects/notes/batch/read', {
+    method: 'POST',
+    body: JSON.stringify({ properties: ['hs_note_body', 'hs_timestamp'], inputs: assoc.results.map((a) => ({ id: String(a.toObjectId) })) }),
+  });
+  return notes.results
+    .map((n) => ({ id: n.id, at: n.properties.hs_timestamp ?? '', text: noteText(n.properties.hs_note_body ?? '') }))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+}
+
 /**
  * Routine run reports: the Claude routine logs each run as a note on an internal contact
  * (FUNNEL.routine.logEmail) whose body starts with "NAUNAS_ROUTINE_REPORT" followed by JSON.
@@ -268,24 +287,14 @@ export async function routineReports<T>(logEmail: string, take: number): Promise
   } catch {
     return []; // no run logged yet
   }
-  const assoc = await hs<{ results: { toObjectId: number }[] }>(`/crm/v4/objects/contacts/${contactId}/associations/notes?limit=100`);
-  if (!assoc.results.length) return [];
-  const notes = await hs<{ results: { properties: { hs_note_body?: string; hs_timestamp?: string } }[] }>('/crm/v3/objects/notes/batch/read', {
-    method: 'POST',
-    body: JSON.stringify({ properties: ['hs_note_body', 'hs_timestamp'], inputs: assoc.results.map((a) => ({ id: String(a.toObjectId) })) }),
-  });
-  const decode = (html: string) => html
-    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n').replace(/<[^>]+>/g, '')
-    .replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
-  return notes.results
-    .sort((a, b) => Date.parse(b.properties.hs_timestamp ?? '') - Date.parse(a.properties.hs_timestamp ?? ''))
+  return (await notesForContact(contactId))
     .flatMap((n) => {
-      const text = decode(n.properties.hs_note_body ?? '');
+      const text = n.text;
       const at = text.indexOf('NAUNAS_ROUTINE_REPORT');
       if (at < 0) return [];
       try {
         const json = text.slice(text.indexOf('{', at), text.lastIndexOf('}') + 1);
-        return [{ runAt: n.properties.hs_timestamp, ...JSON.parse(json) } as T];
+        return [{ runAt: n.at, ...JSON.parse(json) } as T];
       } catch {
         return [];
       }

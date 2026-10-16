@@ -4,7 +4,7 @@
 
 const GRAPH = 'https://graph.instagram.com/v23.0';
 
-async function ig<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function ig<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = process.env.IG_ACCESS_TOKEN;
   if (!token) throw new Error('Missing IG_ACCESS_TOKEN');
   const res = await fetch(`${GRAPH}${path}`, {

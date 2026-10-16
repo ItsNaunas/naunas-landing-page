@@ -8,6 +8,7 @@ import { preCallEmail, noShowEmail } from '@/lib/emails';
 import { preCallBrief } from '@/lib/brief';
 import { notify, line, alertError } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
+import { logEvent } from '@/lib/events';
 
 // The owner's time zone, for the call time in alerts.
 const OWNER_TZ = FUNNEL.ownerTz;
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
   if (trigger === 'BOOKING_NO_SHOW_UPDATED') {
     const mailer = getMailer();
     const absent = attendees.filter((a) => a.noShow);
+    for (const a of absent) await logEvent('noshow', `No-show · ${a.name ?? 'attendee'}`);
     for (const a of absent) {
       const firstName = a.name?.split(/\s+/)[0];
       if (mailer) {
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
 
   // Cancelled: leave the "Audit booked" group. Nothing else changes (the HubSpot deal stays put for Naufal).
   if (trigger === 'BOOKING_CANCELLED') {
+    await logEvent('cancel', `Call cancelled · ${attendees.map((a) => a.name ?? 'attendee').join(', ')}`);
     for (const a of attendees) {
       try { await removeFromGroup(a.email, BOOKED_GROUP); } catch (err) { await alertError('CalWebhook: MailerLite remove (booked)', err); }
     }
@@ -121,7 +124,10 @@ export async function POST(req: NextRequest) {
       }
     }
   }
-  if (trigger !== 'BOOKING_CREATED') return NextResponse.json({ success: true, rescheduled: attendees.length });
+  if (trigger !== 'BOOKING_CREATED') {
+    await logEvent('reschedule', `Call rescheduled · ${attendees.map((a) => a.name ?? 'attendee').join(', ')} → ${formatCallTime(event.payload?.startTime, OWNER_TZ) ?? ''}`);
+    return NextResponse.json({ success: true, rescheduled: attendees.length });
+  }
   // CRM: the booker's deal moves to "Audit booked" (created there if they skipped the questionnaire).
   const r = event.payload?.responses ?? {};
   const val = (k: string) => (typeof r[k]?.value === 'string' ? (r[k]!.value as string) : undefined);
@@ -190,5 +196,6 @@ export async function POST(req: NextRequest) {
       });
     }
   }
+  await logEvent('booking', `Audit booked · ${booker?.name ?? val('name') ?? 'someone'} · ${formatCallTime(event.payload?.startTime, OWNER_TZ) ?? ''}`);
   return NextResponse.json({ success: true, stopped: stopped.length });
 }

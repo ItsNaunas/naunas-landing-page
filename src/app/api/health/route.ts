@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runChecks } from '@/lib/health';
+import { putJSON } from '@/lib/store';
 import { notify, esc, alertError } from '@/lib/alert';
 import { weeklyScoreboard } from '@/lib/scoreboard';
 import { FUNNEL } from '@/config/funnel';
@@ -18,6 +19,8 @@ export async function GET(req: NextRequest) {
   }
 
   const checks = await runChecks();
+  // Last run, for the dashboard Automations tab.
+  await putJSON('meta/health.json', { at: new Date().toISOString(), ok: checks.every((c) => c.ok) }).catch(() => {});
 
   const failed = checks.filter((c) => !c.ok);
   const checklist = checks.map((c) => (c.ok ? `✓ ${esc(c.name)}` : `✗ <b>${esc(c.name)}</b>\n    <code>${esc(c.detail ?? 'failed')}</code>`));

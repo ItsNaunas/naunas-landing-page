@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
         permanent: false,
       })),
       // Retired builder-era pages (2026-10-11): send old links to the home page.
+      // Dashboard pages renamed in the v3 layout.
+      { source: '/dashboard/campaigns', destination: '/dashboard/instagram', permanent: false },
+      { source: '/dashboard/routine', destination: '/dashboard/automations', permanent: false },
+      { source: '/dashboard/health', destination: '/dashboard/system', permanent: false },
       ...['/managed', '/newsletter', '/kit'].map((p) => ({ source: p, destination: `/?utm_source=old-link&utm_medium=${p.slice(1)}`, permanent: true })),
     ];
   },
