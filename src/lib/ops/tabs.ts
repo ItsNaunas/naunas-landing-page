@@ -108,7 +108,9 @@ export async function personData(id: string) {
     safe('Deal', src.dealsForContacts([id]), {} as Awaited<ReturnType<typeof src.dealsForContacts>>),
     email ? safe('MailerLite', src.mlSubscriber(email), null) : Promise.resolve(null),
     email && connected.cal() ? safe('Cal.com', Promise.all([src.calBookings('upcoming', 10, email), src.calBookings('past', 10, email)]).then(([a, b]) => [...a, ...b]), []) : Promise.resolve([]),
-    email && connected.stripe() ? safe('Stripe', src.stripeChargesFor(email), []) : Promise.resolve([]),
+    email && connected.stripe()
+      ? safe('Stripe', src.stripeCharges(365).then((all) => all.filter((c) => [c.billing_details.email, c.receipt_email].some((e) => e?.toLowerCase() === email.toLowerCase()))), [])
+      : Promise.resolve([]),
   ]);
   const deal = deals[id];
   type Item = { at: string; kind: 'note' | 'booking' | 'payment' | 'created' | 'email'; title: string; body?: string };

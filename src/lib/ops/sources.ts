@@ -113,7 +113,7 @@ async function stripe<T>(path: string): Promise<T> {
 }
 export type Charge = {
   id: string; amount: number; amount_refunded: number; currency: string; status: string; paid: boolean; refunded: boolean; disputed: boolean;
-  created: number; payment_intent?: string; description?: string; receipt_url?: string; billing_details: { name?: string; email?: string };
+  created: number; payment_intent?: string; description?: string; receipt_url?: string; receipt_email?: string | null; billing_details: { name?: string; email?: string };
 };
 export async function stripeCharges(sinceDays = 180): Promise<Charge[]> {
   const gte = Math.floor((Date.now() - sinceDays * DAY) / 1000);
@@ -127,8 +127,6 @@ export async function stripeCharges(sinceDays = 180): Promise<Charge[]> {
   }
   return out;
 }
-export const stripeChargesFor = (email: string) =>
-  stripe<{ data: Charge[] }>(`/charges/search?limit=20&query=${encodeURIComponent(`billing_details.email:"${email.replace(/"/g, '')}"`)}`).then((r) => r.data);
 export const stripeBalance = () => stripe<{ available: { amount: number; currency: string }[]; pending: { amount: number; currency: string }[] }>('/balance');
 export const stripeOpenInvoices = () =>
   stripe<{ data: { id: string; number?: string; amount_due: number; currency: string; customer_name?: string; customer_email?: string; due_date?: number; hosted_invoice_url?: string }[] }>('/invoices?status=open&limit=20').then((r) => r.data);

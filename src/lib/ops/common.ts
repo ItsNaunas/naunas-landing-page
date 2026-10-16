@@ -38,6 +38,7 @@ export function collector() {
   const safe = <T,>(label: string, p: Promise<T>, fallback: T): Promise<T> =>
     p.catch((err) => {
       errors.push(`${label}: ${err instanceof Error ? err.message.slice(0, 140) : String(err)}`);
+      console.warn(`[dashboard] ${label} failed:`, err instanceof Error ? err.message.slice(0, 400) : err);
       return fallback;
     });
   return { errors, safe };

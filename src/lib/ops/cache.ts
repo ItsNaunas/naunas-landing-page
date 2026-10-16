@@ -32,7 +32,6 @@ export const src = {
   igInsights: c('igInsights', raw.igInsights),
   calBookings: c('calBookings', raw.calBookings),
   stripeCharges: c('stripeCharges', raw.stripeCharges),
-  stripeChargesFor: c('stripeChargesFor', raw.stripeChargesFor),
   stripeBalance: c('stripeBalance', raw.stripeBalance),
   stripeOpenInvoices: c('stripeOpenInvoices', raw.stripeOpenInvoices),
   stripeSubscriptions: c('stripeSubscriptions', raw.stripeSubscriptions),
