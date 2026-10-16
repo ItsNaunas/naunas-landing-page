@@ -18,6 +18,9 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-16 (dashboard redesign)
+- /dashboard rebuilt as an app: sidebar (tabs on mobile) + pages Overview (KPIs w/ week-on-week + sparkline, 30-day leads bars, goal ring, funnel, sources + lost reasons, needs-you, latest leads, last routine run), Pipeline (board), Campaigns (KPIs + table + slide-over editor with Instagram-style DM preview), Content, Routine (run history), Health. SVG charts server-rendered (src/components/dashboard/). Demo mode: DASHBOARD_DEMO=1 shows fictional sample data (design work + showing prospects); never set it in production.
+
 ### 2026-10-16 (phase 5: Naunas Ops dashboard + keyword campaigns)
 - `/dashboard` (password via DASHBOARD_PASSWORD; `src/proxy.ts` gate + page/server-action re-check; noindex + robots disallow): Today, This week, Goal (£5k/mo from vault goals.md, pipeline coverage 3×), Pipeline, Comment & DM campaigns (editor + stats), Content (top posts by leads, routine drafts), Routine runs, System health (shared `src/lib/health.ts`). Each HubSpot query fails independently and shows a warning.
 - Instagram keyword campaigns (`src/lib/campaigns.ts`, stored in Vercel Blob `campaigns.json`, counters in `stats/campaigns.json`): comment and/or DM keywords, optional post scope, end date, DM text with {link} → `/go/<id>` (counts click, adds utm). Default "leak-map" campaign lives in funnel.ts so LEAK works without Blob. HubSpot contact props `instagram_campaign`, `instagram_post` created. DM keyword replies are allowed (they messaged first).
