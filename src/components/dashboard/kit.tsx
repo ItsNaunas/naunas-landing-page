@@ -81,6 +81,7 @@ export const EVENT_META: Record<string, { icon: string; label: string; tone: Ton
   ig_dm: { icon: '◎', label: 'IG DM', tone: 'accent' },
   click: { icon: '↗', label: 'Link click', tone: 'neutral' },
   alert: { icon: '⚠', label: 'Alert', tone: 'bad' },
+  tiktok: { icon: '♪', label: 'TikTok', tone: 'accent' },
 };
 const TONE: Record<Tone, string> = {
   good: 'bg-emerald-400/15 text-emerald-300', bad: 'bg-rose-400/15 text-rose-300',

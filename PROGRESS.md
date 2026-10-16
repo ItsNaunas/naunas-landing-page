@@ -1,9 +1,10 @@
 # Project Status
 
-**Last updated**: 2026-10-16
+**Last updated**: 2026-10-17
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [ ] **TikTok**: app "Naunas" on developers.tiktok.com (sandbox keys in Vercel). Connect at /dashboard/tiktok, test-post privately, record the demo video (scripted, blurred, subtitled), then submit for review + Direct Post audit. Remove user.info.profile from the app (not requested) and keep the scopes in lib/tiktok.ts SCOPES identical to the app. Until audited, posts can only be SELF_ONLY.
 - [ ] Turn on IMAP in Zoho Mail (Settings → Mail Accounts → IMAP Access) — outreach sequences refuse to send without it (stop-on-reply safety).
 - [ ] Fathom webhook: Fathom → API Access → Manage → Add Webhook → https://www.naunas.co.uk/api/fathom-webhook (summary + action items) → put its whsec_ secret in Vercel as FATHOM_WEBHOOK_SECRET.
 - [ ] Outreach: run a first search, approve, review the routine's drafts next day, then flip Sending ON at /dashboard/outreach. Vault email engine finishes wave-1 E4s only (email-engine.md banner).
@@ -22,6 +23,10 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-17 (TikTok)
+- /terms page + footer/sitemap; TikTok URL-prefix verification file in public/.
+- /dashboard/tiktok: Login Kit connect (state cookie, callback at /api/tiktok/callback), tokens AES-GCM encrypted in Blob and auto-refreshed (daily health check keeps them alive), stats + recent videos, Direct Post composer following TikTok UX rules (creator_info, no default privacy, interaction toggles off, commercial disclosure, consent line). Video goes browser → private Blob (client upload) → server action → TikTok FILE_UPLOAD, then our copy is deleted.
+- Decided: TikTok has no comment/DM API for us; IG keeps keyword DMs, TikTok gets link-in-bio + optional ManyChat (comment trigger only in a few regions).
 ### 2026-10-16 (outreach moved into the site + lead profile)
 - /dashboard/outreach: Apify Google Maps search (compass/crawler-google-places, website-only + contact enrichment, per-run charge cap + monthly cap) → fit score 0-7 → approve/skip → routine JOB 6 drafts (reads /api/outreach/feed/<key>, writes NAUNAS_OUTREACH_DRAFTS notes on ops-log) → review/edit → schedule → daily cron /api/outreach/run 14:00 UTC sends E1–E4 (days 0/3/7/14, threaded, 15 new/25 total a day, 7am–8pm their time), stops on reply via IMAP + Telegram; E1 creates the HubSpot contact/company (cold_email). Sending OFF by default. Prospects/searches/settings in Blob (outreach/*.json). IG DMs stay manual (copy opener, mark sent).
 - Lead profile page /dashboard/leads/[id]: journey strip, next-step banner, tabs Overview (their words, research brief, last call, details) / Emails (IMAP thread + reply box sending from contact@ on click, logged to HubSpot) / Calls (Fathom summaries, action items, recordings) / Timeline; side panel: deal stage (+lost reason), outreach status, MailerLite sequences take-out/add, notes, booking link.

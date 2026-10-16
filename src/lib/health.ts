@@ -6,6 +6,7 @@ import { storeReady } from '@/lib/store';
 import { checkInbox } from '@/lib/inbox';
 import { checkFathom } from '@/lib/fathom';
 import { checkApify } from '@/lib/apify';
+import { checkTikTok, tiktokConnected } from '@/lib/tiktok';
 
 // The read-only checks behind the daily health cron and the /dashboard health panel: every service the
 // funnel depends on still accepts our keys, and the MailerLite sequences are switched on.
@@ -26,7 +27,8 @@ async function run(name: string, fn: () => Promise<string | void>): Promise<Chec
   }
 }
 
-export function runChecks(): Promise<Check[]> {
+export async function runChecks(): Promise<Check[]> {
+  const tiktok = await tiktokConnected().catch(() => false);
   return Promise.all([
     run('Env vars', async () => {
       const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
@@ -48,6 +50,7 @@ export function runChecks(): Promise<Check[]> {
     ...(process.env.ZOHO_SMTP_PASS ? [run('Zoho inbox (IMAP)', () => checkInbox())] : []),
     ...(process.env.FATHOM_API_KEY ? [run('Fathom', () => checkFathom())] : []),
     ...(process.env.APIFY_TOKEN ? [run('Apify', () => checkApify())] : []),
+    ...(tiktok ? [run('TikTok', () => checkTikTok())] : []),
     ...(storeReady() ? [] : [run('Blob store', async () => { throw new Error('not connected: campaigns can\'t be edited, stats aren\'t kept'); })]),
   ]);
 }

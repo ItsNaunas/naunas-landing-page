@@ -11,6 +11,7 @@ const ICONS: Record<string, React.ReactNode> = {
   outreach: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" />,
   calls: <path d="M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" />,
   instagram: <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM17.5 6.5h.01" />,
+  tiktok: <path d="M14 3v11.5a3.5 3.5 0 1 1-3.5-3.5M14 3c.5 2.6 2.3 4.4 5 4.8" />,
   email: <path d="M3 6h18v12H3zM3 7l9 6 9-6" />,
   content: <path d="M4 4h16v16H4zM4 15l4-4 4 4 3-3 5 5M15 8.5h.01" />,
   money: <path d="M12 3v18M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.6 7 7.5s2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3" />,
@@ -29,6 +30,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
   ] },
   { label: 'Channels', items: [
     { href: '/dashboard/instagram', label: 'Instagram', icon: 'instagram' },
+    { href: '/dashboard/tiktok', label: 'TikTok', icon: 'tiktok' },
     { href: '/dashboard/email', label: 'Email', icon: 'email' },
     { href: '/dashboard/content', label: 'Content', icon: 'content' },
   ] },

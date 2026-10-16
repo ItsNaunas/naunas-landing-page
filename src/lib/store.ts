@@ -1,5 +1,6 @@
 // Small JSON store on Vercel Blob (private store; env BLOB_READ_WRITE_TOKEN, added when the store is
-// connected to the project). Holds dashboard-editable config and counters, never secrets or lead data
+// connected to the project). Holds dashboard-editable config and counters, never plaintext secrets (the
+// TikTok tokens are stored AES-GCM encrypted, see lib/tiktok.ts) or lead data
 // (HubSpot stays the source of truth for people). Reads never throw: callers get the fallback.
 
 import { get, put } from '@vercel/blob';

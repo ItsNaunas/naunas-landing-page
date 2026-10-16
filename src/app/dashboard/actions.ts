@@ -233,3 +233,62 @@ export async function sendLeadEmail(_prev: SaveState, form: FormData): Promise<S
   await done();
   return { savedAt: Date.now() };
 }
+
+// ---------------------------------------------------------------- TikTok
+// Publishing only ever happens here, on Naufal's click. The video was uploaded by the browser straight to
+// the private Blob store (tiktok/uploads/…); we read it, send it to TikTok, then delete our copy.
+
+export type PublishState = { error?: string; publishId?: string; at?: number } | null;
+
+export async function publishTikTok(_prev: PublishState, form: FormData): Promise<PublishState> {
+  await requireSession();
+  const { publishVideo, getPosts, savePosts } = await import('@/lib/tiktok');
+  const { get, del } = await import('@vercel/blob');
+  const path = String(form.get('video') ?? '');
+  const caption = String(form.get('caption') ?? '').trim();
+  const privacy = String(form.get('privacy') ?? '');
+  const brandedContent = form.get('brandedContent') === 'on';
+  if (!path.startsWith('tiktok/uploads/')) return { error: 'Upload a video first.' };
+  if (!privacy) return { error: 'Choose who can see this post.' };
+  if (brandedContent && privacy === 'SELF_ONLY') return { error: 'Branded content can’t be private. Choose another privacy setting.' };
+  try {
+    const blob = await get(path, { access: 'private', useCache: false });
+    if (!blob) return { error: 'The uploaded video has gone. Upload it again.' };
+    const video = Buffer.from(await new Response(blob.stream).arrayBuffer());
+    const publishId = await publishVideo(video, {
+      caption, privacy,
+      allowComment: form.get('allowComment') === 'on', allowDuet: form.get('allowDuet') === 'on', allowStitch: form.get('allowStitch') === 'on',
+      yourBrand: form.get('yourBrand') === 'on', brandedContent,
+    });
+    await del(path).catch(() => {});
+    await savePosts([{ publishId, caption, privacy, at: new Date().toISOString(), status: 'PROCESSING_UPLOAD' }, ...(await getPosts())]);
+    await logEvent('tiktok', `Posted to TikTok: ${caption.slice(0, 60) || 'video'}`, '/dashboard/tiktok');
+    revalidatePath('/dashboard/tiktok');
+    return { publishId, at: Date.now() };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Publishing failed' };
+  }
+}
+
+/** Re-check TikTok's processing status for posts still in progress. */
+export async function refreshTikTokPosts() {
+  await requireSession();
+  const { publishStatus, getPosts, savePosts } = await import('@/lib/tiktok');
+  const posts = await getPosts();
+  const next = await Promise.all(posts.map(async (p) => {
+    if (p.status === 'PUBLISH_COMPLETE' || p.status === 'FAILED') return p;
+    try {
+      const s = await publishStatus(p.publishId);
+      return { ...p, status: s.status, failReason: s.fail_reason };
+    } catch { return p; }
+  }));
+  await savePosts(next);
+  revalidatePath('/dashboard/tiktok');
+}
+
+export async function disconnectTikTok() {
+  await requireSession();
+  const { disconnect } = await import('@/lib/tiktok');
+  await disconnect();
+  revalidatePath('/dashboard/tiktok');
+}
