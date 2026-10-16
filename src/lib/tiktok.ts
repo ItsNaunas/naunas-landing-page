@@ -48,7 +48,7 @@ async function tokenRequest(params: Record<string, string>): Promise<Token> {
   const res = await fetch(`${API}/oauth/token/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Cache-Control': 'no-cache' },
-    body: new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!, client_secret: process.env.TIKTOK_CLIENT_SECRET!, ...params }),
+    body: new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!.trim(), client_secret: process.env.TIKTOK_CLIENT_SECRET!.trim(), ...params }),
   });
   const b = await res.json() as { access_token?: string; refresh_token?: string; open_id?: string; scope?: string; expires_in?: number; refresh_expires_in?: number; error?: string; error_description?: string };
   if (!res.ok || !b.access_token) throw new Error(`TikTok token → ${res.status}: ${b.error ?? ''} ${b.error_description ?? ''}`.trim());
@@ -61,7 +61,7 @@ async function tokenRequest(params: Record<string, string>): Promise<Token> {
 
 /** The TikTok login page Naufal is sent to from "Connect TikTok". */
 export function authorizeUrl(state: string) {
-  const q = new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!, scope: SCOPES.join(','), response_type: 'code', redirect_uri: REDIRECT_URI, state });
+  const q = new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!.trim(), scope: SCOPES.join(','), response_type: 'code', redirect_uri: REDIRECT_URI, state });
   return `https://www.tiktok.com/v2/auth/authorize/?${q}`;
 }
 
@@ -89,7 +89,7 @@ export async function disconnect() {
   if (t) {
     await fetch(`${API}/oauth/revoke/`, {
       method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!, client_secret: process.env.TIKTOK_CLIENT_SECRET!, token: t.access_token }),
+      body: new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!.trim(), client_secret: process.env.TIKTOK_CLIENT_SECRET!.trim(), token: t.access_token }),
     }).catch(() => {});
   }
   await putJSON(TOKEN_PATH, {});
