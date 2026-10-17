@@ -6,6 +6,7 @@ import { linkedinAccount } from '@/lib/linkedin';
 import { tiktokConnected, creatorInfo } from '@/lib/tiktok';
 import { getCampaigns } from '@/lib/campaigns';
 import { qstashReady } from '@/lib/qstash';
+import { aiReady } from '@/lib/ai';
 import { demoOn } from '@/lib/ops/demo';
 import { FUNNEL } from '@/config/funnel';
 import { PageHeader } from '@/components/dashboard/ui';
@@ -54,7 +55,7 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
         linkedinName: li?.name, linkedinDays: li && !li.expired ? li.daysLeft : null,
         tiktokApproved: tiktokApproved(), qstash: demo || qstashReady(),
         links: Object.fromEntries(CHANNELS.map((c) => [c, trackedLink(post.id, c)])) as Record<(typeof CHANNELS)[number], string>,
-        quickTimes: [...FUNNEL.content.defaultTimes], usTz: FUNNEL.content.usTz, firstComment: FUNNEL.content.linkedinFirstComment,
+        quickTimes: [...FUNNEL.content.defaultTimes], usTz: FUNNEL.content.usTz, firstComment: FUNNEL.content.linkedinFirstComment, ai: demo || aiReady(),
       }} />
     </>
   );

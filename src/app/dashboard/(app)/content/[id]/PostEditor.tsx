@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { upload } from '@vercel/blob/client';
 import {
   saveContentPost, checkContentPost, publishContentNow, scheduleContent, cancelContentSchedule,
-  retryContentChannel, discardHeldTikTok, deleteContentDraft,
+  retryContentChannel, discardHeldTikTok, deleteContentDraft, adaptContent, copyAsTextPost,
 } from '../../../actions';
 import type { ContentPost, ChannelKey, Issue, Media } from '@/lib/content';
 
@@ -12,7 +12,7 @@ type Campaign = { id: string; name: string; keywords: string[] };
 type Creator = { nickname?: string; username?: string; avatar?: string; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxSec: number } | null;
 type Ctx = {
   campaigns: Campaign[]; creator: Creator; linkedinName?: string; linkedinDays: number | null;
-  tiktokApproved: boolean; qstash: boolean; links: Record<ChannelKey, string>; quickTimes: string[]; usTz: string; firstComment: boolean;
+  tiktokApproved: boolean; qstash: boolean; links: Record<ChannelKey, string>; quickTimes: string[]; usTz: string; firstComment: boolean; ai: boolean;
 };
 
 const LABEL: Record<ChannelKey, string> = { linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok' };
@@ -69,14 +69,60 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       setSaved('saving');
-      const r = await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags });
+      const r = await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '' });
       if (r.error) { setSaved('error'); setMsg({ tone: 'bad', text: r.error }); return; }
       setSaved('saved');
       setIssues((await checkContentPost(post.id)).issues);
     }, 1000);
     return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post.master, post.channels, post.flags]);
+  }, [post.master, post.channels, post.flags, post.newsletterBlurb]);
+
+  // ---- AI (Adapt): drafts every channel from the idea + transcript; Naufal edits before publishing.
+  const [hooks, setHooks] = useState<Partial<Record<ChannelKey, string[]>>>({});
+  const [aiNote, setAiNote] = useState<{ icp: string; unsupported: string[] } | null>(null);
+  const [adapting, setAdapting] = useState(false);
+  const hasText = !!(post.channels.linkedin.text || post.channels.instagram.caption || post.channels.tiktok.caption);
+
+  async function runAdapt() {
+    if (hasText && !window.confirm('Replace the current channel texts with fresh AI drafts?')) return;
+    setAdapting(true); setMsg(null);
+    // Make sure the server has the latest idea/transcript before it writes from them.
+    await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '' });
+    const r = await adaptContent(post.id);
+    setAdapting(false);
+    if (r.error || !r.result) { setMsg({ tone: 'bad', text: r.error ?? 'Adapt failed' }); return; }
+    const a = r.result;
+    const none = !post.channels.linkedin.enabled && !post.channels.instagram.enabled && !post.channels.tiktok.enabled;
+    setPost((p) => ({
+      ...p,
+      newsletterBlurb: a.newsletterBlurb,
+      channels: {
+        linkedin: { ...p.channels.linkedin, text: a.linkedin.text, firstComment: a.linkedin.firstComment, ...(none ? { enabled: true } : {}) },
+        instagram: { ...p.channels.instagram, caption: a.instagram.caption, ...(none && p.master.media ? { enabled: true } : {}) },
+        tiktok: { ...p.channels.tiktok, caption: a.tiktok.caption, ...(none && p.master.media?.kind === 'video' ? { enabled: true } : {}) },
+      },
+    }));
+    setHooks({ linkedin: a.linkedin.hooks, instagram: a.instagram.hooks, tiktok: a.tiktok.hooks });
+    setAiNote({ icp: a.icpNote, unsupported: a.unsupported });
+    setMsg({ tone: 'good', text: 'Drafted all three. Read them, swap hooks if you like, then publish.' });
+  }
+
+  /** Swap the opening line (up to the first blank line) for another hook. */
+  const useHook = (c: ChannelKey, hook: string) => {
+    const key = c === 'linkedin' ? 'text' : 'caption';
+    const cur = (post.channels[c] as unknown as Record<string, string>)[key] ?? '';
+    const rest = cur.includes('\n') ? cur.slice(cur.indexOf('\n')) : '';
+    setCh(c, { [key]: `${hook}${rest}` } as never);
+  };
+
+  async function readTranscript(f?: File) {
+    if (!f) return;
+    const raw = await f.text();
+    // Strip SRT/VTT numbering and timestamps, keep the words.
+    const text = raw.replace(/^WEBVTT.*$/m, '').split(/\r?\n/).filter((l) => l.trim() && !/^\d+$/.test(l.trim()) && !/-->/.test(l)).join(' ').replace(/\s+/g, ' ').trim();
+    setMaster({ transcript: text });
+  }
 
   const setCh = <K extends ChannelKey>(c: K, patch: Partial<ContentPost['channels'][K]>) =>
     setPost((p) => ({ ...p, channels: { ...p.channels, [c]: { ...p.channels[c], ...patch } } }));
@@ -139,6 +185,22 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
             <span className="text-xs text-white/50">The idea (your notes or master caption; each channel gets its own version below)</span>
             <textarea rows={6} disabled={locked} value={post.master.idea} onChange={(e) => setMaster({ idea: e.target.value })} placeholder="What’s this post about? The point, the story, the call to action." className={field} />
           </label>
+          <details className="rounded-lg border border-white/[0.08] px-3 py-2" open={!!post.master.transcript}>
+            <summary className="text-xs text-white/55 cursor-pointer">Transcript (optional: the AI writes from what you actually said){post.master.transcript ? ` · ${post.master.transcript.split(/\s+/).length} words` : ''}</summary>
+            <div className="flex flex-col gap-2 mt-2">
+              <textarea rows={4} disabled={locked} value={post.master.transcript ?? ''} onChange={(e) => setMaster({ transcript: e.target.value })} placeholder="Paste the transcript, or upload the .srt / .txt from the studio pipeline." className={field} />
+              {!locked && <label className="self-start text-xs text-white/55 hover:text-white cursor-pointer">Upload .srt / .vtt / .txt<input type="file" accept=".srt,.vtt,.txt,text/plain" className="sr-only" onChange={(e) => readTranscript(e.target.files?.[0])} /></label>}
+            </div>
+          </details>
+          <div className="flex flex-wrap items-center gap-3">
+            {ctx.ai
+              ? <button type="button" disabled={locked || adapting} onClick={runAdapt} className="rounded-lg border border-[#F2613F]/50 bg-[#F2613F]/10 px-3.5 py-1.5 text-sm text-[#ffb19e] hover:bg-[#F2613F]/20 disabled:opacity-40">{adapting ? 'Writing…' : '✨ Write all 3 with AI'}</button>
+              : <span className="text-xs text-white/35">AI drafting turns on with OPENAI_API_KEY.</span>}
+            {aiNote?.icp && <span className="text-xs text-white/50">🎯 {aiNote.icp}</span>}
+          </div>
+          {aiNote && aiNote.unsupported.length > 0 && (
+            <p className="text-xs text-amber-200/90">⚠ Check before posting (not backed by your idea/transcript): {aiNote.unsupported.join(' · ')}</p>
+          )}
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/45">
             {progress !== null && <span>Uploading… {progress}%</span>}
             {m && <span>{m.kind === 'video' ? `Video · ${m.durationSec ?? '?'}s` : 'Image'}{m.width ? ` · ${m.width}×${m.height}` : ''}{m.width && m.height && Math.abs(m.height / m.width - 16 / 9) < 0.05 ? ' · 9:16 ✓' : ''}</span>}
@@ -225,6 +287,18 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                     </>
                   )}
 
+                  {!chLocked && hooks[c]?.length ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[11px] text-white/40">Other hooks (tap to use):</span>
+                      {hooks[c]!.map((h) => (
+                        <button key={h} type="button" onClick={() => useHook(c, h)} className="text-left text-xs rounded-md bg-white/[0.04] hover:bg-white/[0.09] px-2 py-1.5 text-white/75">{h}</button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {c === 'linkedin' && post.channels.linkedin.text && (
+                    <button type="button" disabled={busy} onClick={() => startBusy(async () => { const r = await copyAsTextPost(post.id); if (r.id) window.location.href = `/dashboard/content/${r.id}`; else setMsg({ tone: 'bad', text: r.error ?? 'Could not copy' }); })}
+                      className="self-start text-[11px] text-white/45 hover:text-white">Repurpose: copy as a text-only LinkedIn post →</button>
+                  )}
                   <p className="text-[11px] text-white/35 truncate">Tracked link: {ctx.links[c]}</p>
                 </>
               )}
@@ -241,6 +315,13 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           );
         })}
       </div>
+
+      {/* Newsletter */}
+      <details className="rounded-2xl border border-white/[0.08] bg-[#121212] px-4 py-3" open={!!post.newsletterBlurb}>
+        <summary className="text-sm font-medium cursor-pointer">Newsletter blurb <span className="text-xs font-normal text-white/40">(goes into Monday’s draft if this post makes the week’s list)</span></summary>
+        <textarea rows={3} disabled={locked} value={post.newsletterBlurb ?? ''} onChange={(e) => setPost((p) => ({ ...p, newsletterBlurb: e.target.value }))}
+          placeholder="2–3 sentences for the weekly email. The AI writes one for you." className={`${field} mt-2`} />
+      </details>
 
       {/* Pre-flight */}
       {(blocking.length > 0 || warns.length > 0) && (

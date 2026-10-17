@@ -351,7 +351,7 @@ export async function createContentPost(idea = ''): Promise<ContentResult> {
 }
 
 /** Save the composer's fields (text, options, media, ticks); statuses and results are never taken from the client. */
-export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'>): Promise<ContentResult> {
+export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'> & { newsletterBlurb?: string }): Promise<ContentResult> {
   await requireSession();
   const { getPost, savePost, CHANNELS } = await import('@/lib/content');
   const p = await getPost(input.id);
@@ -370,6 +370,7 @@ export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' |
     (p.channels as Record<string, unknown>)[c] = next;
   }
   p.flags = (input.flags ?? []).slice(0, 50);
+  if (input.newsletterBlurb !== undefined) p.newsletterBlurb = String(input.newsletterBlurb).slice(0, 1500);
   await savePost(p);
   return { post: p };
 }
@@ -503,4 +504,35 @@ export async function checkContentPost(id: string): Promise<{ issues: Issue[] }>
   const { checkPost } = await import('@/lib/publish');
   const p = await getPost(id);
   return { issues: p ? await checkPost(p) : [] };
+}
+
+/** AI drafts for every channel from the saved idea + transcript. Returned to the editor; nothing is saved or posted. */
+export async function adaptContent(id: string): Promise<{ error?: string; result?: import('@/lib/adapt').Adapted }> {
+  await requireSession();
+  const { aiReady } = await import('@/lib/ai');
+  if (!aiReady()) return { error: 'OPENAI_API_KEY is not set in Vercel.' };
+  const { getPost } = await import('@/lib/content');
+  const p = await getPost(id);
+  if (!p) return { error: 'Post not found' };
+  if (p.master.idea.trim().length < 20 && !p.master.transcript?.trim()) return { error: 'Write a bit more in the idea (or add a transcript) first.' };
+  const camp = (await getCampaigns()).find((c) => c.id === p.channels.instagram.campaignId) ?? DEFAULT_CAMPAIGN;
+  try {
+    const { adapt } = await import('@/lib/adapt');
+    return { result: await adapt({ idea: p.master.idea, transcript: p.master.transcript, keyword: camp.keywords[0] ?? 'LEAK', offer: camp.name }) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Adapt failed' };
+  }
+}
+
+/** Repurpose: a new draft with the same LinkedIn text and no media (a text-only post for another day). */
+export async function copyAsTextPost(id: string): Promise<{ error?: string; id?: string }> {
+  await requireSession();
+  const { getPost, newPost, savePost } = await import('@/lib/content');
+  const p = await getPost(id);
+  if (!p) return { error: 'Post not found' };
+  const n = newPost(p.master.idea);
+  n.master.transcript = p.master.transcript;
+  n.channels.linkedin = { ...n.channels.linkedin, enabled: true, status: 'ready', text: p.channels.linkedin.text, firstComment: p.channels.linkedin.firstComment, visibility: p.channels.linkedin.visibility };
+  await savePost(n);
+  return { id: n.id };
 }

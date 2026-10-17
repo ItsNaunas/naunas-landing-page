@@ -107,7 +107,7 @@ The media file is kept until every enabled channel is `posted`, `off` or discard
 - **Held TikTok tray**: "N waiting for TikTok approval", with **Send all** (enabled once `TIKTOK_APPROVED=1`) and **Discard**.
 - The existing `/dashboard/tiktok` and `/dashboard/linkedin` stay for stats and one-offs.
 
-**Phase 4: AI (needs `ANTHROPIC_API_KEY`)**
+**Phase 4: AI (shipped 2026-10-17 on OpenAI: existing `OPENAI_API_KEY`, model gpt-4.1-mini, override with `OPENAI_MODEL`; gpt-5 models need OpenAI org verification)**
 - **Adapt**: one call to Sonnet 5.5 with structured JSON returns the LinkedIn text, the Instagram caption with the keyword CTA, the TikTok caption, **three hooks per channel**, the newsletter blurb, and a suggested first comment.
 - Inputs: the idea, the transcript, `src/config/voice.md` (about 10 example posts from Naufal), and the ICP (US high-ticket project businesses, interior design first).
 - **Guardrails**: numbers, names or claims not in the source are flagged ⚠️ and must be acknowledged. It also flags off-ICP copy.

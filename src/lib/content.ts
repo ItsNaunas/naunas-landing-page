@@ -5,6 +5,7 @@
 
 import { getJSON, putJSON } from '@/lib/store';
 import { FUNNEL } from '@/config/funnel';
+import { strayNumbers } from '@/lib/adapt';
 
 export type ChannelKey = 'linkedin' | 'instagram' | 'tiktok';
 export const CHANNELS: ChannelKey[] = ['linkedin', 'instagram', 'tiktok'];
@@ -142,6 +143,15 @@ export function preflight(p: ContentPost, ctx: { linkedinDaysLeft?: number | nul
     if (tt.brandedContent && tt.privacy === 'SELF_ONLY') out.push({ ch: 'tiktok', level: 'block', text: 'Branded content can’t be private on TikTok.' });
     if (m?.kind === 'video' && !isVertical) out.push({ ch: 'tiktok', level: 'warn', text: 'TikTok is vertical (9:16). This video isn’t.' });
     if (!ctx.tiktokApproved) out.push({ ch: 'tiktok', level: 'warn', text: 'TikTok hasn’t approved the app yet, so this waits in the held tray and goes out when you press Send all.' });
+  }
+
+  // Guardrail: a number in a caption that isn't in the idea or transcript might be made up (AI or memory).
+  const source = `${p.master.idea}\n${p.master.transcript ?? ''}`;
+  const texts: [ChannelKey, string][] = [['linkedin', li.text], ['instagram', ig.caption], ['tiktok', tt.caption]];
+  for (const [c, t] of texts) {
+    if (!p.channels[c].enabled) continue;
+    const stray = strayNumbers(t, source);
+    if (stray.length) out.push({ ch: c, level: 'warn', text: `Mentions ${stray.join(', ')}, which isn’t in your idea or transcript. Check it’s true.` });
   }
   return out;
 }

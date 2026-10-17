@@ -4,7 +4,7 @@
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
-- [ ] **Content engine** (docs/content-engine/PLAN.md): Phase 1 + 3 shipped (composer at /dashboard/content). Needs QStash keys for scheduling; Phase 2 needs the Meta publish permission + new IG token; Phase 4 needs ANTHROPIC_API_KEY. TikTok posts are held until TIKTOK_APPROVED=1.
+- [ ] **Content engine** (docs/content-engine/PLAN.md): Phase 1 + 3 shipped (composer at /dashboard/content). Needs QStash keys for scheduling; Phase 2 needs the Meta publish permission + new IG token; Phase 4 (AI Adapt) shipped on OpenAI. TikTok posts are held until TIKTOK_APPROVED=1.
 - [ ] **TikTok**: app "Naunas" on developers.tiktok.com (sandbox keys in Vercel). Connect at /dashboard/tiktok, test-post privately, record the demo video (scripted, blurred, subtitled), then submit for review + Direct Post audit. Remove user.info.profile from the app (not requested) and keep the scopes in lib/tiktok.ts SCOPES identical to the app. Until audited, posts can only be SELF_ONLY.
 - [ ] Turn on IMAP in Zoho Mail (Settings → Mail Accounts → IMAP Access) — outreach sequences refuse to send without it (stop-on-reply safety).
 - [ ] Fathom webhook: Fathom → API Access → Manage → Add Webhook → https://www.naunas.co.uk/api/fathom-webhook (summary + action items) → put its whsec_ secret in Vercel as FATHOM_WEBHOOK_SECRET.
@@ -24,6 +24,10 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-17 (content engine phase 4: AI)
+- Write all 3 with AI in the composer (lib/adapt.ts via lib/ai.ts, OpenAI structured JSON, gpt-4.1-mini default): LinkedIn post + first comment, Instagram caption with the campaign keyword CTA, TikTok caption, 3 platform hooks each (tap to swap), newsletter blurb, ICP note. Transcript field (paste or .srt/.vtt/.txt). Repurpose: copy as text-only LinkedIn post.
+- Guardrails: prompt forbids new specifics; pre-flight warns on any number not in the idea/transcript (handles list numbering and number words). Tested live: gpt-4.1 embellished, gpt-4.1-mini stayed faithful; voice examples stripped of numbers after one leaked into a hook.
+- Note: OPENAI_API_KEY is stored as Config (visible) in Vercel; switch it to Secret.
 ### 2026-10-17 (content engine phase 1 + 3)
 - Post everywhere: content posts in Blob (lib/content.ts), per-channel adapters + independent runner (lib/publish.ts; each result saved as it lands, Telegram summary), pre-flight checks with acknowledgeable warnings, TikTok held until approved, LinkedIn first-comment link, per-post tracked links /go/p-<id>-<li|ig|tt> (utm_campaign = post id), QStash exact-time scheduling (/api/content/fire, signature-verified, no retries), short-lived public media links /m/<token> for Instagram, Instagram Reels/image publishing code (untested until the permission exists).
 - Composer at /dashboard/content/<id>; Content tab: New post, week calendar with real posts, held TikTok tray, Scheduled + Recent lists. Weekly target now 7 (about 1 post a day).
