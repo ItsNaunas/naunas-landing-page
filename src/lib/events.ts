@@ -9,7 +9,7 @@ import { getJSON, updateJSON, storeReady } from '@/lib/store';
 export type EventKind =
   | 'lead' | 'enquiry' | 'subscribe' | 'booking' | 'reschedule' | 'cancel' | 'noshow'
   | 'payment' | 'payment_issue' | 'refund' | 'ig_comment' | 'ig_dm' | 'click' | 'alert'
-  | 'email_sent' | 'outreach_email' | 'outreach_dm' | 'outreach_reply' | 'call_recorded' | 'tiktok' | 'linkedin';
+  | 'email_sent' | 'outreach_email' | 'outreach_dm' | 'outreach_reply' | 'call_recorded' | 'tiktok' | 'linkedin' | 'content';
 
 export type OpsEvent = { at: string; kind: EventKind; title: string; href?: string };
 

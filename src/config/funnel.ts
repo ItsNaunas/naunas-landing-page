@@ -78,4 +78,18 @@ export const FUNNEL = {
     /** "Stripe: <event>" emails for the owner's own records (vault sync). */
     vaultEmail: 'its.naunas@gmail.com',
   },
+
+  /** Content engine ("Post everywhere", docs/content-engine/PLAN.md). */
+  content: {
+    weeklyTarget: 7,
+    /** Quick-pick schedule times, US Eastern (the ICP's morning, lunch and evening). */
+    defaultTimes: ['09:00', '12:00', '18:00'],
+    usTz: 'America/New_York',
+    /** Where a post's tracked links send people (utm tags are added per channel). */
+    linkUrl: 'https://www.naunas.co.uk/',
+    /** LinkedIn shows posts with links to fewer people, so the link goes in the first comment. */
+    linkedinFirstComment: true,
+    newsletterDay: 1, // Monday (0 = Sunday)
+    replyReminderMin: 30,
+  },
 } as const;

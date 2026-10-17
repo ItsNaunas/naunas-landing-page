@@ -130,6 +130,12 @@ export async function publishPost(text: string, visibility: 'PUBLIC' | 'CONNECTI
 
 export const postUrl = (urn: string) => `https://www.linkedin.com/feed/update/${urn}/`;
 
+/** Comment on one of Naufal's own posts (used for the first-comment link). */
+export async function commentOnPost(postUrn: string, text: string) {
+  const t = await token();
+  await rest(`/socialActions/${encodeURIComponent(postUrn)}/comments`, t, { actor: `urn:li:person:${t.sub}`, object: postUrn, message: { text } });
+}
+
 // ---------------------------------------------------------------- our post log
 export type PostRecord = { urn: string; text: string; visibility: string; media?: 'image' | 'video'; at: string };
 export const getPosts = () => getJSON<PostRecord[]>(POSTS_PATH, []);

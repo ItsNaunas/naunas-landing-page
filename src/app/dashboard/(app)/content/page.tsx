@@ -1,12 +1,55 @@
+import Link from 'next/link';
 import { contentData } from '@/lib/ops/tabs';
 import { contentPlus } from '@/lib/ops/more';
+import { getIndex, CHANNELS, CHANNEL_LABEL, CHANNEL_CODE, type IndexRow, type ChannelStatus } from '@/lib/content';
+import { tiktokApproved } from '@/lib/publish';
+import { demoOn } from '@/lib/ops/demo';
 import { PageHeader, Errors, Card, Empty, Badge, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, Meter } from '@/components/dashboard/kit';
 import { CopyButton } from '@/components/dashboard/client';
+import { newContentPost } from '../../actions';
+import { SendHeldButton } from './HeldTray';
 
 export const dynamic = 'force-dynamic';
 
 const KIND = (title: string) => /^leak/i.test(title) ? 'Leak post' : /^hot take/i.test(title) ? 'Hot take' : /^build/i.test(title) ? 'Build in public' : 'Draft';
+
+const TZ = 'Africa/Dar_es_Salaam';
+const dayKey = (t: string | number) => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ });
+const DOT: Record<ChannelStatus, string> = {
+  off: 'bg-white/10', ready: 'bg-white/40', scheduled: 'bg-sky-400', publishing: 'bg-amber-300', posted: 'bg-emerald-400', failed: 'bg-rose-400', held: 'bg-amber-400',
+};
+const POST_TONE: Record<string, 'good' | 'bad' | 'muted' | 'accent' | 'neutral'> = { done: 'good', partial: 'accent', scheduled: 'neutral', draft: 'muted', publishing: 'neutral' };
+const POST_LABEL: Record<string, string> = { done: 'Posted', partial: 'Partly posted', scheduled: 'Scheduled', draft: 'Draft', publishing: 'Publishing' };
+
+function demoRows(): IndexRow[] {
+  const d = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
+  return [
+    { id: 'demo', createdAt: d(-30), when: d(20), status: 'scheduled', idea: 'The follow-up most studios never send (and the one that books the call).', kind: 'video', channels: { linkedin: 'scheduled', instagram: 'scheduled', tiktok: 'scheduled' } },
+    { id: 'demo', createdAt: d(-26), when: d(-2), status: 'partial', idea: 'Most design studios lose the client between the first call and the deposit.', kind: 'video', channels: { linkedin: 'posted', instagram: 'posted', tiktok: 'held' } },
+    { id: 'demo', createdAt: d(-50), when: d(-26), status: 'done', idea: 'Why your proposal sits unread for 6 days.', kind: 'image', channels: { linkedin: 'posted', instagram: 'posted', tiktok: 'off' } },
+    { id: 'demo', createdAt: d(-80), when: d(-50), status: 'partial', idea: 'I rebuilt a studio’s enquiry form in a day. Here’s the before and after.', kind: 'video', channels: { linkedin: 'posted', instagram: 'failed', tiktok: 'held' } },
+  ];
+}
+
+function PostRow({ r }: { r: IndexRow }) {
+  return (
+    <li>
+      <Link href={`/dashboard/content/${r.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02]">
+        <span className="text-xs text-white/40 w-[92px] shrink-0 tabular-nums">{new Date(r.when).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+        <span className="flex-1 min-w-0 truncate text-[13px] text-white/85">{r.idea || 'Untitled'}</span>
+        <span className="hidden sm:flex gap-2 shrink-0">
+          {CHANNELS.filter((c) => r.channels[c] && r.channels[c] !== 'off').map((c) => (
+            <span key={c} className="flex items-center gap-1 text-[10.5px] text-white/55" title={`${CHANNEL_LABEL[c]}: ${r.channels[c]}`}>
+              <span className={`size-1.5 rounded-full ${DOT[r.channels[c]!]}`} />{CHANNEL_CODE[c].toUpperCase()}
+            </span>
+          ))}
+        </span>
+        <Badge tone={POST_TONE[r.status] ?? 'muted'}>{POST_LABEL[r.status] ?? r.status}</Badge>
+      </Link>
+    </li>
+  );
+}
 
 export default async function Content() {
   const d = await contentData();
@@ -14,34 +57,78 @@ export default async function Content() {
   const byRun = d.drafts.reduce<Record<string, typeof d.drafts>>((a, r) => ({ ...a, [r.runAt]: [...(a[r.runAt] ?? []), r] }), {});
   const gaps = x.coverage.filter((c) => !c.drafts);
 
+  const rows = demoOn() ? demoRows() : await getIndex().catch(() => [] as IndexRow[]);
+  const todayIdx = (new Date(new Date().toLocaleString('en-US', { timeZone: TZ })).getDay() + 6) % 7;
+  const weekDays = Array.from({ length: 7 }, (_, i) => dayKey(Date.now() + (i - todayIdx) * 86_400_000));
+  const byDay = (k: string) => rows.filter((r) => dayKey(r.when) === k && r.status !== 'draft');
+  const postedThisWeek = rows.filter((r) => weekDays.includes(dayKey(r.when)) && Object.values(r.channels).includes('posted')).length;
+  const held = rows.filter((r) => r.channels.tiktok === 'held');
+  const upcoming = rows.filter((r) => r.status === 'scheduled').sort((a, b) => a.when.localeCompare(b.when));
+  const recent = rows.filter((r) => r.status !== 'scheduled').slice(0, 12);
+
   return (
     <>
-      <PageHeader title="Content" sub="What to post today, drafts written from your leads’ own words, and which posts actually bring people in." />
+      <PageHeader title="Content" sub="Post once to LinkedIn, Instagram and TikTok, plan the week, and see which posts actually bring people in."
+        action={<form action={newContentPost}><button className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">+ New post</button></form>} />
       <Errors errors={[...d.errors, ...x.errors]} />
 
       {/* This week */}
       <div className="grid lg:grid-cols-[1fr_260px] gap-3 md:gap-4">
-        <Card title="This week’s plan" pad={false}>
-          <div className="grid grid-cols-7 min-w-0 overflow-x-auto">
+        <Card title="This week" pad={false}>
+          <div className="grid grid-cols-[repeat(7,minmax(112px,1fr))] min-w-0 overflow-x-auto">
             {x.plan.map((p, i) => (
-              <div key={p.day} className={`px-3 py-3 border-r border-white/[0.05] last:border-r-0 min-w-[110px] ${i === x.todayIdx ? 'bg-[#F2613F]/[0.08]' : ''}`}>
-                <p className={`text-xs font-semibold ${i === x.todayIdx ? 'text-[#ff8a6d]' : 'text-white/45'}`}>{p.day}{i === x.todayIdx ? ' · today' : ''}</p>
+              <div key={p.day} className={`px-3 py-3 border-r border-white/[0.05] last:border-r-0 ${i === todayIdx ? 'bg-[#F2613F]/[0.08]' : ''}`}>
+                <p className={`text-xs font-semibold ${i === todayIdx ? 'text-[#ff8a6d]' : 'text-white/45'}`}>{p.day}{i === todayIdx ? ' · today' : ''}</p>
                 <p className="text-[13px] mt-2 text-white/90">{p.a}</p>
                 <p className="text-[11px] text-white/40 mt-1">{p.b}</p>
+                <div className="mt-2 flex flex-col gap-1">
+                  {byDay(weekDays[i]).map((r, j) => (
+                    <Link key={r.id + j} href={`/dashboard/content/${r.id}`} className="rounded-md bg-white/[0.05] hover:bg-white/[0.09] px-1.5 py-1 text-[10.5px] leading-tight text-white/75 flex items-start gap-1">
+                      <span className="flex gap-0.5 mt-[3px] shrink-0">{CHANNELS.map((c) => <span key={c} className={`size-1.5 rounded-full ${DOT[r.channels[c] ?? 'off']}`} />)}</span>
+                      <span className="line-clamp-2">{r.status === 'scheduled' ? `${new Date(r.when).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' })} · ` : ''}{r.idea || 'Untitled'}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </Card>
         <Card title="Posts this week">
-          <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{x.postsThisWeek}<span className="text-base text-white/35">/{x.weeklyTarget}</span></p>
-          <div className="mt-3"><Meter value={x.postsThisWeek} max={x.weeklyTarget} /></div>
-          <p className="text-[11px] text-white/40 mt-2">Floor: 3 a day (1 buyer, 2 builder). Batch-film and schedule.</p>
+          <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{postedThisWeek}<span className="text-base text-white/35">/{x.weeklyTarget}</span></p>
+          <div className="mt-3"><Meter value={postedThisWeek} max={x.weeklyTarget} /></div>
+          <p className="text-[11px] text-white/40 mt-2">Published from here (about 1 a day). {x.postsThisWeek} Instagram post{x.postsThisWeek === 1 ? '' : 's'} in total this week.</p>
+          <p className="text-[11px] text-white/35 mt-2 flex flex-wrap gap-x-2">
+            {(['posted', 'scheduled', 'held', 'failed'] as ChannelStatus[]).map((s) => <span key={s} className="flex items-center gap-1"><span className={`size-1.5 rounded-full ${DOT[s]}`} />{s}</span>)}
+          </p>
+        </Card>
+      </div>
+
+      {held.length > 0 && (
+        <Card>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="font-medium">⏳ {held.length} post{held.length > 1 ? 's' : ''} waiting for TikTok</p>
+              <p className="text-sm text-white/50 mt-1">LinkedIn and Instagram already went out. TikTok only allows public posts once it approves the app. Then send these in one go, or open one and drop it if it’s stale.</p>
+            </div>
+            <SendHeldButton approved={tiktokApproved()} count={held.length} />
+          </div>
+        </Card>
+      )}
+
+      <div className="grid lg:grid-cols-2 gap-3 md:gap-4">
+        <Card title="Scheduled" pad={false}>
+          {upcoming.length ? <ul className="divide-y divide-white/[0.05]">{upcoming.map((r, j) => <PostRow key={r.id + j} r={r} />)}</ul>
+            : <Empty>Nothing scheduled. Press New post, write it once, then Schedule for an exact time.</Empty>}
+        </Card>
+        <Card title="Recent posts" pad={false}>
+          {recent.length ? <ul className="divide-y divide-white/[0.05]">{recent.map((r, j) => <PostRow key={r.id + j} r={r} />)}</ul>
+            : <Empty>Posts you publish from here show up with each channel’s result.</Empty>}
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
         <div className="lg:col-span-2 flex flex-col gap-3 min-w-0">
-          <SectionTitle>Drafts to post</SectionTitle>
+          <SectionTitle>Drafts from the routine</SectionTitle>
           {Object.keys(byRun).length ? Object.entries(byRun).map(([runAt, drafts]) => (
             <div key={runAt} className="flex flex-col gap-3">
               <p className="text-xs text-white/40">Written {ago(runAt)}</p>

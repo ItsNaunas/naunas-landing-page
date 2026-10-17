@@ -8,6 +8,7 @@ import { DASH_COOKIE, validSession } from '@/lib/dashAuth';
 const RULES: Record<string, string[]> = {
   'tiktok/uploads/': ['video/mp4', 'video/quicktime', 'video/webm'],
   'linkedin/uploads/': ['video/mp4', 'image/jpeg', 'image/png', 'image/gif'],
+  'content/media/': ['video/mp4', 'video/quicktime', 'image/jpeg', 'image/png'],
 };
 
 export async function POST(req: NextRequest) {

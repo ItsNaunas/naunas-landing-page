@@ -277,7 +277,7 @@ export const demo = {
       { day: 'Mon', a: 'Hot take', b: 'Build-with-me · AI news' }, { day: 'Tue', a: 'Leak', b: 'Behind the build' }, { day: 'Wed', a: 'System demo', b: 'Build-with-me · Win' },
       { day: 'Thu', a: 'Proof / case study', b: 'AI news' }, { day: 'Fri', a: 'Leak + audit CTA', b: 'Build-with-me · Win' }, { day: 'Sat', a: 'Repurpose the week’s best', b: 'AI news' }, { day: 'Sun', a: 'Hot take', b: 'What I’m building' },
     ],
-    todayIdx: (new Date().getDay() + 6) % 7, postsThisWeek: 9, weeklyTarget: 21,
+    todayIdx: (new Date().getDay() + 6) % 7, postsThisWeek: 5, weeklyTarget: 7,
     coverage: ['Attention', 'Capture', 'Pipeline', 'Follow-up', 'Conversion', 'Fulfilment', 'Retention', 'Attribution'].map((name, i) => ({ n: i + 1, name, drafts: [2, 3, 0, 4, 1, 0, 0, 1][i] })),
     ideas: [
       { text: 'Enquiries come in through Instagram and the website and half never get a reply within a day.', who: 'Interior design studio', at: ago(22) },

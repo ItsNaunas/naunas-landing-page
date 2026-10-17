@@ -4,6 +4,7 @@
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [ ] **Content engine** (docs/content-engine/PLAN.md): Phase 1 + 3 shipped (composer at /dashboard/content). Needs QStash keys for scheduling; Phase 2 needs the Meta publish permission + new IG token; Phase 4 needs ANTHROPIC_API_KEY. TikTok posts are held until TIKTOK_APPROVED=1.
 - [ ] **TikTok**: app "Naunas" on developers.tiktok.com (sandbox keys in Vercel). Connect at /dashboard/tiktok, test-post privately, record the demo video (scripted, blurred, subtitled), then submit for review + Direct Post audit. Remove user.info.profile from the app (not requested) and keep the scopes in lib/tiktok.ts SCOPES identical to the app. Until audited, posts can only be SELF_ONLY.
 - [ ] Turn on IMAP in Zoho Mail (Settings → Mail Accounts → IMAP Access) — outreach sequences refuse to send without it (stop-on-reply safety).
 - [ ] Fathom webhook: Fathom → API Access → Manage → Add Webhook → https://www.naunas.co.uk/api/fathom-webhook (summary + action items) → put its whsec_ secret in Vercel as FATHOM_WEBHOOK_SECRET.
@@ -23,6 +24,9 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-17 (content engine phase 1 + 3)
+- Post everywhere: content posts in Blob (lib/content.ts), per-channel adapters + independent runner (lib/publish.ts; each result saved as it lands, Telegram summary), pre-flight checks with acknowledgeable warnings, TikTok held until approved, LinkedIn first-comment link, per-post tracked links /go/p-<id>-<li|ig|tt> (utm_campaign = post id), QStash exact-time scheduling (/api/content/fire, signature-verified, no retries), short-lived public media links /m/<token> for Instagram, Instagram Reels/image publishing code (untested until the permission exists).
+- Composer at /dashboard/content/<id>; Content tab: New post, week calendar with real posts, held TikTok tray, Scheduled + Recent lists. Weekly target now 7 (about 1 post a day).
 ### 2026-10-17 (LinkedIn)
 - LinkedIn inbox audit: Claude-in-Chrome read 134 conversations; 20 imported to HubSpot (lead source linkedin, summary notes), Madison Wallace deal at Scope sent. Finding: zero wave-1 ICP in the inbox.
 - /dashboard/linkedin: Connect (OIDC + Share on LinkedIn, self-serve), post text/image/video to Naufal's profile on Publish only (Posts/Images/Videos APIs, Linkedin-Version 202609). 60-day token, no refresh: health check fails 7 days before expiry. Shared lib/sealed.ts now holds TikTok + LinkedIn tokens; shared upload route /dashboard/media/upload.

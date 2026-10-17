@@ -345,6 +345,7 @@ export async function systemData() {
       { name: 'Instagram', role: 'Keyword DMs + posts', ok: has('IG_ACCESS_TOKEN'), env: 'IG_ACCESS_TOKEN' },
       { name: 'TikTok app', role: 'Post videos + video stats (connect on the TikTok tab)', ok: has('TIKTOK_CLIENT_KEY') && has('TIKTOK_CLIENT_SECRET'), env: 'TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET' },
       { name: 'LinkedIn app', role: 'Post to your profile (connect on the LinkedIn tab, renew every 60 days)', ok: has('LINKEDIN_CLIENT_ID') && has('LINKEDIN_CLIENT_SECRET'), env: 'LINKEDIN_CLIENT_ID + LINKEDIN_CLIENT_SECRET' },
+      { name: 'QStash', role: 'Exact-time scheduled posts', ok: has('QSTASH_TOKEN') && has('QSTASH_CURRENT_SIGNING_KEY'), env: 'QSTASH_TOKEN + QSTASH_*_SIGNING_KEY' },
       { name: 'Telegram', role: 'Alerts to your phone', ok: has('TELEGRAM_BOT_TOKEN'), env: 'TELEGRAM_BOT_TOKEN' },
       { name: 'Vercel Blob', role: 'Campaigns, stats, activity feed', ok: has('BLOB_READ_WRITE_TOKEN'), env: 'BLOB_READ_WRITE_TOKEN' },
       { name: 'Fathom API', role: 'Call recordings + recaps', ok: has('FATHOM_API_KEY'), env: 'FATHOM_API_KEY' },

@@ -147,7 +147,7 @@ export async function contentPlus(drafts: { detail?: string; runAt: string }[], 
   return {
     errors,
     plan: PLAN, todayIdx: (new Date().getDay() + 6) % 7,
-    postsThisWeek: posts.filter((p) => ts(p.timestamp) >= weekStart).length, weeklyTarget: 21,
+    postsThisWeek: posts.filter((p) => ts(p.timestamp) >= weekStart).length, weeklyTarget: FUNNEL.content.weeklyTarget,
     coverage: LAYERS.map((name, i) => ({ n: i + 1, name, drafts: covered[String(i + 1)] ?? 0 })),
     ideas: recent.results.map((c) => ({ text: c.properties.whats_not_working ?? '', who: c.properties.business_type ?? 'A lead', at: c.properties.createdate ?? '' })).filter((x) => x.text.length > 15).slice(0, 12),
     hooks: HOOKS,

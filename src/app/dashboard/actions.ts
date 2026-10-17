@@ -11,6 +11,7 @@ import { addToGroup, removeFromGroup } from '@/lib/mailerlite';
 import { sendEmail } from '@/lib/send';
 import { logEvent } from '@/lib/events';
 import { getCampaigns, saveCampaigns, slugify, DEFAULT_CAMPAIGN, type Campaign, type Channel } from '@/lib/campaigns';
+import type { ContentPost, ChannelKey, Issue } from '@/lib/content';
 
 export async function login(_prev: string | null, form: FormData): Promise<string | null> {
   const pw = String(form.get('password') ?? '');
@@ -331,4 +332,175 @@ export async function disconnectLinkedIn() {
   const { disconnect } = await import('@/lib/linkedin');
   await disconnect();
   revalidatePath('/dashboard/linkedin');
+}
+
+// ---------------------------------------------------------------- Content engine ("Post everywhere")
+// Object-argument actions called from the composer. Nothing publishes except publishContentNow (Naufal's
+// click) and scheduleContent (his chosen time, fired by QStash). Each channel runs independently.
+
+export type ContentResult = { error?: string; issues?: Issue[]; post?: ContentPost };
+
+const editable = (p: ContentPost) => p.status === 'draft' || p.status === 'scheduled' || p.status === 'partial';
+
+export async function createContentPost(idea = ''): Promise<ContentResult> {
+  await requireSession();
+  const { newPost, savePost } = await import('@/lib/content');
+  const p = newPost(idea);
+  await savePost(p);
+  return { post: p };
+}
+
+/** Save the composer's fields (text, options, media, ticks); statuses and results are never taken from the client. */
+export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'>): Promise<ContentResult> {
+  await requireSession();
+  const { getPost, savePost, CHANNELS } = await import('@/lib/content');
+  const p = await getPost(input.id);
+  if (!p) return { error: 'Post not found' };
+  if (!editable(p)) return { error: 'This post is publishing right now.' };
+  const m = input.master.media;
+  if (m && !m.path.startsWith('content/media/')) return { error: 'Upload the media again.' };
+  p.master = { idea: String(input.master.idea ?? '').slice(0, 5000), media: m, transcript: input.master.transcript?.slice(0, 50_000) };
+  for (const c of CHANNELS) {
+    const cur = p.channels[c];
+    const keep = { status: cur.status, url: cur.url, error: cur.error, attempts: cur.attempts, postedAt: cur.postedAt };
+    if (cur.status === 'posted' || cur.status === 'publishing') continue;
+    const next = { ...cur, ...input.channels[c], ...keep } as typeof cur;
+    if (next.enabled && (keep.status === 'off' || !keep.status)) next.status = 'ready';
+    if (!next.enabled) next.status = 'off';
+    (p.channels as Record<string, unknown>)[c] = next;
+  }
+  p.flags = (input.flags ?? []).slice(0, 50);
+  await savePost(p);
+  return { post: p };
+}
+
+async function readyToPublish(id: string): Promise<ContentResult & { p?: ContentPost }> {
+  const { getPost } = await import('@/lib/content');
+  const { checkPost } = await import('@/lib/publish');
+  const p = await getPost(id);
+  if (!p) return { error: 'Post not found' };
+  const issues = await checkPost(p);
+  if (issues.some((i) => i.level === 'block')) return { issues, error: 'Fix the red items first.' };
+  if (issues.some((i) => i.level === 'warn' && !p.flags.includes(i.text))) return { issues, error: 'Tick the warnings you are happy to go ahead with.' };
+  return { p, issues };
+}
+
+export async function publishContentNow(id: string): Promise<ContentResult> {
+  await requireSession();
+  const r = await readyToPublish(id);
+  if (!r.p) return r;
+  const { cancelScheduled } = await import('@/lib/qstash');
+  if (r.p.qstashMessageId) await cancelScheduled(r.p.qstashMessageId).catch(() => {});
+  const { runPost } = await import('@/lib/publish');
+  const out = await runPost(id);
+  revalidatePath('/dashboard/content');
+  return { post: out.post };
+}
+
+export async function scheduleContent(id: string, atIso: string): Promise<ContentResult> {
+  await requireSession();
+  const { qstashReady, scheduleAt, cancelScheduled } = await import('@/lib/qstash');
+  if (!qstashReady()) return { error: 'Scheduling is not set up yet (QStash keys missing). Use Publish now, or add the keys.' };
+  const at = new Date(atIso);
+  if (Number.isNaN(at.getTime()) || at.getTime() < Date.now() + 60_000) return { error: 'Pick a time at least a minute from now.' };
+  if (at.getTime() > Date.now() + 60 * 86_400_000) return { error: 'Schedule within the next 60 days.' };
+  const r = await readyToPublish(id);
+  if (!r.p) return r;
+  const p = r.p;
+  if (p.qstashMessageId) await cancelScheduled(p.qstashMessageId).catch(() => {});
+  p.qstashMessageId = await scheduleAt(at, { postId: p.id });
+  p.scheduledFor = at.toISOString();
+  const { CHANNELS, savePost } = await import('@/lib/content');
+  for (const c of CHANNELS) if (p.channels[c].enabled && p.channels[c].status !== 'posted') p.channels[c].status = 'scheduled';
+  p.status = 'scheduled';
+  await savePost(p);
+  revalidatePath('/dashboard/content');
+  return { post: p };
+}
+
+export async function cancelContentSchedule(id: string): Promise<ContentResult> {
+  await requireSession();
+  const { getPost, savePost, rollUp, CHANNELS } = await import('@/lib/content');
+  const { cancelScheduled } = await import('@/lib/qstash');
+  const p = await getPost(id);
+  if (!p) return { error: 'Post not found' };
+  if (p.qstashMessageId) await cancelScheduled(p.qstashMessageId).catch(() => {});
+  p.qstashMessageId = undefined;
+  p.scheduledFor = undefined;
+  for (const c of CHANNELS) if (p.channels[c].status === 'scheduled') p.channels[c].status = 'ready';
+  p.status = rollUp(p);
+  await savePost(p);
+  revalidatePath('/dashboard/content');
+  return { post: p };
+}
+
+export async function retryContentChannel(id: string, ch: ChannelKey): Promise<ContentResult> {
+  await requireSession();
+  const { runPost } = await import('@/lib/publish');
+  const out = await runPost(id, { only: [ch] });
+  revalidatePath('/dashboard/content');
+  return { post: out.post };
+}
+
+/** Sends TikTok for every held post (after the app is approved), oldest first, within one request's time. */
+export async function sendHeldTikTok(): Promise<{ error?: string; sent: number; left: number }> {
+  await requireSession();
+  const { tiktokApproved, runPost } = await import('@/lib/publish');
+  if (!tiktokApproved()) return { error: 'TikTok has not approved the app yet (set TIKTOK_APPROVED=1 once it has).', sent: 0, left: 0 };
+  const { getIndex } = await import('@/lib/content');
+  const held = (await getIndex()).filter((r) => r.channels.tiktok === 'held').reverse();
+  const until = Date.now() + 200_000;
+  let sent = 0;
+  for (const row of held) {
+    if (Date.now() > until) break;
+    const out = await runPost(row.id, { only: ['tiktok'] });
+    if (out.post.channels.tiktok.status === 'posted') sent++;
+  }
+  revalidatePath('/dashboard/content');
+  return { sent, left: held.length - sent };
+}
+
+export async function discardHeldTikTok(id: string): Promise<ContentResult> {
+  await requireSession();
+  const { getPost, savePost, rollUp, CHANNELS } = await import('@/lib/content');
+  const p = await getPost(id);
+  if (!p) return { error: 'Post not found' };
+  p.channels.tiktok = { ...p.channels.tiktok, enabled: false, status: 'off', error: undefined };
+  p.status = rollUp(p);
+  await savePost(p);
+  const pending = CHANNELS.some((c) => p.channels[c].enabled && ['failed', 'held', 'ready', 'scheduled'].includes(p.channels[c].status));
+  if (!pending && p.master.media) { const { del } = await import('@vercel/blob'); await del(p.master.media.path).catch(() => {}); }
+  revalidatePath('/dashboard/content');
+  return { post: p };
+}
+
+export async function deleteContentDraft(id: string): Promise<ContentResult> {
+  await requireSession();
+  const { getPost, deletePost, CHANNELS } = await import('@/lib/content');
+  const p = await getPost(id);
+  if (!p) return {};
+  if (CHANNELS.some((c) => ['posted', 'publishing'].includes(p.channels[c].status))) return { error: 'Published posts are kept as a record.' };
+  if (p.qstashMessageId) { const { cancelScheduled } = await import('@/lib/qstash'); await cancelScheduled(p.qstashMessageId).catch(() => {}); }
+  if (p.master.media) { const { del } = await import('@vercel/blob'); await del(p.master.media.path).catch(() => {}); }
+  await deletePost(id);
+  revalidatePath('/dashboard/content');
+  return {};
+}
+
+/** "New post" button: create a draft and open it in the editor. */
+export async function newContentPost() {
+  await requireSession();
+  const { newPost, savePost } = await import('@/lib/content');
+  const p = newPost();
+  await savePost(p);
+  redirect(`/dashboard/content/${p.id}`);
+}
+
+/** Live pre-flight for the editor (after each autosave). */
+export async function checkContentPost(id: string): Promise<{ issues: Issue[] }> {
+  await requireSession();
+  const { getPost } = await import('@/lib/content');
+  const { checkPost } = await import('@/lib/publish');
+  const p = await getPost(id);
+  return { issues: p ? await checkPost(p) : [] };
 }
