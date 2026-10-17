@@ -49,7 +49,7 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
       setProgress(0);
       const name = f.name.replace(/[^\w.-]+/g, '-').slice(-60) || 'video.mp4';
       const res = await upload(`tiktok/uploads/${name}`, f, {
-        access: 'private', handleUploadUrl: '/dashboard/tiktok/upload', multipart: f.size > 20 * 1024 * 1024,
+        access: 'private', handleUploadUrl: '/dashboard/media/upload', multipart: f.size > 20 * 1024 * 1024,
         onUploadProgress: (p) => setProgress(Math.round(p.percentage)),
       });
       setBlobPath(res.pathname);

@@ -4,8 +4,8 @@
 // (access token 24h, refresh token ~1 year). Posting only ever happens when he presses Publish.
 // While the app is unaudited (sandbox), TikTok only allows SELF_ONLY (private) posts.
 
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { getJSON, putJSON, storeReady } from '@/lib/store';
+import { sealedStore } from '@/lib/sealed';
 import { FUNNEL } from '@/config/funnel';
 
 const API = 'https://open.tiktokapis.com/v2';
@@ -19,30 +19,10 @@ export const tiktokConfigured = () => !!process.env.TIKTOK_CLIENT_KEY && !!proce
 
 type Token = { access_token: string; refresh_token: string; open_id: string; scope: string; expires_at: number; refresh_expires_at: number };
 
-// ---------------------------------------------------------------- token storage (encrypted)
-const key = () => createHash('sha256').update(`naunas-tiktok:${process.env.TIKTOK_CLIENT_SECRET}`).digest();
-
-function seal(t: Token): string {
-  const iv = randomBytes(12);
-  const c = createCipheriv('aes-256-gcm', key(), iv);
-  const body = Buffer.concat([c.update(JSON.stringify(t), 'utf8'), c.final()]);
-  return [iv, c.getAuthTag(), body].map((b) => b.toString('base64')).join('.');
-}
-
-function open(s: string): Token | null {
-  try {
-    const [iv, tag, body] = s.split('.').map((p) => Buffer.from(p, 'base64'));
-    const d = createDecipheriv('aes-256-gcm', key(), iv);
-    d.setAuthTag(tag);
-    return JSON.parse(Buffer.concat([d.update(body), d.final()]).toString('utf8')) as Token;
-  } catch { return null; }
-}
-
-const loadToken = async () => {
-  const s = await getJSON<{ sealed?: string }>(TOKEN_PATH, {});
-  return s.sealed ? open(s.sealed) : null;
-};
-const saveToken = (t: Token) => putJSON(TOKEN_PATH, { sealed: seal(t), savedAt: new Date().toISOString() });
+// ---------------------------------------------------------------- token storage (encrypted, lib/sealed.ts)
+const tokens = sealedStore<Token>('tiktok', TOKEN_PATH, () => process.env.TIKTOK_CLIENT_SECRET);
+const loadToken = tokens.load;
+const saveToken = tokens.save;
 
 async function tokenRequest(params: Record<string, string>): Promise<Token> {
   const res = await fetch(`${API}/oauth/token/`, {
@@ -92,7 +72,7 @@ export async function disconnect() {
       body: new URLSearchParams({ client_key: process.env.TIKTOK_CLIENT_KEY!.trim(), client_secret: process.env.TIKTOK_CLIENT_SECRET!.trim(), token: t.access_token }),
     }).catch(() => {});
   }
-  await putJSON(TOKEN_PATH, {});
+  await tokens.clear();
 }
 
 // ---------------------------------------------------------------- API calls

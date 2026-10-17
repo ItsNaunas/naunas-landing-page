@@ -23,6 +23,10 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-17 (LinkedIn)
+- LinkedIn inbox audit: Claude-in-Chrome read 134 conversations; 20 imported to HubSpot (lead source linkedin, summary notes), Madison Wallace deal at Scope sent. Finding: zero wave-1 ICP in the inbox.
+- /dashboard/linkedin: Connect (OIDC + Share on LinkedIn, self-serve), post text/image/video to Naufal's profile on Publish only (Posts/Images/Videos APIs, Linkedin-Version 202609). 60-day token, no refresh: health check fails 7 days before expiry. Shared lib/sealed.ts now holds TikTok + LinkedIn tokens; shared upload route /dashboard/media/upload.
+- TikTok: demo video recorded (sandbox, private test account @milno62) and app submitted for review.
 ### 2026-10-17 (TikTok)
 - /terms page + footer/sitemap; TikTok URL-prefix verification file in public/.
 - /dashboard/tiktok: Login Kit connect (state cookie, callback at /api/tiktok/callback), tokens AES-GCM encrypted in Blob and auto-refreshed (daily health check keeps them alive), stats + recent videos, Direct Post composer following TikTok UX rules (creator_info, no default privacy, interaction toggles off, commercial disclosure, consent line). Video goes browser → private Blob (client upload) → server action → TikTok FILE_UPLOAD, then our copy is deleted.

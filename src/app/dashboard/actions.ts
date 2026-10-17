@@ -292,3 +292,43 @@ export async function disconnectTikTok() {
   await disconnect();
   revalidatePath('/dashboard/tiktok');
 }
+
+// ---------------------------------------------------------------- LinkedIn
+// Posts to Naufal's own profile only on his click. Media (optional) was uploaded by the browser to the
+// private Blob store (linkedin/uploads/…); we read it, send it to LinkedIn, then delete our copy.
+
+export async function publishLinkedIn(_prev: PublishState, form: FormData): Promise<PublishState> {
+  await requireSession();
+  const { publishPost, getPosts, savePosts } = await import('@/lib/linkedin');
+  const { get, del } = await import('@vercel/blob');
+  const text = String(form.get('text') ?? '').trim();
+  const visibility = form.get('visibility') === 'CONNECTIONS' ? 'CONNECTIONS' : 'PUBLIC';
+  const path = String(form.get('media') ?? '');
+  const kind = form.get('mediaKind') === 'video' ? 'video' : 'image';
+  if (!text) return { error: 'Write the post first.' };
+  if (text.length > 3000) return { error: 'LinkedIn posts are limited to 3,000 characters.' };
+  if (path && !path.startsWith('linkedin/uploads/')) return { error: 'Upload the media again.' };
+  try {
+    let media: { kind: 'image' | 'video'; data: Buffer; title?: string } | undefined;
+    if (path) {
+      const blob = await get(path, { access: 'private', useCache: false });
+      if (!blob) return { error: 'The uploaded file has gone. Upload it again.' };
+      media = { kind, data: Buffer.from(await new Response(blob.stream).arrayBuffer()), title: text.split('\n')[0].slice(0, 100) };
+    }
+    const urn = await publishPost(text, visibility, media);
+    if (path) await del(path).catch(() => {});
+    await savePosts([{ urn, text: text.slice(0, 300), visibility, ...(media ? { media: media.kind } : {}), at: new Date().toISOString() }, ...(await getPosts())]);
+    await logEvent('linkedin', `Posted to LinkedIn: ${text.slice(0, 60)}`, '/dashboard/linkedin');
+    revalidatePath('/dashboard/linkedin');
+    return { publishId: urn, at: Date.now() };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Publishing failed' };
+  }
+}
+
+export async function disconnectLinkedIn() {
+  await requireSession();
+  const { disconnect } = await import('@/lib/linkedin');
+  await disconnect();
+  revalidatePath('/dashboard/linkedin');
+}
