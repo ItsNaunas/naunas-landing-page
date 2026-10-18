@@ -45,7 +45,9 @@ function PostRow({ r }: { r: IndexRow }) {
             </span>
           ))}
         </span>
-        <Badge tone={POST_TONE[r.status] ?? 'muted'}>{POST_LABEL[r.status] ?? r.status}</Badge>
+        {r.status === 'scheduled' && Date.parse(r.when) < Date.now() - 10 * 60_000
+          ? <Badge tone="bad">Overdue</Badge>
+          : <Badge tone={POST_TONE[r.status] ?? 'muted'}>{POST_LABEL[r.status] ?? r.status}</Badge>}
       </Link>
     </li>
   );

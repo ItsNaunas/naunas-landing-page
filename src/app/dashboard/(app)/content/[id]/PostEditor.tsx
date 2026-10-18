@@ -343,6 +343,8 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
         {post.status === 'scheduled' && post.scheduledFor ? (
           <>
             <span className="text-sm">Scheduled for <b>{fmt(new Date(post.scheduledFor))}</b> <span className="text-white/40">({fmt(new Date(post.scheduledFor), ctx.usTz)} US East)</span></span>
+            {Date.parse(post.scheduledFor) < Date.now() - 10 * 60_000 && <span className="text-xs text-rose-300">Overdue: the schedule didn’t fire.</span>}
+            <button disabled={busy} onClick={() => act(() => publishContentNow(post.id), 'Published.')} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm hover:border-white/40 disabled:opacity-40">Publish now instead</button>
             <button disabled={busy} onClick={() => act(() => cancelContentSchedule(post.id), 'Schedule cancelled.')} className="text-sm text-white/55 hover:text-rose-300 disabled:opacity-40">Cancel schedule</button>
           </>
         ) : (

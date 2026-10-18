@@ -9,6 +9,7 @@ import { checkApify } from '@/lib/apify';
 import { checkTikTok, tiktokConnected } from '@/lib/tiktok';
 import { checkLinkedIn, linkedinAccount } from '@/lib/linkedin';
 import { checkQStash, qstashReady } from '@/lib/qstash';
+import { getIndex } from '@/lib/content';
 
 // The read-only checks behind the daily health cron and the /dashboard health panel: every service the
 // funnel depends on still accepts our keys, and the MailerLite sequences are switched on.
@@ -56,6 +57,11 @@ export async function runChecks(): Promise<Check[]> {
     ...(tiktok ? [run('TikTok', () => checkTikTok())] : []),
     ...(linkedin ? [run('LinkedIn', () => checkLinkedIn())] : []),
     ...(qstashReady() ? [run('QStash (scheduling)', () => checkQStash())] : []),
+    ...(storeReady() ? [run('Scheduled posts', async () => {
+      // A post still "scheduled" 10+ minutes after its time means QStash never fired (or was rejected).
+      const late = (await getIndex()).filter((r) => r.status === 'scheduled' && Date.parse(r.when) < Date.now() - 10 * 60_000);
+      if (late.length) throw new Error(`${late.length} scheduled post${late.length > 1 ? 's' : ''} didn't go out (${late.slice(0, 3).map((r) => r.idea.slice(0, 40) || r.id).join(' · ')}). Open Content and press Publish now.`);
+    })] : []),
     ...(storeReady() ? [] : [run('Blob store', async () => { throw new Error('not connected: campaigns can\'t be edited, stats aren\'t kept'); })]),
   ]);
 }
