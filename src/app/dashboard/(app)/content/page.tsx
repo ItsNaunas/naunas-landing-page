@@ -12,6 +12,10 @@ import { SendHeldButton } from './HeldTray';
 import { SchedulingTest } from './SchedulingTest';
 import { qstashReady } from '@/lib/qstash';
 import { getJSON } from '@/lib/store';
+import { postPerformance, evergreen, type PostPerf } from '@/lib/performance';
+import { latestDigest, type Digest } from '@/lib/newsletter';
+import { NewsletterButton } from './NewsletterButton';
+import { refreshPostStats, duplicateContentPost } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +37,13 @@ function demoRows(): IndexRow[] {
     { id: 'demo', createdAt: d(-50), when: d(-26), status: 'done', idea: 'Why your proposal sits unread for 6 days.', kind: 'image', channels: { linkedin: 'posted', instagram: 'posted', tiktok: 'off' } },
     { id: 'demo', createdAt: d(-80), when: d(-50), status: 'partial', idea: 'I rebuilt a studio’s enquiry form in a day. Here’s the before and after.', kind: 'video', channels: { linkedin: 'posted', instagram: 'failed', tiktok: 'held' } },
   ];
+}
+
+function demoPerf(): PostPerf[] {
+  return demoRows().filter((r) => r.status !== 'scheduled').map((r, i) => ({
+    ...r, clicks: { linkedin: 14 - i * 4, instagram: 9 - i * 3, tiktok: 0 }, totalClicks: 23 - i * 7, leads: 3 - i, deals: i ? 0 : 1, score: 0,
+    insights: r.channels.instagram === 'posted' ? { reach: 2100 - i * 600, views: 3400 - i * 900, likes: 88 - i * 20, comments: 12 - i * 3, saved: 9 - i * 2, shares: 4, at: r.when } : undefined,
+  }));
 }
 
 function PostRow({ r }: { r: IndexRow }) {
@@ -71,12 +82,16 @@ export default async function Content() {
   const upcoming = rows.filter((r) => r.status === 'scheduled').sort((a, b) => a.when.localeCompare(b.when));
   const ping = demoOn() ? null : await getJSON<{ scheduledFor?: string; firedAt?: string | null } | null>('meta/qstash-ping.json', null);
   const recent = rows.filter((r) => r.status !== 'scheduled').slice(0, 12);
+  const perf = demoOn() ? { rows: demoPerf(), errors: [] } : await postPerformance(365).catch(() => ({ rows: [] as PostPerf[], errors: ['Post performance failed to load'] }));
+  const board = perf.rows.filter((r) => Date.parse(r.when) >= Date.now() - 120 * 86_400_000).slice(0, 10);
+  const again = evergreen(perf.rows);
+  const digest: Digest | null = demoOn() ? null : await latestDigest().catch(() => null);
 
   return (
     <>
       <PageHeader title="Content" sub="Post once to LinkedIn, Instagram and TikTok, plan the week, and see which posts actually bring people in."
         action={<form action={newContentPost}><button className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">+ New post</button></form>} />
-      <Errors errors={[...d.errors, ...x.errors]} />
+      <Errors errors={[...d.errors, ...x.errors, ...perf.errors]} />
 
       {/* This week */}
       <div className="grid lg:grid-cols-[1fr_260px] gap-3 md:gap-4">
@@ -129,6 +144,68 @@ export default async function Content() {
         <Card title="Recent posts" pad={false}>
           {recent.length ? <ul className="divide-y divide-white/[0.05]">{recent.map((r, j) => <PostRow key={r.id + j} r={r} />)}</ul>
             : <Empty>Posts you publish from here show up with each channel’s result.</Empty>}
+        </Card>
+      </div>
+
+      {/* What's working */}
+      <SectionTitle action={<form action={refreshPostStats}><button className="text-xs text-white/45 hover:text-white">Refresh Instagram stats ↻</button></form>}>Post leaderboard · last 120 days</SectionTitle>
+      <Card pad={false}>
+        {board.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[13px] min-w-[640px]">
+              <thead><tr className="text-left text-[11px] text-white/40 border-b border-white/[0.06]">
+                <th className="px-5 py-2.5 font-normal">Post</th>
+                <th className="px-2 py-2.5 font-normal text-right" title="Tracked-link clicks per channel">Clicks LI · IG · TT</th>
+                <th className="px-2 py-2.5 font-normal text-right" title="Instagram reach / views">IG reach</th>
+                <th className="px-2 py-2.5 font-normal text-right">Leads</th>
+                <th className="px-5 py-2.5 font-normal text-right">Deals</th>
+              </tr></thead>
+              <tbody className="divide-y divide-white/[0.05]">
+                {board.map((r, j) => (
+                  <tr key={r.id + j} className="hover:bg-white/[0.02]">
+                    <td className="px-5 py-2.5 max-w-0 w-1/2">
+                      <Link href={`/dashboard/content/${r.id}`} className="block truncate text-white/85 hover:text-[#F2613F]">{r.idea || 'Untitled'}</Link>
+                      <span className="text-[11px] text-white/35">{ago(r.when)}{CHANNELS.filter((c) => r.urls?.[c]).map((c) => <a key={c} href={r.urls![c]} {...linkProps} className="ml-2 hover:text-white">{CHANNEL_CODE[c].toUpperCase()} ↗</a>)}</span>
+                    </td>
+                    <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.clicks.linkedin ?? 0} · {r.clicks.instagram ?? 0} · {r.clicks.tiktok ?? 0}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.insights ? (r.insights.reach ?? r.insights.views ?? 0).toLocaleString() : '—'}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums font-medium">{r.leads || <span className="text-white/30">0</span>}</td>
+                    <td className="px-5 py-2.5 text-right tabular-nums">{r.deals ? <span className="text-emerald-300">{r.deals}</span> : <span className="text-white/30">0</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <Empty>Once posts go out from here, each one ranks by the leads, deals and clicks it brings. LinkedIn has no stats API, so it counts clicks on the post’s tracked link.</Empty>}
+      </Card>
+
+      <div className="grid lg:grid-cols-2 gap-3 md:gap-4">
+        <div id="newsletter" className="scroll-mt-20">
+          <Card title="Weekly newsletter" action={<NewsletterButton label={digest ? 'Rebuild this week' : 'Build draft now'} />}>
+            <p className="text-sm text-white/55">Every Monday a draft builds itself in MailerLite from last week’s posts, best one first, with the free-audit button. It is <b className="text-white/80">never sent</b> until you press Send there.</p>
+            {digest ? (
+              <div className="mt-4 rounded-lg bg-white/[0.03] border border-white/[0.06] p-3.5">
+                <p className="text-[11px] text-white/40">Week of {digest.week} · {digest.postIds.length} post{digest.postIds.length > 1 ? 's' : ''}</p>
+                <p className="text-[13.5px] text-white/90 mt-1">{digest.subject}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+                  {digest.editUrl ? <a href={digest.editUrl} {...linkProps} className="text-[#ff8a6d] hover:underline">Open the draft in MailerLite ↗</a> : <span className="text-rose-300">{digest.error ?? 'No draft made'}</span>}
+                  {!digest.contentIncluded && digest.editUrl && <><CopyButton text={digest.html} label="Copy email HTML" /><span className="text-white/40">MailerLite → the draft → Content → Custom HTML → paste</span></>}
+                </div>
+              </div>
+            ) : <p className="text-xs text-white/40 mt-3">No draft yet. Write a newsletter blurb on each post (AI does it with the rest) so the email reads well.</p>}
+          </Card>
+        </div>
+        <Card title="Worth posting again">
+          {again.length ? (
+            <ul className="flex flex-col divide-y divide-white/[0.05] -my-2">
+              {again.map((r) => (
+                <li key={r.id} className="py-2.5 flex items-center gap-3">
+                  <span className="flex-1 min-w-0"><span className="block truncate text-[13px] text-white/85">{r.idea || 'Untitled'}</span><span className="text-[11px] text-white/40">{r.leads} lead{r.leads > 1 ? 's' : ''} · {ago(r.when)}</span></span>
+                  <form action={duplicateContentPost}><input type="hidden" name="id" value={r.id} /><button className="text-xs rounded-lg bg-white/[0.08] hover:bg-white/[0.14] px-2.5 py-1.5">Re-post as draft</button></form>
+                </li>
+              ))}
+            </ul>
+          ) : <Empty>Posts older than 90 days that brought leads show up here. Same idea, new hook: it’s a new audience by then.</Empty>}
         </Card>
       </div>
 

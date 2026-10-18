@@ -11,6 +11,7 @@ import { publishToInstagram } from '@/lib/instagram';
 import { getCampaigns, saveCampaigns } from '@/lib/campaigns';
 import { mediaLink } from '@/lib/mediaLink';
 import { notify, line } from '@/lib/alert';
+import { qstashReady, scheduleAt } from '@/lib/qstash';
 import { logEvent } from '@/lib/events';
 import { FUNNEL } from '@/config/funnel';
 
@@ -139,5 +140,9 @@ export async function runPost(id: string, opts: { only?: ChannelKey[]; expectSch
       { text: 'Open in dashboard', url: `${FUNNEL.site}/dashboard/content?post=${p.id}` },
     ],
   });
+  // A while after it goes live: nudge to answer comments (early replies are what the algorithms reward).
+  if (results.some((r) => r.status === 'posted' && r.c !== 'tiktok') && qstashReady()) {
+    await scheduleAt(new Date(Date.now() + FUNNEL.content.replyReminderMin * 60_000), { remind: p.id }).catch((err) => console.error('[publish] reminder', err));
+  }
   return { skipped: false as const, post: p };
 }

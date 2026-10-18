@@ -9,6 +9,32 @@ import { DAY, num, ts, tally, collector, nowish, STAGE_LABEL, type RoutineReport
 import { personData } from './tabs';
 import { src } from './cache';
 import { demo, demoOn } from './demo';
+import { getReps, repDay, MANUAL_REPS, AUTO_TARGETS } from '@/lib/reps';
+import { getIndex, type IndexRow } from '@/lib/content';
+
+/** Today's reps + the last 7 days, from the rep log, the activity log and the content index. */
+function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], posts: IndexRow[], prospects: Prospect[]) {
+  const days = Array.from({ length: 7 }, (_, i) => repDay(Date.now() - (6 - i) * DAY));
+  const count = (day: string, kind: string) => events.filter((e) => e.kind === kind && repDay(e.at) === day).length;
+  const postsOn = (day: string) => posts.filter((r) => Object.values(r.channels).includes('posted') && repDay(r.when) === day).length;
+  const row = (day: string) => {
+    const manual = MANUAL_REPS.map((r) => ({ ...r, done: log[day]?.[r.key] ?? 0 }));
+    const auto = { emails: count(day, 'outreach_email'), dms: count(day, 'outreach_dm'), posts: postsOn(day) };
+    const touches = auto.emails + auto.dms + manual.filter((m) => m.key !== 'list').reduce((t, m) => t + m.done, 0);
+    return { day, manual, auto, touches };
+  };
+  const week = days.map(row);
+  const today = week[6];
+  const goals = [...today.manual.map((m) => [m.done, m.target]), [today.auto.emails, AUTO_TARGETS.emails], [today.auto.dms, AUTO_TARGETS.dms], [today.auto.posts, AUTO_TARGETS.posts]];
+  const since = Date.parse(days[0]);
+  return {
+    today, week, targets: AUTO_TARGETS,
+    hit: goals.filter(([d, t]) => d >= t).length, of: goals.length,
+    weekTouches: week.reduce((t, d) => t + d.touches, 0),
+    weekReplies: prospects.filter((p) => p.repliedAt && Date.parse(p.repliedAt) >= since).length,
+  };
+}
+const demoReps = () => repsView({ [repDay()]: { warmups: 3, followups: 2, linkedin: 1, list: 5 } }, [], [], []);
 
 // Lead profile, Outreach and Content-plus data for /dashboard. Read-only; per-source errors.
 
@@ -80,7 +106,7 @@ export async function leadProfile(id: string) {
 
 // ---------------------------------------------------------------- Outreach
 export async function outreachData() {
-  if (demoOn()) return demo.outreach() as never;
+  if (demoOn()) return { ...demo.outreach(), reps2: demoReps(), warmList: [] } as never;
   const { errors, safe } = collector();
   if (apifyReady()) await safe('Apify', syncSearches(), [] as Search[]);
   await safe('Drafts', ingestDrafts(), 0);
@@ -90,6 +116,7 @@ export async function outreachData() {
     safe('HubSpot', crmSearch('contacts', [{ propertyName: 'naunas_lead_source', operator: 'EQ', value: 'cold_email' }], ['email', 'firstname', 'naunas_outreach_status', 'num_associated_deals', 'createdate', 'website']), { total: 0, results: [] }),
     inboxReady() ? safe('Inbox', src.recentInbound(14, 80), [] as Mail[]) : Promise.resolve([] as Mail[]),
   ]);
+  const [repLog, contentRows] = await Promise.all([safe('Reps', getReps(), {}), safe('Content', getIndex(), [] as IndexRow[])]);
   const today = new Date(nowish()).toISOString().slice(0, 10);
   const todays = events.filter((e) => e.at.slice(0, 10) === today);
   const month = new Date().toISOString().slice(0, 7);
@@ -111,6 +138,9 @@ export async function outreachData() {
   return {
     errors, settings, searches: searches.slice(0, 8), spent,
     queue: { review: by('new').sort((a, b) => b.fit - a.fit), approved: by('approved'), drafted: by('drafted'), scheduled: by('scheduled'), active: by('active'), replied: by('replied'), finished: by('finished') },
+    reps2: repsView(repLog, events, contentRows, prospects),
+    // Day 0 of the Instagram sequence: follow + comment, then DM the next day.
+    warmList: prospects.filter((p) => p.instagram && !p.warmedAt && !p.dmSentAt && ['drafted', 'scheduled', 'active'].includes(p.status)).sort((a, b) => b.fit - a.fit).slice(0, 5),
     dmList: prospects.filter((p) => p.instagram && p.drafts?.dm && !p.dmSentAt && ['drafted', 'scheduled', 'active'].includes(p.status)).slice(0, 10),
     reps: {
       emails: todays.filter((e) => e.kind === 'outreach_email').length, emailTarget: settings.dailyNew,

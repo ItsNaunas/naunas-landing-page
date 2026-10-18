@@ -5,6 +5,8 @@ import { notify, esc, alertError } from '@/lib/alert';
 import { weeklyScoreboard } from '@/lib/scoreboard';
 import { FUNNEL } from '@/config/funnel';
 import { refreshIgToken } from '@/lib/instagram';
+import { buildWeeklyDraft } from '@/lib/newsletter';
+import { refreshInsights } from '@/lib/performance';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -43,6 +45,16 @@ export async function GET(req: NextRequest) {
       await alertError('Health: weekly scoreboard', err, 'Nothing is broken for leads; only this week’s scoreboard is missing.');
     }
   }
+  // Newsletter day (Monday): build the weekly draft in MailerLite from last week's posts. Never sends.
+  if (new Date().getUTCDay() === FUNNEL.content.newsletterDay || req.nextUrl.searchParams.get('newsletter') === '1') {
+    try {
+      await buildWeeklyDraft();
+    } catch (err) {
+      await alertError('Health: newsletter draft', err, 'Only the weekly draft is missing. Build it from Content → Newsletter.');
+    }
+  }
+  // Instagram insights for recent posts (the Content leaderboard). Quiet on failure: stats only.
+  await refreshInsights().catch((err) => console.error('[health] insights', err));
   // 1st of the month: extend the Instagram token (it dies after 60 days unused-refresh).
   if (process.env.IG_ACCESS_TOKEN && new Date().getUTCDate() === 1) {
     try {

@@ -22,7 +22,7 @@ export type Prospect = {
   fit: number; fitWhy: string[]; searchId: string; createdAt: string; status: ProspectStatus;
   drafts?: Drafts;
   sent?: { step: number; at: string; messageId: string }[];
-  startedAt?: string; repliedAt?: string; dmSentAt?: string; contactId?: string;
+  startedAt?: string; repliedAt?: string; dmSentAt?: string; warmedAt?: string; contactId?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 export type OutreachSettings = { sending: boolean; dailyNew: number; dailyTotal: number; monthlyCapUsd: number };

@@ -117,13 +117,13 @@ The media file is kept until every enabled channel is `posted`, `off` or discard
   - the newsletter blurb.
 - **Captions**: when an SRT is attached (from the local `naunas-studio` faster-whisper pipeline), LinkedIn video gets a caption upload. Burned-in subtitles for TikTok and Reels stay in the studio pipeline.
 
-**Phase 5: Weekly newsletter draft**
+**Phase 5: Weekly newsletter draft** (shipped 2026-10-18 · `src/lib/newsletter.ts`; if MailerLite refuses API HTML on the free plan, the draft is made without a body and the HTML is copied from Content → Weekly newsletter)
 - The existing 06:00 UTC health cron runs it on **Mondays only**.
 - Last week's posted items are ranked by tracked clicks and leads.
 - The MailerLite **draft campaign** for the Newsletter group contains a subject, an intro (AI, or a template if there's no key), the best post first, the others below, and a "Book your free audit" CTA.
 - Telegram sends a "draft ready" link. If nothing was posted that week, there's no draft and Telegram says so. It's never sent automatically.
 
-**Phase 6: Performance and habits**
+**Phase 6: Performance and habits** (shipped 2026-10-18 · `src/lib/performance.ts`: leaderboard, IG insights in the daily cron, reply reminder, re-post suggestions. Deferred: studio drop, LinkedIn xlsx import, TikTok stats until approval)
 - **Leaderboard** on the Content tab: per post, clicks per channel, leads, bookings and deals (HubSpot `first_touch_campaign = postId`), and Instagram keyword DMs, sorted by leads.
 - **Stats pulled back**: Instagram media insights, and TikTok `video.list` matched by id once approved. LinkedIn has no API, so its monthly analytics xlsx is uploaded and matched by date and text.
 - Telegram **reply reminder** 30 minutes after posting, using a QStash delayed message.

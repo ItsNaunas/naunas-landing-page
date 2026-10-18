@@ -554,3 +554,70 @@ export async function testScheduling(): Promise<{ error?: string; at?: string }>
   revalidatePath('/dashboard/content');
   return { at: at.toISOString() };
 }
+
+// ---------------------------------------------------------------- Daily reps (Outreach → Today)
+
+export async function bumpRepCount(form: FormData) {
+  await requireSession();
+  const { bumpRep, MANUAL_REPS } = await import('@/lib/reps');
+  const key = str(form, 'key');
+  const rep = MANUAL_REPS.find((r) => r.key === key);
+  if (!rep) return;
+  await bumpRep(rep.key, form.get('delta') === '-1' ? -1 : 1);
+  revalidatePath('/dashboard/outreach');
+}
+
+/** Day 0 of the Instagram sequence done for one firm (followed + commented): counts as a warm-up rep. */
+export async function markWarmed(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const list = await getProspects();
+  if (!list.some((x) => x.id === id)) return;
+  await saveProspects(list.map((x) => (x.id === id ? { ...x, warmedAt: new Date().toISOString() } : x)));
+  const { bumpRep } = await import('@/lib/reps');
+  await bumpRep('warmups', 1);
+  revalidatePath('/dashboard/outreach');
+}
+
+// ---------------------------------------------------------------- Newsletter + performance (Content)
+
+/** Build (or rebuild) this week's MailerLite draft now. Never sends. */
+export async function buildNewsletterDraft(): Promise<{ error?: string; ok?: string }> {
+  await requireSession();
+  const { buildWeeklyDraft } = await import('@/lib/newsletter');
+  try {
+    const r = await buildWeeklyDraft({ force: true });
+    revalidatePath('/dashboard/content');
+    if ('empty' in r) return { error: 'No posts went out in the last 7 days, so there is nothing to put in it.' };
+    const d = 'exists' in r ? r.exists : r;
+    if (!d.campaignId) return { error: d.error ?? 'MailerLite refused the draft.' };
+    return { ok: d.contentIncluded ? 'Draft ready in MailerLite.' : 'Draft made. Paste the email body from here into MailerLite.' };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message.slice(0, 200) : 'Failed' };
+  }
+}
+
+/** Pull Instagram insights for recent posts now (the daily cron does this too). */
+export async function refreshPostStats() {
+  await requireSession();
+  const { refreshInsights } = await import('@/lib/performance');
+  await refreshInsights().catch(() => 0);
+  revalidatePath('/dashboard/content');
+}
+
+/** Re-post an old winner: a new draft with the same idea and copy (add the media again, try a new hook). */
+export async function duplicateContentPost(form: FormData) {
+  await requireSession();
+  const { getPost, newPost, savePost } = await import('@/lib/content');
+  const old = await getPost(str(form, 'id'));
+  if (!old) return;
+  const p = newPost(old.master.idea);
+  p.master.transcript = old.master.transcript;
+  p.newsletterBlurb = old.newsletterBlurb;
+  p.channels.linkedin = { ...p.channels.linkedin, text: old.channels.linkedin.text, firstComment: old.channels.linkedin.firstComment, visibility: old.channels.linkedin.visibility };
+  p.channels.instagram = { ...p.channels.instagram, caption: old.channels.instagram.caption, campaignId: old.channels.instagram.campaignId };
+  p.channels.tiktok = { ...p.channels.tiktok, caption: old.channels.tiktok.caption };
+  p.flags = [`Re-post of ${old.id}`];
+  await savePost(p);
+  redirect(`/dashboard/content/${p.id}`);
+}

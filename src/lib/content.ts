@@ -38,7 +38,9 @@ export type ContentPost = {
   newsletterBlurb?: string;
 };
 
-export type IndexRow = { id: string; createdAt: string; when: string; status: PostStatus; idea: string; kind?: 'video' | 'image'; channels: Partial<Record<ChannelKey, ChannelStatus>> };
+export type IndexRow = { id: string; createdAt: string; when: string; status: PostStatus; idea: string; kind?: 'video' | 'image'; channels: Partial<Record<ChannelKey, ChannelStatus>>;
+  /** Live post links and the Instagram media id, for the leaderboard and newsletter without loading every post. */
+  urls?: Partial<Record<ChannelKey, string>>; igMediaId?: string };
 
 const postPath = (id: string) => `content/posts/${id}.json`;
 const INDEX = 'content/index.json';
@@ -76,6 +78,8 @@ export async function savePost(p: ContentPost) {
     id: p.id, createdAt: p.createdAt, idea: p.master.idea.slice(0, 140), status: p.status, kind: p.master.media?.kind,
     when: CHANNELS.map((c) => p.channels[c].postedAt).filter(Boolean).sort()[0] ?? p.scheduledFor ?? p.createdAt,
     channels: Object.fromEntries(CHANNELS.map((c) => [c, p.channels[c].enabled ? p.channels[c].status : 'off'])),
+    urls: Object.fromEntries(CHANNELS.filter((c) => p.channels[c].url).map((c) => [c, p.channels[c].url])),
+    igMediaId: p.channels.instagram.mediaId,
   };
   const idx = await getIndex();
   await putJSON(INDEX, [row, ...idx.filter((r) => r.id !== p.id)].sort((a, b) => b.when.localeCompare(a.when)).slice(0, 1000));

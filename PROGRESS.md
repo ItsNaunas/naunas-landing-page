@@ -1,10 +1,11 @@
 # Project Status
 
-**Last updated**: 2026-10-17
+**Last updated**: 2026-10-18
 **State**: The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
-- [ ] **Content engine** (docs/content-engine/PLAN.md): Phase 1 + 3 shipped (composer at /dashboard/content). QStash scheduling verified live 2026-10-18 (Test scheduling ping → Telegram; EU endpoint via QSTASH_URL); Phase 2 needs the Meta publish permission + new IG token; Phase 4 (AI Adapt) shipped on OpenAI. TikTok posts are held until TIKTOK_APPROVED=1.
+- [ ] **Content engine** (docs/content-engine/PLAN.md): Phase 1 + 3 shipped (composer at /dashboard/content). QStash scheduling verified live 2026-10-18 (Test scheduling ping → Telegram; EU endpoint via QSTASH_URL); Phase 2 needs the Meta publish permission + new IG token; Phase 4 (AI Adapt) shipped on OpenAI. Phase 5 (Monday MailerLite newsletter DRAFT, never sent; Build draft button on Content) + Phase 6 (post leaderboard: clicks/leads/deals/IG insights; reply reminder 30 min after posting via QStash; 'Worth posting again' >90d with leads) shipped 2026-10-18, unverified live. Deferred: studio drop endpoint, LinkedIn analytics xlsx import, TikTok stats (after approval). TikTok posts are held until TIKTOK_APPROVED=1.
+- [ ] **Outreach → Today's reps** (2026-10-18): the daily-brief checklist lives on the dashboard now: emails/DMs/posts count themselves, warm-ups/follow-ups/LinkedIn/list-building/Zanzibar ticked with +; 'Warm up today' list of drafted firms with IG; 7-day touches → replies replaces the vault tally line.
 - [ ] **TikTok**: app "Naunas" on developers.tiktok.com (sandbox keys in Vercel). Connect at /dashboard/tiktok, test-post privately, record the demo video (scripted, blurred, subtitled), then submit for review + Direct Post audit. Remove user.info.profile from the app (not requested) and keep the scopes in lib/tiktok.ts SCOPES identical to the app. Until audited, posts can only be SELF_ONLY.
 - [ ] Turn on IMAP in Zoho Mail (Settings → Mail Accounts → IMAP Access) — outreach sequences refuse to send without it (stop-on-reply safety).
 - [ ] Fathom webhook: Fathom → API Access → Manage → Add Webhook → https://www.naunas.co.uk/api/fathom-webhook (summary + action items) → put its whsec_ secret in Vercel as FATHOM_WEBHOOK_SECRET.
