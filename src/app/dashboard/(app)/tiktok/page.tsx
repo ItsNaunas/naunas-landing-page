@@ -37,6 +37,7 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
 
   return (
     <>
+      <a href="/dashboard/system/connections" className="text-xs text-white/45 hover:text-white -mb-3">← Connections</a>
       <PageHeader title="TikTok"
         sub={user ? `${user.display_name ?? 'Connected'}${user.username ? ` · @${user.username}` : ''} · post videos and see how they do` : 'Post videos and see how they do'}
         action={connected ? (

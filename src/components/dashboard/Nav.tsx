@@ -27,23 +27,19 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
     { href: '/dashboard/leads', label: 'Leads', icon: 'leads' },
     { href: '/dashboard/outreach', label: 'Outreach', icon: 'outreach' },
     { href: '/dashboard/pipeline', label: 'Pipeline', icon: 'pipeline' },
-    { href: '/dashboard/calls', label: 'Calls', icon: 'calls' },
   ] },
-  { label: 'Channels', items: [
-    { href: '/dashboard/instagram', label: 'Instagram', icon: 'instagram' },
-    { href: '/dashboard/tiktok', label: 'TikTok', icon: 'tiktok' },
-    { href: '/dashboard/linkedin', label: 'LinkedIn', icon: 'linkedin' },
-    { href: '/dashboard/email', label: 'Email', icon: 'email' },
+  { label: 'Grow', items: [
     { href: '/dashboard/content', label: 'Content', icon: 'content' },
   ] },
   { label: 'Business', items: [
     { href: '/dashboard/money', label: 'Money', icon: 'money' },
-    { href: '/dashboard/automations', label: 'Automations', icon: 'automations' },
     { href: '/dashboard/system', label: 'System', icon: 'system' },
   ] },
 ];
 const ALL = NAV_GROUPS.flatMap((g) => g.items);
-const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach', '/dashboard/pipeline'];
+const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach', '/dashboard/content'];
+export type Badges = Partial<Record<string, number>>;
+const Dot = ({ n }: { n?: number }) => (n ? <span className="ml-auto rounded-full bg-[#F2613F] px-1.5 py-px text-[10px] font-semibold text-white tabular-nums">{n}</span> : null);
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   return (
@@ -55,7 +51,7 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
 
 const isActive = (path: string, href: string) => (href === '/dashboard' ? path === href : path.startsWith(href));
 
-export function SideNav() {
+export function SideNav({ badges = {} }: { badges?: Badges }) {
   const path = usePathname();
   return (
     <nav className="flex flex-col gap-5" aria-label="Dashboard">
@@ -69,6 +65,7 @@ export function SideNav() {
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${active ? 'bg-white/[0.08] text-white' : 'text-white/55 hover:text-white hover:bg-white/[0.04]'}`}>
                 <span className={active ? 'text-[#F2613F]' : ''}><Icon name={n.icon} /></span>
                 {n.label}
+                <Dot n={badges[n.href]} />
               </Link>
             );
           })}
@@ -79,7 +76,7 @@ export function SideNav() {
 }
 
 /** Mobile: 4 main tabs + "More" sheet with everything else. */
-export function BottomNav() {
+export function BottomNav({ badges = {} }: { badges?: Badges }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -103,8 +100,9 @@ export function BottomNav() {
           const n = ALL.find((x) => x.href === href)!;
           const active = isActive(path, href);
           return (
-            <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`flex flex-col items-center gap-1 py-2.5 text-[10px] ${active ? 'text-white' : 'text-white/45'}`}>
+            <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`relative flex flex-col items-center gap-1 py-2.5 text-[10px] ${active ? 'text-white' : 'text-white/45'}`}>
               <span className={active ? 'text-[#F2613F]' : ''}><Icon name={n.icon} size={20} /></span>{n.label}
+              {!!badges[href] && <span className="absolute top-1.5 left-1/2 ml-2 size-2 rounded-full bg-[#F2613F]" />}
             </Link>
           );
         })}

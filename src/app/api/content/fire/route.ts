@@ -5,6 +5,7 @@ import { alertError, notify } from '@/lib/alert';
 import { putJSON } from '@/lib/store';
 import { getPost, CHANNELS, CHANNEL_LABEL } from '@/lib/content';
 import { FUNNEL } from '@/config/funnel';
+import { getOwed, NUDGE_D } from '@/lib/owed';
 
 // QStash calls this at the minute Naufal scheduled. Only signed QStash requests get through, and a post that
 // was cancelled, rescheduled or already published is skipped (runPost checks it's still "scheduled").
@@ -16,7 +17,24 @@ export async function POST(req: Request) {
   let postId = '';
   let ping = '';
   let remind = '';
-  try { ({ postId = '', ping = '', remind = '' } = JSON.parse(body) as { postId?: string; ping?: string; remind?: string }); } catch { /* handled below */ }
+  let owed = '';
+  let nudge = '';
+  try { ({ postId = '', ping = '', remind = '', owed = '', nudge = '' } = JSON.parse(body) as Record<string, string>); } catch { /* handled below */ }
+
+  // Asset owed: 20h after a yes, if the Loom/PDF still isn't marked sent; 5 days after sending, if still open.
+  if (owed || nudge) {
+    const o = (await getOwed()).find((x) => x.id === (owed || nudge));
+    const due = o && !o.closedAt && (owed ? !o.sentAt : !!o.sentAt);
+    if (o && due) {
+      await notify({
+        level: owed ? 'error' : 'ok',
+        title: owed ? `You owe ${o.who} a ${o.what}` : `Nudge ${o.who}`,
+        lines: [owed ? `They said yes ${Math.round((Date.now() - Date.parse(o.owedAt)) / 3_600_000)} hours ago (${o.channel}). Send it today, with one real finding about them.` : `You sent the ${o.what} ${NUDGE_D} days ago and they went quiet. One short nudge, then let it go.`],
+        buttons: [...(o.link ? [{ text: 'Open the conversation', url: o.link }] : []), { text: 'Outreach', url: `${FUNNEL.site}/dashboard/outreach` }],
+      });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
   // Reply reminder, booked by runPost a set time after a post goes live.
   if (remind) {

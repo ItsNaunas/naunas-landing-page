@@ -50,7 +50,7 @@ export async function todayData(lastVisit: number) {
       kind: 'call' as const, title: `Call with ${b.attendees[0]?.name ?? 'someone'}`, sub: b.start, href: `/dashboard/leads?q=${encodeURIComponent(b.attendees[0]?.email ?? '')}`,
     })),
     ...(upcoming ? [] : booked.map((d) => ({ kind: 'call' as const, title: `Prep the call: ${d.properties.dealname}`, href: hubspotUrl.deal(d.id) }))),
-    ...(reports[0]?.needsYou ?? []).map((t) => ({ kind: 'routine' as const, title: t, href: '/dashboard/automations' })),
+    ...(reports[0]?.needsYou ?? []).map((t) => ({ kind: 'routine' as const, title: t, href: '/dashboard/system/automations' })),
     ...issues.map((e) => ({ kind: (e.kind === 'alert' ? 'system' : 'money') as Action['kind'], title: e.title, sub: e.at, href: e.href })),
     ...checks.filter((c) => !c.ok).map((c) => ({ kind: 'system' as const, title: `${c.name} is failing`, sub: c.detail, href: '/dashboard/system' })),
     ...stale.slice(0, 5).map((d) => ({ kind: 'stale' as const, title: `${d.name} has gone quiet`, sub: `${d.idle} days without activity`, href: hubspotUrl.deal(d.id) })),
@@ -330,11 +330,13 @@ export async function automationsData(kind?: string) {
 }
 
 export async function systemData() {
-  const checks = await runChecks();
+  return { checks: await runChecks(), integrations: integrations() };
+}
+
+/** Which tools have keys set (Connections tab). No network calls. */
+export function integrations() {
   const has = (k: string) => !!process.env[k];
-  return {
-    checks,
-    integrations: [
+  return [
       { name: 'HubSpot', role: 'CRM: people, deals, notes', ok: has('HUBSPOT_TOKEN'), env: 'HUBSPOT_TOKEN' },
       { name: 'MailerLite', role: 'Email sequences + newsletter', ok: has('MAILERLITE_API_TOKEN'), env: 'MAILERLITE_API_TOKEN' },
       { name: 'Zoho Mail', role: 'One-off emails from contact@', ok: has('ZOHO_SMTP_PASS'), env: 'ZOHO_SMTP_*' },
@@ -343,8 +345,8 @@ export async function systemData() {
       { name: 'Stripe webhook', role: 'Payments → Won + onboarding', ok: has('STRIPE_WEBHOOK_SECRET'), env: 'STRIPE_WEBHOOK_SECRET' },
       { name: 'Stripe read key', role: 'Money tab', ok: has('STRIPE_READ_KEY'), env: 'STRIPE_READ_KEY' },
       { name: 'Instagram', role: 'Keyword DMs + posts', ok: has('IG_ACCESS_TOKEN'), env: 'IG_ACCESS_TOKEN' },
-      { name: 'TikTok app', role: 'Post videos + video stats (connect on the TikTok tab)', ok: has('TIKTOK_CLIENT_KEY') && has('TIKTOK_CLIENT_SECRET'), env: 'TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET' },
-      { name: 'LinkedIn app', role: 'Post to your profile (connect on the LinkedIn tab, renew every 60 days)', ok: has('LINKEDIN_CLIENT_ID') && has('LINKEDIN_CLIENT_SECRET'), env: 'LINKEDIN_CLIENT_ID + LINKEDIN_CLIENT_SECRET' },
+      { name: 'TikTok app', role: 'Post videos + video stats (connect under Connections)', ok: has('TIKTOK_CLIENT_KEY') && has('TIKTOK_CLIENT_SECRET'), env: 'TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET' },
+      { name: 'LinkedIn app', role: 'Post to your profile (connect under Connections, renew every 60 days)', ok: has('LINKEDIN_CLIENT_ID') && has('LINKEDIN_CLIENT_SECRET'), env: 'LINKEDIN_CLIENT_ID + LINKEDIN_CLIENT_SECRET' },
       { name: 'QStash', role: 'Exact-time scheduled posts', ok: has('QSTASH_TOKEN') && has('QSTASH_CURRENT_SIGNING_KEY'), env: 'QSTASH_TOKEN + QSTASH_*_SIGNING_KEY' },
       { name: 'Telegram', role: 'Alerts to your phone', ok: has('TELEGRAM_BOT_TOKEN'), env: 'TELEGRAM_BOT_TOKEN' },
       { name: 'Vercel Blob', role: 'Campaigns, stats, activity feed', ok: has('BLOB_READ_WRITE_TOKEN'), env: 'BLOB_READ_WRITE_TOKEN' },
@@ -353,8 +355,7 @@ export async function systemData() {
       { name: 'Apify', role: 'Find prospects (Google Maps)', ok: has('APIFY_TOKEN'), env: 'APIFY_TOKEN' },
       { name: 'Zoho inbox (IMAP)', role: 'Email threads, outreach replies', ok: has('ZOHO_SMTP_PASS'), env: 'IMAP on in Zoho' },
       { name: 'Claude routine', role: 'Daily drafts + run reports', ok: true, env: 'claude.ai routine' },
-    ],
-  };
+  ];
 }
 
 export async function contentData() {

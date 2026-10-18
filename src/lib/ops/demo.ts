@@ -71,8 +71,8 @@ export const demo = {
     goal: { target: 5000, wonMonth: 3750, pct: 75 },
     actions: [
       { kind: 'call', title: 'Call with Mia Turner', sub: ahead(5), href: '/dashboard/leads?person=p1' },
-      { kind: 'routine', title: 'Send the recap + proposal to Priya (draft in Docs)', href: '/dashboard/automations' },
-      { kind: 'routine', title: 'Reply to Mia: she asked about timelines', href: '/dashboard/automations' },
+      { kind: 'routine', title: 'Send the recap + proposal to Priya (draft in Docs)', href: '/dashboard/system/automations' },
+      { kind: 'routine', title: 'Reply to Mia: she asked about timelines', href: '/dashboard/system/automations' },
       { kind: 'money', title: 'Card declined · £375.00', sub: ago(40) },
       { kind: 'stale', title: 'Tom Ellis · Renovations has gone quiet', sub: '16 days without activity', href: '/dashboard/pipeline' },
     ],

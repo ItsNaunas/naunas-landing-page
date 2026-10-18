@@ -129,7 +129,7 @@ export async function runPost(id: string, opts: { only?: ChannelKey[]; expectSch
   const results = targets.map((c) => ({ c, ...p.channels[c] }));
   const posted = results.filter((r) => r.status === 'posted').length;
   const icon = { posted: '✅', failed: '❌', held: '⏳' } as Record<string, string>;
-  await logEvent('content', `Posted ${posted}/${results.length}: ${p.master.idea.slice(0, 60) || p.id}`, `/dashboard/content?post=${p.id}`);
+  await logEvent('content', `Posted ${posted}/${results.length}: ${p.master.idea.slice(0, 60) || p.id}`, `/dashboard/content/${p.id}`);
   await notify({
     level: results.some((r) => r.status === 'failed') ? 'error' : 'ok',
     title: `Posted ${posted}/${results.length}${results.some((r) => r.status === 'held') ? ' · TikTok held' : ''}`,
@@ -137,7 +137,7 @@ export async function runPost(id: string, opts: { only?: ChannelKey[]; expectSch
     quote: p.master.idea.slice(0, 200) || undefined,
     buttons: [
       ...results.filter((r) => r.url).map((r) => ({ text: `Open on ${CHANNEL_LABEL[r.c]}`, url: r.url! })),
-      { text: 'Open in dashboard', url: `${FUNNEL.site}/dashboard/content?post=${p.id}` },
+      { text: 'Open in dashboard', url: `${FUNNEL.site}/dashboard/content/${p.id}` },
     ],
   });
   // A while after it goes live: nudge to answer comments (early replies are what the algorithms reward).

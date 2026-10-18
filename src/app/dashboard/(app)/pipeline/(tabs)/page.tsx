@@ -1,7 +1,7 @@
 import { pipelineData } from '@/lib/ops/tabs';
 import { SOURCE_LABEL, LOST_LABEL } from '@/lib/ops/common';
 import { hubspotUrl } from '@/lib/hubspot';
-import { PageHeader, Errors, Badge, Card, Kpi, Empty, gbp, compactGbp, linkProps } from '@/components/dashboard/ui';
+import { TabIntro, Errors, Badge, Card, Kpi, Empty, gbp, compactGbp, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
 import { Funnel, HBars } from '@/components/dashboard/charts';
 
@@ -23,9 +23,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <PageHeader
-        title="Pipeline"
-        sub="Every open deal, how long it’s been quiet, and how deals convert."
+      <TabIntro sub="Every open deal, how long it’s been quiet, and how deals convert."
         action={<a href={hubspotUrl.contacts().replace('/objects/0-1/', '/objects/0-3/')} {...linkProps} className="text-sm rounded-full border border-white/10 px-4 py-2 text-white/70 hover:text-white hover:border-white/25">Open in HubSpot ↗</a>}
       />
       <Errors errors={d.errors} />

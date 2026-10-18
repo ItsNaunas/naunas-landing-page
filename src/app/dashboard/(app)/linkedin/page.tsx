@@ -2,11 +2,8 @@ import { linkedinConfigured, linkedinAccount, getPosts, postUrl, SCOPES } from '
 import { PageHeader, Badge, Card, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard } from '@/components/dashboard/kit';
 import { disconnectLinkedIn } from '../../actions';
-import { LinkedInComposer } from './LinkedInComposer';
 
 export const dynamic = 'force-dynamic';
-// Video posts upload the file to LinkedIn and wait for processing inside the server action.
-export const maxDuration = 300;
 
 export default async function LinkedIn({ searchParams }: { searchParams: Promise<{ connected?: string; error?: string }> }) {
   const q = await searchParams;
@@ -18,8 +15,9 @@ export default async function LinkedIn({ searchParams }: { searchParams: Promise
 
   return (
     <>
+      <a href="/dashboard/system/connections" className="text-xs text-white/45 hover:text-white -mb-3">← Connections</a>
       <PageHeader title="LinkedIn"
-        sub={live ? `${account.name ?? 'Connected'} · post to your profile` : 'Post to your profile'}
+        sub={live ? `${account.name ?? 'Connected'} · your profile connection` : 'Connect your profile so Content can post to it'}
         action={account ? <form action={disconnectLinkedIn}><button className="text-xs text-white/40 hover:text-rose-300">Disconnect</button></form> : undefined} />
 
       {q.connected && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-sm text-emerald-200/90">LinkedIn connected.</div>}
@@ -42,9 +40,10 @@ export default async function LinkedIn({ searchParams }: { searchParams: Promise
 
       {live && (
         <>
-          <SectionTitle action={<span className="text-xs text-white/35">Connection good for {account.daysLeft} more days</span>}>Write a post</SectionTitle>
-          <Card><LinkedInComposer name={account.name} picture={account.picture} /></Card>
-
+          <Card>
+            <p className="text-sm">Connected and good for <b>{account.daysLeft} more days</b>.</p>
+            <p className="text-xs text-white/45 mt-1">Write LinkedIn posts in Content → New post (tick LinkedIn only if it’s just for here).</p>
+          </Card>
           <SectionTitle>Posted from here</SectionTitle>
           {posts.length ? (
             <Card pad={false}>

@@ -3,9 +3,9 @@ import { storeReady } from '@/lib/store';
 import { demoOn } from '@/lib/ops/demo';
 import { DEFAULT_CAMPAIGN } from '@/lib/campaigns';
 import { FUNNEL } from '@/config/funnel';
-import { PageHeader, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
+import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
-import { toggleCampaign, deleteCampaign } from '../../actions';
+import { toggleCampaign, deleteCampaign } from '@/app/dashboard/actions';
 import { CampaignEditor } from './CampaignEditor';
 
 export const dynamic = 'force-dynamic';
@@ -24,11 +24,10 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Instagram"
-        sub={d.profile ? `@${d.profile.username} · keyword campaigns and which posts bring leads` : 'Keyword campaigns and which posts bring leads'}
+      <TabIntro sub={d.profile ? `@${d.profile.username} · keyword campaigns and which posts bring leads` : 'Keyword campaigns and which posts bring leads'}
         action={<CampaignEditor site={FUNNEL.site} disabled={!ready} />} />
       <Errors errors={d.errors} />
-      <RangeChips path="/dashboard/instagram" param="range" value={range} options={RANGES} />
+      <RangeChips path="/dashboard/content/keywords" param="range" value={range} options={RANGES} />
       {!d.connected && <ConnectCard title="Connect Instagram" why="Needed for keyword DMs and post stats." steps={['Follow RUNBOOK §8 (Meta app, Instagram API with Instagram Login)']} env="IG_ACCESS_TOKEN" />}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
@@ -97,26 +96,6 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
         </div>
       </Card>
 
-      <SectionTitle>Posts · {span}</SectionTitle>
-      <SectionError errors={errFor(d.errors, 'Instagram posts', 'Instagram profile')} />
-      {d.posts.length ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
-          {d.posts.map((p) => (
-            <a key={p.id} href={p.permalink} {...linkProps} className="group rounded-2xl border border-white/[0.07] bg-[#121212] overflow-hidden flex flex-col hover:border-white/20">
-              <div className="aspect-square bg-white/[0.04] relative overflow-hidden">
-                {(p.thumbnail_url || (p.media_type !== 'VIDEO' && p.media_url))
-                  ? <img src={p.thumbnail_url ?? p.media_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover group-hover:scale-[1.03] transition-transform" />
-                  : <div className="absolute inset-0 grid place-items-center text-xs text-white/30 p-3 text-center">{p.caption?.slice(0, 80)}</div>}
-                {p.leads > 0 && <span className="absolute top-2 left-2"><Badge tone="accent">{p.leads} lead{p.leads > 1 ? 's' : ''}</Badge></span>}
-              </div>
-              <div className="p-3 flex flex-col gap-1">
-                <p className="text-[11px] text-white/40">{TYPE[p.media_type] ?? 'Post'} · {ago(p.timestamp)}</p>
-                <p className="text-xs text-white/70 tabular-nums">♥ {p.like_count ?? 0} · 💬 {p.comments_count ?? 0}</p>
-              </div>
-            </a>
-          ))}
-        </div>
-      ) : <Card><Empty>No posts in this period.</Empty></Card>}
     </>
   );
 }

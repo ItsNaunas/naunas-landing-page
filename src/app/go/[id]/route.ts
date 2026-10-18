@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/go/[id]'>) {
         const row = s[post.postId] ?? {};
         return { ...s, [post.postId]: { ...row, [post.ch]: (row[post.ch] ?? 0) + 1 } };
       }).catch(() => {});
-      await logEvent('click', `Link clicked · ${CHANNEL_LABEL[post.ch]} post`, `/dashboard/content?post=${post.postId}`);
+      await logEvent('click', `Link clicked · ${CHANNEL_LABEL[post.ch]} post`, `/dashboard/content/${post.postId}`);
     });
     return NextResponse.redirect(destinationFor(post.postId, post.ch), 302);
   }

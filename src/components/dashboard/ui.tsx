@@ -76,6 +76,17 @@ export function PageHeader({ title, sub, action }: { title: string; sub?: string
   );
 }
 
+/** One line under a section's tabs: what this tab is for, plus its own button. */
+export function TabIntro({ sub, action }: { sub?: React.ReactNode; action?: React.ReactNode }) {
+  if (!sub && !action) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      {sub ? <p className="text-sm text-white/45 max-w-3xl">{sub}</p> : <span />}
+      {action}
+    </div>
+  );
+}
+
 export function Empty({ children }: { children: React.ReactNode }) {
   return <div className="flex-1 grid place-items-center text-center text-sm text-white/40 py-8 px-4">{children}</div>;
 }

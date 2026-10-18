@@ -43,13 +43,13 @@ export default async function Today() {
           {Object.entries(d.since.counts).map(([kind, n]) => (
             <span key={kind} className="text-white/75"><b className="font-semibold text-white">{n}</b> {(EVENT_META[kind]?.label ?? kind).toLowerCase()}</span>
           ))}
-          <a href="/dashboard/automations" className="sm:ml-auto text-xs text-[#ff8a6d] hover:text-white">See activity →</a>
+          <a href="/dashboard/system/automations" className="sm:ml-auto text-xs text-[#ff8a6d] hover:text-white">See activity →</a>
         </div>
       )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         <Kpi label="New leads · 7 days" value={k.leads7} chart={<Sparkline values={d.spark} />} foot={<Delta now={k.leads7} prev={k.leadsPrev7} />} href="/dashboard/leads?range=7" />
-        <Kpi label={d.agenda ? 'Calls coming up' : 'Calls booked'} value={k.calls} foot={<span className="text-xs text-white/40">{d.agenda ? 'from Cal.com' : 'deals in Audit booked'}</span>} href="/dashboard/calls" />
+        <Kpi label={d.agenda ? 'Calls coming up' : 'Calls booked'} value={k.calls} foot={<span className="text-xs text-white/40">{d.agenda ? 'from Cal.com' : 'deals in Audit booked'}</span>} href="/dashboard/pipeline/calls" />
         <Kpi label={`Won in ${month}`} value={compactGbp(k.wonMonth)} foot={<span className="text-xs text-white/40">{d.goal.pct}% of {compactGbp(d.goal.target)} goal</span>} href="/dashboard/money" />
         <Kpi label="Open pipeline" value={compactGbp(k.openValue)} foot={<span className="text-xs text-white/40">{k.openCount} open deal{k.openCount === 1 ? '' : 's'}</span>} href="/dashboard/pipeline" />
       </div>
@@ -111,11 +111,11 @@ export default async function Today() {
 
       <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
         <div className="lg:col-span-2 flex flex-col gap-3 min-w-0">
-          <SectionTitle action={<a href="/dashboard/automations" className="text-xs text-white/40 hover:text-white">All activity →</a>}>Live activity</SectionTitle>
+          <SectionTitle action={<a href="/dashboard/system/automations" className="text-xs text-white/40 hover:text-white">All activity →</a>}>Live activity</SectionTitle>
           <Card><SectionError errors={errFor(d.errors, 'Activity')} /><Feed events={d.feed} /></Card>
         </div>
         <div className="flex flex-col gap-3 min-w-0">
-          <SectionTitle action={<a href="/dashboard/calls" className="text-xs text-white/40 hover:text-white">Calls →</a>}>Coming up</SectionTitle>
+          <SectionTitle action={<a href="/dashboard/pipeline/calls" className="text-xs text-white/40 hover:text-white">Calls →</a>}>Coming up</SectionTitle>
           <Card>
             {d.agenda?.length ? (
               <ul className="flex flex-col divide-y divide-white/[0.05] -my-2">

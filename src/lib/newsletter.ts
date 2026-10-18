@@ -104,7 +104,7 @@ export async function buildWeeklyDraft(opts: { force?: boolean } = {}): Promise<
     next: d.campaignId ? 'Read it, tweak it, then press Send in MailerLite. Nothing goes out on its own.' : 'Open the dashboard and press Build draft again.',
     buttons: [
       ...(d.editUrl ? [{ text: 'Open in MailerLite', url: d.editUrl }] : []),
-      { text: 'Dashboard', url: `${FUNNEL.site}/dashboard/content#newsletter` },
+      { text: 'Dashboard', url: `${FUNNEL.site}/dashboard/content/newsletter` },
     ],
   });
   return d;

@@ -1,5 +1,9 @@
 import { emailData } from '@/lib/ops/tabs';
-import { PageHeader, Errors, Badge, Card, Kpi, Empty, linkProps } from '@/components/dashboard/ui';
+import { demoOn } from '@/lib/ops/demo';
+import { latestDigest, type Digest } from '@/lib/newsletter';
+import { CopyButton } from '@/components/dashboard/client';
+import { NewsletterButton } from '../../NewsletterButton';
+import { TabIntro, Errors, Badge, Card, Kpi, Empty, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, Meter, pct, SectionError, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
@@ -11,16 +15,32 @@ const LABEL: Record<string, { title: string; what: string }> = {
 };
 
 export default async function Email() {
-  const d = await emailData();
+  const [d, digest] = await Promise.all([emailData(), demoOn() ? Promise.resolve(null) : latestDigest().catch(() => null as Digest | null)]);
   const list = d.groups.find((g) => g.name === 'Naunas Newsletter');
   const inSequences = d.automations.reduce((s, a) => s + a.inQueue, 0);
   const sent = d.automations.reduce((s, a) => s + a.sent, 0);
 
   return (
     <>
-      <PageHeader title="Email" sub="Your three MailerLite sequences, how each email performs (all-time totals), and who’s in them now."
+      <TabIntro sub="Your three MailerLite sequences, how each email performs (all-time totals), and who’s in them now."
         action={<a href="https://dashboard.mailerlite.com/automations" {...linkProps} className="text-sm rounded-full border border-white/10 px-4 py-2 text-white/70 hover:text-white hover:border-white/25">Open MailerLite ↗</a>} />
       <Errors errors={d.errors} />
+        <div id="newsletter" className="scroll-mt-20">
+          <Card title="Weekly newsletter" action={<NewsletterButton label={digest ? 'Rebuild this week' : 'Build draft now'} />}>
+            <p className="text-sm text-white/55">Every Monday a draft builds itself in MailerLite from last week’s posts, best one first, with the free-audit button. It is <b className="text-white/80">never sent</b> until you press Send there.</p>
+            {digest ? (
+              <div className="mt-4 rounded-lg bg-white/[0.03] border border-white/[0.06] p-3.5">
+                <p className="text-[11px] text-white/40">Week of {digest.week} · {digest.postIds.length} post{digest.postIds.length > 1 ? 's' : ''}</p>
+                <p className="text-[13.5px] text-white/90 mt-1">{digest.subject}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+                  {digest.editUrl ? <a href={digest.editUrl} {...linkProps} className="text-[#ff8a6d] hover:underline">Open the draft in MailerLite ↗</a> : <span className="text-rose-300">{digest.error ?? 'No draft made'}</span>}
+                  {!digest.contentIncluded && digest.editUrl && <><CopyButton text={digest.html} label="Copy email HTML" /><span className="text-white/40">MailerLite → the draft → Content → Custom HTML → paste</span></>}
+                </div>
+              </div>
+            ) : <p className="text-xs text-white/40 mt-3">No draft yet. Write a newsletter blurb on each post (AI does it with the rest) so the email reads well.</p>}
+          </Card>
+        </div>
+
       <SectionError errors={errFor(d.errors, 'Automations')} />
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">

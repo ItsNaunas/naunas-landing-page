@@ -1,7 +1,7 @@
 import { callsData } from '@/lib/ops/tabs';
 import { hubspotUrl } from '@/lib/hubspot';
 import { FUNNEL } from '@/config/funnel';
-import { PageHeader, Errors, Badge, Card, Kpi, Empty, linkProps } from '@/components/dashboard/ui';
+import { TabIntro, Errors, Badge, Card, Kpi, Empty, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export default async function Calls() {
   if (!d.connected) {
     return (
       <>
-        <PageHeader title="Calls" sub="Your free audits: what’s coming up, who showed, and what came of it." />
+        <TabIntro sub="Your free audits: what’s coming up, who showed, and what came of it." />
         <Errors errors={d.errors} />
         <ConnectCard
           title="Connect Cal.com to see your calls"
@@ -37,7 +37,7 @@ export default async function Calls() {
   const s = d.stats;
   return (
     <>
-      <PageHeader title="Calls" sub="Your free audits: what’s coming up, who showed, and what came of it."
+      <TabIntro sub="Your free audits: what’s coming up, who showed, and what came of it."
         action={<a href={`https://app.cal.com/bookings/upcoming`} {...linkProps} className="text-sm rounded-full border border-white/10 px-4 py-2 text-white/70 hover:text-white hover:border-white/25">Open Cal.com ↗</a>} />
       <Errors errors={d.errors} />
 

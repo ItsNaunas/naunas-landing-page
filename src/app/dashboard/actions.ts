@@ -621,3 +621,35 @@ export async function duplicateContentPost(form: FormData) {
   await savePost(p);
   redirect(`/dashboard/content/${p.id}`);
 }
+
+// ---------------------------------------------------------------- Asset owed (Outreach → Today)
+
+export async function addOwedAsset(form: FormData) {
+  await requireSession();
+  const who = str(form, 'who');
+  const what = str(form, 'what') || 'Loom';
+  if (!who) return;
+  const { addOwed, DUE_H } = await import('@/lib/owed');
+  const o = await addOwed({ who: who.slice(0, 120), what: what.slice(0, 80), channel: str(form, 'channel') || 'LinkedIn', link: str(form, 'link').slice(0, 400) || undefined });
+  const { qstashReady, scheduleAt } = await import('@/lib/qstash');
+  if (qstashReady()) await scheduleAt(new Date(Date.now() + (DUE_H - 4) * 3_600_000), { owed: o.id }).catch(() => {});
+  revalidatePath('/dashboard', 'layout');
+}
+
+export async function markOwedSent(form: FormData) {
+  await requireSession();
+  const { patchOwed, NUDGE_D } = await import('@/lib/owed');
+  const o = await patchOwed(str(form, 'id'), { sentAt: new Date().toISOString() });
+  const { qstashReady, scheduleAt } = await import('@/lib/qstash');
+  if (o && qstashReady()) await scheduleAt(new Date(Date.now() + NUDGE_D * 86_400_000), { nudge: o.id }).catch(() => {});
+  revalidatePath('/dashboard', 'layout');
+}
+
+export async function closeOwed(form: FormData) {
+  await requireSession();
+  const outcome = str(form, 'outcome');
+  if (!['replied', 'nudged', 'dropped'].includes(outcome)) return;
+  const { patchOwed } = await import('@/lib/owed');
+  await patchOwed(str(form, 'id'), { closedAt: new Date().toISOString(), outcome: outcome as 'replied' | 'nudged' | 'dropped' });
+  revalidatePath('/dashboard', 'layout');
+}

@@ -26,8 +26,13 @@ const nextConfig: NextConfig = {
       })),
       // Retired builder-era pages (2026-10-11): send old links to the home page.
       // Dashboard pages renamed in the v3 layout.
-      { source: '/dashboard/campaigns', destination: '/dashboard/instagram', permanent: false },
-      { source: '/dashboard/routine', destination: '/dashboard/automations', permanent: false },
+      { source: '/dashboard/campaigns', destination: '/dashboard/content/keywords', permanent: false },
+      { source: '/dashboard/routine', destination: '/dashboard/system/automations', permanent: false },
+      // 2026-10-18 sidebar merge: channel pages became tabs.
+      { source: '/dashboard/instagram', destination: '/dashboard/content/keywords', permanent: false },
+      { source: '/dashboard/email', destination: '/dashboard/content/newsletter', permanent: false },
+      { source: '/dashboard/calls', destination: '/dashboard/pipeline/calls', permanent: false },
+      { source: '/dashboard/automations', destination: '/dashboard/system/automations', permanent: false },
       { source: '/dashboard/health', destination: '/dashboard/system', permanent: false },
       ...['/managed', '/newsletter', '/kit'].map((p) => ({ source: p, destination: `/?utm_source=old-link&utm_medium=${p.slice(1)}`, permanent: true })),
     ];

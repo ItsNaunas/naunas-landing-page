@@ -1,6 +1,6 @@
 import { automationsData } from '@/lib/ops/tabs';
 import { FUNNEL } from '@/config/funnel';
-import { PageHeader, Errors, Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
+import { TabIntro, Errors, Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, Feed, Chips, EVENT_META, when, SectionError, errFor } from '@/components/dashboard/kit';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <PageHeader title="Automations" sub="Every moving part of the system, when it last ran, and everything that has happened." />
+      <TabIntro sub="Every moving part of the system, when it last ran, and everything that has happened." />
       <Errors errors={d.errors} />
 
       <div className="grid md:grid-cols-2 gap-3 md:gap-4">
@@ -104,9 +104,9 @@ export default async function Automations({ searchParams }: { searchParams: Prom
       )}
 
       <SectionTitle>Activity log</SectionTitle>
-      <Chips active={kind ? `/dashboard/automations?kind=${kind}` : '/dashboard/automations'} items={[
-        { label: 'Everything', href: '/dashboard/automations' },
-        ...Object.entries(d.kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: EVENT_META[k]?.label ?? k, href: `/dashboard/automations?kind=${k}`, count: n })),
+      <Chips active={kind ? `/dashboard/system/automations?kind=${kind}` : '/dashboard/system/automations'} items={[
+        { label: 'Everything', href: '/dashboard/system/automations' },
+        ...Object.entries(d.kinds).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: EVENT_META[k]?.label ?? k, href: `/dashboard/system/automations?kind=${k}`, count: n })),
       ]} />
       <Card><SectionError errors={errFor(d.errors, 'Activity')} />{d.feed.length ? <Feed events={d.feed} /> : <Empty>No activity yet.</Empty>}</Card>
     </>

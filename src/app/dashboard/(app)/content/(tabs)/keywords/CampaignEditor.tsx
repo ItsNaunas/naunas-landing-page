@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import { saveCampaign, type SaveState } from '../../actions';
+import { saveCampaign, type SaveState } from '@/app/dashboard/actions';
 import type { Campaign } from '@/lib/campaigns';
 
 const input = 'w-full rounded-lg bg-[#0C0C0C] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F2613F] placeholder:text-white/25';
