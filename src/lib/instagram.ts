@@ -81,3 +81,18 @@ export async function publishToInstagram(kind: 'video' | 'image', mediaUrl: stri
 export function hasKeyword(text: string, keywords: readonly string[]) {
   return keywords.some((k) => new RegExp(`\\b${k}\\b`, 'i').test(text));
 }
+
+/** Health: proves the token may publish (instagram_business_content_publish) without posting anything. */
+export async function checkIgPublish() {
+  const uid = await igUserId();
+  try {
+    const r = await ig<{ data: { quota_usage?: number; config?: { quota_total?: number } }[] }>(`/${uid}/content_publishing_limit?fields=quota_usage,config`);
+    const q = r.data[0];
+    return `allowed · ${q?.quota_usage ?? 0}/${q?.config?.quota_total ?? 100} posts used today`;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(/permission|scope|#10\b|#200\b|OAuth/i.test(msg)
+      ? 'token has no publish permission: add instagram_business_content_publish, generate a NEW token, replace IG_ACCESS_TOKEN'
+      : msg.slice(0, 160));
+  }
+}

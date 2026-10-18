@@ -1,7 +1,7 @@
 import { getMailer } from '@/lib/mailer';
 import { checkHubSpot } from '@/lib/hubspot';
 import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
-import { igMe } from '@/lib/instagram';
+import { igMe, checkIgPublish } from '@/lib/instagram';
 import { storeReady } from '@/lib/store';
 import { checkInbox } from '@/lib/inbox';
 import { checkFathom } from '@/lib/fathom';
@@ -50,7 +50,7 @@ export async function runChecks(): Promise<Check[]> {
       await mailer.transporter.verify();
     }),
     // Optional pieces: only checked once they are set up.
-    ...(process.env.IG_ACCESS_TOKEN ? [run('Instagram token', async () => `@${(await igMe()).username}`)] : []),
+    ...(process.env.IG_ACCESS_TOKEN ? [run('Instagram token', async () => `@${(await igMe()).username}`), run('Instagram publishing', () => checkIgPublish())] : []),
     ...(process.env.ZOHO_SMTP_PASS ? [run('Zoho inbox (IMAP)', () => checkInbox())] : []),
     ...(process.env.FATHOM_API_KEY ? [run('Fathom', () => checkFathom())] : []),
     ...(process.env.APIFY_TOKEN ? [run('Apify', () => checkApify())] : []),
