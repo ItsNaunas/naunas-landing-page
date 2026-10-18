@@ -9,6 +9,9 @@ import { SectionTitle, Meter } from '@/components/dashboard/kit';
 import { CopyButton } from '@/components/dashboard/client';
 import { newContentPost } from '../../actions';
 import { SendHeldButton } from './HeldTray';
+import { SchedulingTest } from './SchedulingTest';
+import { qstashReady } from '@/lib/qstash';
+import { getJSON } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +69,7 @@ export default async function Content() {
   const postedThisWeek = rows.filter((r) => weekDays.includes(dayKey(r.when)) && Object.values(r.channels).includes('posted')).length;
   const held = rows.filter((r) => r.channels.tiktok === 'held');
   const upcoming = rows.filter((r) => r.status === 'scheduled').sort((a, b) => a.when.localeCompare(b.when));
+  const ping = demoOn() ? null : await getJSON<{ scheduledFor?: string; firedAt?: string | null } | null>('meta/qstash-ping.json', null);
   const recent = rows.filter((r) => r.status !== 'scheduled').slice(0, 12);
 
   return (
@@ -118,7 +122,7 @@ export default async function Content() {
       )}
 
       <div className="grid lg:grid-cols-2 gap-3 md:gap-4">
-        <Card title="Scheduled" pad={false}>
+        <Card title="Scheduled" pad={false} action={<SchedulingTest ready={demoOn() || qstashReady()} last={ping} />}>
           {upcoming.length ? <ul className="divide-y divide-white/[0.05]">{upcoming.map((r, j) => <PostRow key={r.id + j} r={r} />)}</ul>
             : <Empty>Nothing scheduled. Press New post, write it once, then Schedule for an exact time.</Empty>}
         </Card>

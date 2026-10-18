@@ -536,3 +536,21 @@ export async function copyAsTextPost(id: string): Promise<{ error?: string; id?:
   await savePost(n);
   return { id: n.id };
 }
+
+/** "Test scheduling": books a QStash call 1 minute ahead that only records a ping (nothing is posted). */
+export async function testScheduling(): Promise<{ error?: string; at?: string }> {
+  await requireSession();
+  const { qstashReady, scheduleAt } = await import('@/lib/qstash');
+  if (!qstashReady()) return { error: 'QStash keys are missing.' };
+  const { putJSON } = await import('@/lib/store');
+  const ping = `t${Date.now()}`;
+  const at = new Date(Date.now() + 60_000);
+  try {
+    await scheduleAt(at, { ping });
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'QStash refused the schedule' };
+  }
+  await putJSON('meta/qstash-ping.json', { ping, scheduledFor: at.toISOString(), firedAt: null });
+  revalidatePath('/dashboard/content');
+  return { at: at.toISOString() };
+}
