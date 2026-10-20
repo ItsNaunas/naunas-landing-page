@@ -78,10 +78,10 @@ export function DraftEditor({ p }: { p: Prospect }) {
   );
 }
 
-export function CopyText({ text }: { text: string }) {
+export function CopyText({ text, label = 'Copy opener' }: { text: string; label?: string }) {
   const [done, setDone] = useState(false);
   return (
     <button type="button" onClick={async () => { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1500); }}
-      className="rounded-full border border-white/15 px-3 py-1.5 text-xs hover:border-white/30">{done ? 'Copied ✓' : 'Copy opener'}</button>
+      className="rounded-full border border-white/15 px-3 py-1.5 text-xs hover:border-white/30">{done ? 'Copied ✓' : label}</button>
   );
 }

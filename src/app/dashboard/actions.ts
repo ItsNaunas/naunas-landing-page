@@ -686,3 +686,27 @@ export async function markIgReplied(form: FormData) {
   await logEvent('lead', `Instagram reply · ${p.firm}`, p.instagram ? `https://instagram.com/${p.instagram}` : undefined);
   revalidatePath('/dashboard', 'layout');
 }
+
+// ---------------------------------------------------------------- Old warm leads (Outreach → Today's list)
+
+/** Write (or rewrite) a check-in message from the lead's HubSpot notes. Returned to the list; nothing is sent. */
+export async function writeCheckin(lead: { id: string; name: string; company?: string; channel: 'Instagram' | 'LinkedIn' }): Promise<{ text?: string; error?: string }> {
+  await requireSession();
+  if (!/^\d+$/.test(lead.id)) return { error: 'Bad contact id' };
+  const { draftCheckin } = await import('@/lib/checkins');
+  try {
+    return { text: await draftCheckin(lead) };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message.slice(0, 160) : 'Could not write it' };
+  }
+}
+
+export async function markCheckin(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const outcome = str(form, 'outcome');
+  if (!/^\d+$/.test(id) || !['sent', 'snoozed', 'dropped'].includes(outcome)) return;
+  const { recordCheckin } = await import('@/lib/checkins');
+  await recordCheckin({ id, channel: str(form, 'channel') || 'Instagram' }, outcome as 'sent' | 'snoozed' | 'dropped');
+  revalidatePath('/dashboard', 'layout');
+}
