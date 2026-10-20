@@ -145,6 +145,8 @@ export async function saveProspectDrafts(_prev: SaveState, form: FormData): Prom
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'That email address doesn’t look right.' };
   const schedule = form.get('intent') === 'schedule';
   if (schedule && !email) return { error: 'Add their email address before scheduling.' };
+  const { hasPlaceholder } = await import('@/lib/dmLint');
+  if (schedule && hasPlaceholder([subject, ...steps].join(' '))) return { error: 'An email still has placeholder text ([like this]). Fix it before scheduling.' };
   const list = await getProspects();
   await saveProspects(list.map((p) => p.id !== id ? p : {
     ...p, email: email || p.email,
@@ -161,7 +163,8 @@ export async function markDmSent(form: FormData) {
   const list = await getProspects();
   const p = list.find((x) => x.id === id);
   if (!p) return;
-  await saveProspects(list.map((x) => (x.id === id ? { ...x, dmSentAt: new Date().toISOString() } : x)));
+  const style = str(form, 'style') || undefined;
+  await saveProspects(list.map((x) => (x.id === id ? { ...x, dmSentAt: new Date().toISOString(), dmStyle: style ?? x.dmStyle } : x)));
   await logEvent('outreach_dm', `Instagram DM sent · ${p.firm}`, p.instagram ? `https://instagram.com/${p.instagram}` : undefined);
   await done();
 }
@@ -651,5 +654,35 @@ export async function closeOwed(form: FormData) {
   if (!['replied', 'nudged', 'dropped'].includes(outcome)) return;
   const { patchOwed } = await import('@/lib/owed');
   await patchOwed(str(form, 'id'), { closedAt: new Date().toISOString(), outcome: outcome as 'replied' | 'nudged' | 'dropped' });
+  revalidatePath('/dashboard', 'layout');
+}
+
+// ---------------------------------------------------------------- Instagram sequence (Outreach → Today)
+
+/** Follow-up 1 (day 5) or 2 (day 9) sent by hand. Counts as an IG follow-up rep. */
+export async function markIgFollowup(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const n = str(form, 'n') === '2' ? 'fu2At' : 'fu1At';
+  const list = await getProspects();
+  if (!list.some((x) => x.id === id)) return;
+  await saveProspects(list.map((x) => (x.id === id ? { ...x, [n]: new Date().toISOString() } : x)));
+  const { bumpRep } = await import('@/lib/reps');
+  await bumpRep('followups', 1);
+  revalidatePath('/dashboard', 'layout');
+}
+
+/** They replied on Instagram: stop the IG follow-ups AND the email sequence. */
+export async function markIgReplied(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const list = await getProspects();
+  const p = list.find((x) => x.id === id);
+  if (!p) return;
+  const now = new Date().toISOString();
+  const stop = ['drafted', 'scheduled', 'active'].includes(p.status);
+  await saveProspects(list.map((x) => (x.id === id ? { ...x, igRepliedAt: now, ...(stop ? { status: 'replied' as const, repliedAt: now } : {}) } : x)));
+  if (p.contactId) await updateContact(p.contactId, { naunas_outreach_status: 'replied' }).catch(() => {});
+  await logEvent('lead', `Instagram reply · ${p.firm}`, p.instagram ? `https://instagram.com/${p.instagram}` : undefined);
   revalidatePath('/dashboard', 'layout');
 }

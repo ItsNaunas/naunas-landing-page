@@ -6,6 +6,7 @@ import { repliesFrom, inboxReady } from '@/lib/inbox';
 import { logEvent } from '@/lib/events';
 import { notify, line } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
+import { hasPlaceholder } from '@/lib/dmLint';
 
 // Cold outreach, run from /dashboard/outreach. Replaces the vault email engine for NEW prospects.
 //   find (Apify Google Maps) → you approve → the Claude routine drafts (research line, E1–E4, IG DM) →
@@ -15,7 +16,8 @@ import { FUNNEL } from '@/config/funnel';
 // Nothing sends unless settings.sending is on (switched from the dashboard).
 
 export type ProspectStatus = 'new' | 'rejected' | 'approved' | 'drafted' | 'scheduled' | 'active' | 'replied' | 'finished' | 'stopped' | 'bounced';
-export type Drafts = { dossier?: string; firstName?: string; subject: string; steps: string[]; dm?: string };
+/** dms: up to 3 opener styles from the routine (A/B/C test); dm stays the single/edited opener. */
+export type Drafts = { dossier?: string; firstName?: string; subject: string; steps: string[]; dm?: string; dms?: { style: string; text: string }[] };
 export type Prospect = {
   id: string; firm: string; website?: string; domain?: string; email?: string; instagram?: string; phone?: string;
   city?: string; state?: string; country?: string; tz: string; rating?: number; reviews?: number; category?: string; mapsUrl?: string;
@@ -23,6 +25,8 @@ export type Prospect = {
   drafts?: Drafts;
   sent?: { step: number; at: string; messageId: string }[];
   startedAt?: string; repliedAt?: string; dmSentAt?: string; warmedAt?: string; contactId?: string;
+  /** Instagram sequence: opener style used, the two follow-ups, and a reply on Instagram (stops everything). */
+  dmStyle?: string; fu1At?: string; fu2At?: string; igRepliedAt?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 export type OutreachSettings = { sending: boolean; dailyNew: number; dailyTotal: number; monthlyCapUsd: number };
@@ -161,7 +165,7 @@ export async function ingestDrafts(): Promise<number> {
     const d = byId.get(p.id);
     if (p.status !== 'approved' || !d || !d.subject || !d.steps?.length) return p;
     n++;
-    return { ...p, status: 'drafted', drafts: { dossier: d.dossier, firstName: d.firstName, subject: d.subject, steps: d.steps.slice(0, 4), dm: d.dm } };
+    return { ...p, status: 'drafted', drafts: { dossier: d.dossier, firstName: d.firstName, subject: d.subject, steps: d.steps.slice(0, 4), dm: d.dm ?? d.dms?.[0]?.text, dms: d.dms?.slice(0, 3) } };
   }));
   return n;
 }
@@ -223,6 +227,7 @@ export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunR
     if (step >= 4 || step >= p.drafts!.steps.length) continue;
     if (step === 0 && fresh >= settings.dailyNew) continue;
     if (step > 0 && Date.now() < Date.parse(p.startedAt!) + STEP_DAYS[step] * 86_400_000) continue;
+    if (hasPlaceholder(`${p.drafts!.subject} ${p.drafts!.steps[step]}`)) { result.skipped.push(`${p.firm}: E${step + 1} has placeholder text, fix the draft`); continue; }
     if (p.sent?.some((s) => day(s.at) === today)) continue;
     const h = localHour(p.tz);
     if (h < 7 || h >= 20) { result.skipped.push(`${p.firm}: outside 7am–8pm their time`); continue; }

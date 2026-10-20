@@ -7,10 +7,10 @@ import { getJSON, updateJSON } from '@/lib/store';
 
 export type RepKey = 'warmups' | 'followups' | 'linkedin' | 'list' | 'zanzibar';
 export const MANUAL_REPS: { key: RepKey; label: string; hint: string; target: number }[] = [
-  { key: 'warmups', label: 'IG warm-ups', hint: 'Follow + one real comment on a recent project post (about the work)', target: 5 },
-  { key: 'followups', label: 'IG follow-ups', hint: 'Reply to a story or new post, nudge an unanswered DM', target: 5 },
+  { key: 'warmups', label: 'IG warm-ups', hint: 'Follow, like 2 to 3 project posts, one specific comment, view their story', target: 10 },
+  { key: 'followups', label: 'IG follow-ups', hint: 'Day 5 and day 9 follow-ups (ticked from the sequence), story replies', target: 5 },
   { key: 'linkedin', label: 'LinkedIn connects', hint: 'Connect with a note, once they have seen you twice elsewhere', target: 3 },
-  { key: 'list', label: 'List-building', hint: 'New firms found and approved (Find prospects below)', target: 5 },
+  { key: 'list', label: 'List-building', hint: 'New firms found and approved (Prospects tab)', target: 5 },
   { key: 'zanzibar', label: 'Zanzibar action', hint: 'One relationship move. Intro-led, never cold', target: 1 },
 ];
 /** Counted automatically: emails by the daily send, DMs you mark sent, posts published from Content. */

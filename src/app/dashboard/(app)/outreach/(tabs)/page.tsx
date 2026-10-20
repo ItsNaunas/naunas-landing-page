@@ -3,13 +3,14 @@ import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
 import { Funnel } from '@/components/dashboard/charts';
-import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, bumpRepCount, markWarmed } from '@/app/dashboard/actions';
+import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, bumpRepCount, markWarmed, markIgFollowup, markIgReplied } from '@/app/dashboard/actions';
 import { SearchForm, DraftEditor, CopyText } from '@/app/dashboard/(app)/outreach/OutreachClient';
 
 export const dynamic = 'force-dynamic';
 
 const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') as 'good' | 'accent' | 'muted';
 
+import { lintMessage } from '@/lib/dmLint';
 import { getOwed, needsYou, dueAt, nudgeAt } from '@/lib/owed';
 import { demoOn } from '@/lib/ops/demo';
 import { addOwedAsset, markOwedSent, closeOwed } from '@/app/dashboard/actions';
@@ -100,7 +101,7 @@ export default async function OutreachToday() {
           <ul className="divide-y divide-white/[0.05]">
             {([
               ['Cold emails', d.reps2.today.auto.emails, d.reps2.targets.emails, 'Sent by the 14:00 UTC run once sending is on'],
-              ['Instagram DMs', d.reps2.today.auto.dms, d.reps2.targets.dms, 'Copy from “DMs to send” below, then Mark sent'],
+              ['Instagram openers', d.reps2.today.auto.dms, d.reps2.targets.dms, 'From the Instagram sequence below: Sent this one'],
               ['Posts', d.reps2.today.auto.posts, d.reps2.targets.posts, 'Published from Content'],
             ] as const).map(([label, done, target, hint]) => (
               <li key={label} className="px-5 py-3 flex items-center gap-3">
@@ -139,18 +140,6 @@ export default async function OutreachToday() {
             <p className="text-sm mt-3"><b className="tabular-nums">{d.reps2.weekTouches}</b> <span className="text-white/50">touches →</span> <b className="tabular-nums">{d.reps2.weekReplies}</b> <span className="text-white/50">replies this week</span></p>
             <p className="text-[11px] text-white/35 mt-1">Touches = emails, DMs, warm-ups, follow-ups and LinkedIn connects. This replaces the day-close tally line.</p>
           </Card>
-          <Card title="Warm up today" pad={false}>
-            {d.warmList.length ? (
-              <ul className="divide-y divide-white/[0.05]">
-                {d.warmList.map((p) => (
-                  <li key={p.id} className="px-5 py-2.5 flex items-center gap-2">
-                    <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="flex-1 min-w-0 truncate text-[13px] hover:text-[#F2613F]">@{p.instagram} ↗<span className="block text-[11px] text-white/35">{p.firm}</span></a>
-                    <form action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className="rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs px-2.5 py-1">Done</button></form>
-                  </li>
-                ))}
-              </ul>
-            ) : <Empty>Drafted firms with an Instagram appear here. Follow + comment on a recent project today, DM them tomorrow.</Empty>}
-          </Card>
         </div>
       </div>
 
@@ -178,30 +167,77 @@ export default async function OutreachToday() {
           ) : <Empty>No replies in the last 14 days. They appear here (and on Telegram) the moment they land.</Empty>}
       </Card>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 min-w-0">
-          <SectionTitle>Today’s Instagram DMs</SectionTitle>
-          <Card pad={false}>
-            {d.dmList.length ? (
-              <ul className="divide-y divide-white/[0.05]">
-                {d.dmList.map((p) => (
-                  <li key={p.id} className="px-5 py-3.5 flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-sm font-medium hover:text-[#F2613F]">@{p.instagram} ↗</a>
-                      <span className="text-xs text-white/40">{p.firm}</span>
-                    </div>
-                    <p className="text-[13px] text-white/70">{p.drafts?.dm}</p>
-                    <div className="flex gap-2">
-                      <CopyText text={p.drafts?.dm ?? ''} />
-                      <form action={markDmSent}><input type="hidden" name="id" value={p.id} /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Mark sent</button></form>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : <Empty>No DMs queued. Drafted prospects with an Instagram show up here, ready to copy.</Empty>}
-          </Card>
-        </div>
+      {/* Instagram sequence (DM playbook): warm up day 1 → opener day 2 → follow-ups day 5 and 9 → stop */}
+      <SectionTitle action={<span className="text-xs text-white/45">{d.ig.waiting} waiting on a reply · {d.ig.finished} finished</span>}>Instagram sequence</SectionTitle>
+      <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
+        <Card title={`1 · Warm up (${d.ig.warm.length})`} pad={false}>
+          {d.ig.warm.length ? (
+            <ul className="divide-y divide-white/[0.05]">
+              {d.ig.warm.map((p) => (
+                <li key={p.id} className="px-5 py-2.5 flex items-center gap-2">
+                  <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="flex-1 min-w-0 truncate text-[13px] hover:text-[#F2613F]">@{p.instagram} ↗<span className="block text-[11px] text-white/35">{p.firm}</span></a>
+                  <form action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className="rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-xs px-2.5 py-1">Done</button></form>
+                </li>
+              ))}
+            </ul>
+          ) : <Empty>Drafted firms with an Instagram land here. Follow, like 2 to 3 project posts, leave one specific comment, view their story.</Empty>}
+          <p className="px-5 pb-3 text-[11px] text-white/35">Their opener unlocks tomorrow.</p>
+        </Card>
 
+        <Card title={`2 · Send the opener (${d.ig.openers.length})`} pad={false}>
+          {d.ig.openers.length ? (
+            <ul className="divide-y divide-white/[0.05]">
+              {d.ig.openers.map((p) => {
+                const options = p.drafts?.dms?.length ? p.drafts.dms : [{ style: 'default', text: p.drafts?.dm ?? '' }];
+                return (
+                  <li key={p.id} className="px-5 py-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-sm font-medium hover:text-[#F2613F] truncate">@{p.instagram} ↗</a>
+                      <span className="text-[11px] text-white/40 truncate">{p.firm}</span>
+                    </div>
+                    {options.map((o) => {
+                      const lint = lintMessage(o.text, { dm: true });
+                      return (
+                        <div key={o.style} className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 flex flex-col gap-2">
+                          {options.length > 1 && <span className="text-[10px] uppercase tracking-wider text-white/35">Style {o.style}</span>}
+                          <p className="text-[13px] text-white/80">{o.text}</p>
+                          {(lint.block.length > 0 || lint.warn.length > 0) && (
+                            <p className="text-[11px]">{lint.block.map((b) => <span key={b} className="text-rose-300 mr-2">✕ {b}</span>)}{lint.warn.map((w) => <span key={w} className="text-amber-300/90 mr-2">⚠ {w}</span>)}</p>
+                          )}
+                          <div className="flex gap-2">
+                            {lint.ok ? <CopyText text={o.text} /> : <span className="text-[11px] text-white/40">Fix it in Prospects → Drafts first</span>}
+                            {lint.ok && <form action={markDmSent}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="style" value={o.style} /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Sent this one</button></form>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : <Empty>Openers appear the day after a warm-up. Under 25 words, one real detail, one easy question, no link.</Empty>}
+        </Card>
+
+        <Card title={`3 · Follow-ups due (${d.ig.followups.length})`} pad={false}>
+          {d.ig.followups.length ? (
+            <ul className="divide-y divide-white/[0.05]">
+              {d.ig.followups.map(({ p, n }) => (
+                <li key={p.id} className="px-5 py-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-sm font-medium hover:text-[#F2613F] truncate">@{p.instagram} ↗</a>
+                    <Badge tone={n === 2 ? 'accent' : 'neutral'}>{n === 1 ? 'Day 5' : 'Day 9 · last one'}</Badge>
+                  </div>
+                  <p className="text-[12px] text-white/50">{n === 1 ? 'Something useful: a screenshot or a 60-second voice note on how a firm like theirs handles enquiries. No “just checking in”.' : 'Leave the door open with a month to check back. Then stop. Never a third.'}</p>
+                  <div className="flex gap-3 items-center">
+                    <form action={markIgFollowup}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="n" value={n} /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Sent</button></form>
+                    <form action={markIgReplied}><input type="hidden" name="id" value={p.id} /><button className="text-xs text-white/55 hover:text-white">They replied</button></form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : <Empty>Nothing due. Follow-ups show up 3 and 7 days after the opener, and vanish when you mark a reply.</Empty>}
+          {d.ig.waiting > 0 && <p className="px-5 pb-3 text-[11px] text-white/35">Got a reply from someone waiting? Find them under Prospects or mark it from their follow-up.</p>}
+        </Card>
       </div>
     </>
   );

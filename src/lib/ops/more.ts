@@ -34,6 +34,35 @@ function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], 
     weekReplies: prospects.filter((p) => p.repliedAt && Date.parse(p.repliedAt) >= since).length,
   };
 }
+const H = 3_600_000;
+function igSequence(all: Prospect[], demoMode = false) {
+  const now = Date.now();
+  const today = repDay();
+  const live = all.filter((p) => p.instagram && !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
+  const sinceDm = (p: Prospect) => (p.dmSentAt ? now - Date.parse(p.dmSentAt) : 0);
+  const warm = live.filter((p) => !p.warmedAt && !p.dmSentAt).sort((a, b) => b.fit - a.fit).slice(0, 10);
+  // Opener goes the day after the warm-up (warmed before today); demo shows one straight away.
+  const openers = live.filter((p) => !p.dmSentAt && (p.drafts?.dm || p.drafts?.dms?.length) && (demoMode || (p.warmedAt && repDay(p.warmedAt) < today))).slice(0, 10);
+  const followups = live.flatMap((p): { p: Prospect; n: 1 | 2 }[] => {
+    if (!p.dmSentAt) return [];
+    if (!p.fu1At && sinceDm(p) >= 3 * 24 * H) return [{ p, n: 1 }];
+    if (p.fu1At && !p.fu2At && sinceDm(p) >= 7 * 24 * H) return [{ p, n: 2 }];
+    return [];
+  });
+  const waiting = live.filter((p) => p.dmSentAt && !(p.fu1At && p.fu2At)).length - followups.length;
+  // Opener test: reply rate per style.
+  const sent = all.filter((p) => p.dmSentAt);
+  const styles = Object.entries(sent.reduce<Record<string, { sent: number; replied: number }>>((acc, p) => {
+    const k = p.dmStyle ?? 'unlabelled';
+    const row = (acc[k] ??= { sent: 0, replied: 0 });
+    row.sent += 1;
+    if (p.igRepliedAt) row.replied += 1;
+    return acc;
+  }, {})).map(([style, v]) => ({ style, ...v, rate: v.sent ? Math.round((v.replied / v.sent) * 100) : 0 })).sort((a, b) => b.sent - a.sent);
+  const finished = live.filter((p) => p.fu2At).length;
+  return { warm, openers, followups, waiting: Math.max(0, waiting), finished, styles };
+}
+
 const demoReps = () => repsView({ [repDay()]: { warmups: 3, followups: 2, linkedin: 1, list: 5 } }, [], [], []);
 
 // Lead profile, Outreach and Content-plus data for /dashboard. Read-only; per-source errors.
@@ -106,7 +135,7 @@ export async function leadProfile(id: string) {
 
 // ---------------------------------------------------------------- Outreach
 export async function outreachData() {
-  if (demoOn()) return { ...demo.outreach(), reps2: demoReps(), warmList: [] } as never;
+  if (demoOn()) { const o = demo.outreach() as { queue: Record<string, Prospect[]> }; return { ...o, reps2: demoReps(), ig: igSequence(Object.values(o.queue).flat(), true) } as never; }
   const { errors, safe } = collector();
   if (apifyReady()) await safe('Apify', syncSearches(), [] as Search[]);
   await safe('Drafts', ingestDrafts(), 0);
@@ -139,8 +168,8 @@ export async function outreachData() {
     errors, settings, searches: searches.slice(0, 8), spent,
     queue: { review: by('new').sort((a, b) => b.fit - a.fit), approved: by('approved'), drafted: by('drafted'), scheduled: by('scheduled'), active: by('active'), replied: by('replied'), finished: by('finished') },
     reps2: repsView(repLog, events, contentRows, prospects),
-    // Day 0 of the Instagram sequence: follow + comment, then DM the next day.
-    warmList: prospects.filter((p) => p.instagram && !p.warmedAt && !p.dmSentAt && ['drafted', 'scheduled', 'active'].includes(p.status)).sort((a, b) => b.fit - a.fit).slice(0, 5),
+    // Instagram sequence (DM playbook): warm up day 1, opener day 2, follow-ups day 5 and 9, then stop.
+    ig: igSequence(prospects),
     dmList: prospects.filter((p) => p.instagram && p.drafts?.dm && !p.dmSentAt && ['drafted', 'scheduled', 'active'].includes(p.status)).slice(0, 10),
     reps: {
       emails: todays.filter((e) => e.kind === 'outreach_email').length, emailTarget: settings.dailyNew,
