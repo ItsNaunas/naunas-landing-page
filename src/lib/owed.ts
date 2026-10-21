@@ -7,6 +7,8 @@ import { getJSON, updateJSON } from '@/lib/store';
 export type Owed = {
   id: string; who: string; what: string; channel: string; link?: string;
   owedAt: string; sentAt?: string; closedAt?: string; outcome?: 'replied' | 'nudged' | 'dropped';
+  /** The cold-outreach firm, and its HubSpot task (completed when marked sent or closed). */
+  firmId?: string; taskId?: string;
 };
 
 const PATH = 'outreach/owed.json';

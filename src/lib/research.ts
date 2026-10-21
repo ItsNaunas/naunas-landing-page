@@ -13,6 +13,7 @@ import { scanSite, scanFacts, scanText, type Scan } from '@/lib/scan';
 import { saveIgPosts } from '@/lib/igPosts';
 import { qstashReady, scheduleAt } from '@/lib/qstash';
 import type { Prospect, Drafts, Research } from '@/lib/outreach';
+import { knownInHubSpot } from '@/lib/crmSync';
 
 const P = 'outreach/prospects.json';
 export const scanPath = (id: string) => `outreach/scans/${id}.json`;
@@ -95,6 +96,9 @@ export async function researchProspect(id: string): Promise<'drafted' | 'skipped
     if (p.country && p.country.toUpperCase() !== 'US') { await skip(id, `outside the US (${p.country})`); return 'skipped'; }
     const scan = await scanSite(p.website);
     if (!scan.ok) { await skip(id, 'the website could not be loaded'); return 'skipped'; }
+    // Never cold-pitch someone HubSpot already knows (client, open deal, recently lost, existing contact).
+    const known = await knownInHubSpot([p.email, ...scan.emails].filter(Boolean) as string[], p.website).catch(() => null);
+    if (known) { await skip(id, known); return 'skipped'; }
     const handle = (p.instagram || scan.instagram)?.replace(/^@/, '');
     const ig = handle ? await igProfile(handle).catch(() => null) : null;
     await putJSON(scanPath(id), { ...scan, ig: ig ?? undefined });

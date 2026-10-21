@@ -48,6 +48,8 @@ export type Prospect = {
   reportToken?: string;
   /** HubSpot deal opened when the firm engaged (lib/crmSync). */
   dealId?: string;
+  /** Booked an audit (cal-webhook matched them), and the deal's outcome synced back from HubSpot. */
+  bookedAt?: string; wonAt?: string; lostAt?: string; lostReason?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 /** dailyNew = new firms per day by EMAIL (first emails); igNew / liNew = new firms per day started on Instagram / LinkedIn. */
@@ -214,10 +216,10 @@ export function emailHold(p: Prospect, now = Date.now()): string | null {
 const localHour = (tz: string) => Number(new Date().toLocaleString('en-GB', { hour: 'numeric', hour12: false, timeZone: tz }));
 const day = (iso: string) => iso.slice(0, 10);
 
-export type RunResult = { sent: number; newFirms: number; replies: number; skipped: string[]; errors: string[] };
+export type RunResult = { sent: number; newFirms: number; replies: number; skipped: string[]; errors: string[]; repliedIds: string[] };
 
 export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunResult> {
-  const result: RunResult = { sent: 0, newFirms: 0, replies: 0, skipped: [], errors: [] };
+  const result: RunResult = { sent: 0, newFirms: 0, replies: 0, skipped: [], errors: [], repliedIds: [] };
   const settings = await getSettings();
   await ingestDrafts().catch((e) => result.errors.push(`drafts: ${e instanceof Error ? e.message : e}`));
   let list = await getProspects();
@@ -235,6 +237,7 @@ export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunR
         p.status = /mailer-daemon|postmaster/i.test(r.from) ? 'bounced' : 'replied';
         p.repliedAt = r.date;
         if (opts.dryRun) continue;
+        if (p.status === 'replied') result.repliedIds.push(p.id);
         if (p.contactId) await updateContact(p.contactId, { naunas_outreach_status: p.status === 'bounced' ? 'bounced' : 'replied' }).catch(() => {});
         await logEvent('outreach_reply', `Outreach reply · ${p.firm}`, p.contactId ? `/dashboard/leads/${p.contactId}` : '/dashboard/outreach');
         await notify({

@@ -11,6 +11,8 @@ import { setProspect, markIgReplied, addOwedAsset, researchNow } from '@/app/das
 import { getReport } from '@/lib/leakReport';
 import { FUNNEL } from '@/config/funnel';
 import { ReportPanel } from './ReportPanel';
+import { pullDealStagesSoon, outcomeOf } from '@/lib/crmSync';
+import { hubspotUrl } from '@/lib/hubspot';
 import { DraftEditor, CopyText } from '../../OutreachClient';
 import { Timeline } from '../../FirmTimeline';
 
@@ -25,6 +27,7 @@ const STATUS: Record<Prospect['status'], string> = {
 /** Everything about one firm in one place: research, channel, timeline, drafts, their posts, and the actions. */
 export default async function FirmPage({ params }: PageProps<'/dashboard/outreach/firm/[id]'>) {
   const id = decodeURIComponent((await params).id);
+  if (!demoOn()) await pullDealStagesSoon().catch(() => {});
   const all = demoOn() ? [] : await getProspects().catch(() => [] as Prospect[]);
   const p = all.find((x) => x.id === id);
   if (!p) notFound();
@@ -47,9 +50,12 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
             {[p.city, p.state].filter(Boolean).join(', ')}
             <Badge tone={p.status === 'replied' ? 'good' : live ? 'accent' : 'muted'}>{STATUS[p.status]}</Badge>
             {p.channel && <Badge tone="neutral">{CHANNEL_LABEL[p.channel]} only</Badge>}
+            {outcomeOf(p) && <Badge tone={p.wonAt ? 'good' : p.lostAt ? 'muted' : 'accent'}>{outcomeOf(p)}</Badge>}
           </p>
         </div>
         <div className="flex flex-wrap gap-3 text-xs">
+          {p.dealId ? <a href={hubspotUrl.deal(p.dealId)} {...linkProps} className="text-[#ff8a6d] hover:underline">Deal in HubSpot ↗</a> : p.contactId ? <a href={hubspotUrl.contact(p.contactId)} {...linkProps} className="text-[#ff8a6d] hover:underline">HubSpot ↗</a> : null}
+          {p.contactId && <a href={`/dashboard/leads/${p.contactId}`} className="text-white/60 hover:text-white">Lead page</a>}
           {p.website && <a href={p.website} {...linkProps} className="text-white/60 hover:text-white">Website ↗</a>}
           {p.instagram && <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-white/60 hover:text-white">@{p.instagram} ↗</a>}
           {r?.ownerLinkedin && <a href={r.ownerLinkedin} {...linkProps} className="text-white/60 hover:text-white">LinkedIn ↗</a>}

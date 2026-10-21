@@ -1,6 +1,7 @@
 import { outreachData } from '@/lib/ops/more';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
+import { STEP_DAYS, STEP_LABEL, CHANNEL_LABEL, getProspects, type Prospect, type OutreachChannel } from '@/lib/outreach';
+import { demoOn } from '@/lib/ops/demo';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
 import { Funnel } from '@/components/dashboard/charts';
@@ -16,6 +17,15 @@ export default async function OutreachResults() {
   const q = d.queue;
   const inFlight = [...q.scheduled, ...q.active];
   const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
+  // Which channel makes money: started → replied → booked → won per channel, from the firms themselves
+  // (won/lost synced back from HubSpot deals).
+  const firms = demoOn() ? [] : await getProspects().catch(() => [] as Prospect[]);
+  const started = firms.filter((p) => p.channel && (p.scheduledAt || p.startedAt));
+  const byChannel = (['instagram', 'linkedin', 'email'] as OutreachChannel[]).map((c) => {
+    const f = started.filter((p) => p.channel === c);
+    return { c, started: f.length, replied: f.filter((p) => p.igRepliedAt || p.repliedAt || p.bookedAt).length, booked: f.filter((p) => p.bookedAt).length, won: f.filter((p) => p.wonAt).length, lost: f.filter((p) => p.lostAt).length };
+  });
+  const lostReasons = Object.entries(firms.filter((p) => p.lostAt).reduce<Record<string, number>>((acc, p) => { const k = p.lostReason ?? 'No reason given'; acc[k] = (acc[k] ?? 0) + 1; return acc; }, {})).sort((a, b) => b[1] - a[1]);
 
   return (
     <>
@@ -33,6 +43,23 @@ export default async function OutreachResults() {
           </Card>
         </div>
       </div>
+      <SectionTitle action={<span className="text-xs text-white/45">Won and Lost come from the HubSpot deal</span>}>By channel · started → replied → booked → won</SectionTitle>
+      <Card pad={false}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px] tabular-nums">
+            <thead><tr className="text-left text-[11px] text-white/40"><th className="px-5 py-2.5 font-normal">Channel</th><th className="px-3 font-normal">Started</th><th className="px-3 font-normal">Replied</th><th className="px-3 font-normal">Booked</th><th className="px-3 font-normal">Won</th><th className="px-3 font-normal">Lost</th></tr></thead>
+            <tbody className="divide-y divide-white/[0.05]">
+              {byChannel.map((r) => (
+                <tr key={r.c}><td className="px-5 py-2.5">{CHANNEL_LABEL[r.c]}</td><td className="px-3">{r.started}</td>
+                  <td className="px-3">{r.replied}{r.started ? <span className="text-white/35"> · {Math.round((r.replied / r.started) * 100)}%</span> : ''}</td>
+                  <td className="px-3">{r.booked}</td><td className="px-3 text-emerald-300">{r.won}</td><td className="px-3 text-white/50">{r.lost}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {lostReasons.length > 0 && <p className="px-5 py-3 text-xs text-white/50 border-t border-white/[0.06]">Lost because: {lostReasons.map(([k, n]) => `${k} (${n})`).join(' · ')}</p>}
+      </Card>
+
       <SectionTitle>Instagram opener test</SectionTitle>
       <Card pad={false}>
         {d.ig.styles.length ? (

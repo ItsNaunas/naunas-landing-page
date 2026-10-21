@@ -666,9 +666,17 @@ export async function addOwedAsset(form: FormData) {
   const what = str(form, 'what') || 'Loom';
   if (!who) return;
   const { addOwed, DUE_H } = await import('@/lib/owed');
-  const o = await addOwed({ who: who.slice(0, 120), what: what.slice(0, 80), channel: str(form, 'channel') || 'LinkedIn', link: str(form, 'link').slice(0, 400) || undefined });
-  const firmId = str(form, 'firmId');
-  if (firmId) await crmAfter(firmId, (m) => m.prospectNote(firmId, `<p>Said yes to a ${what.replace(/</g, '&lt;')} (${str(form, 'channel') || 'DM'}). Promised within 24 hours.</p>`, 'interested'), 'Said yes');
+  const firmId = str(form, 'firmId') || undefined;
+  const o = await addOwed({ who: who.slice(0, 120), what: what.slice(0, 80), channel: str(form, 'channel') || 'LinkedIn', link: str(form, 'link').slice(0, 400) || undefined, firmId });
+  // Said yes: note + status interested on the deal, and a HubSpot task due in 24 hours (shows in the phone app).
+  if (firmId) await crmAfter(firmId, async (m) => {
+    await m.prospectNote(firmId, `<p>Said yes to a ${what.replace(/</g, '&lt;')} (${str(form, 'channel') || 'DM'}). Promised within 24 hours.</p>`, 'interested');
+    const ids = await m.syncProspect(firmId);
+    if (!ids) return;
+    const taskId = await m.createTask(ids.contactId, ids.dealId, `Send ${who} the ${what}`, new Date(Date.parse(o.owedAt) + DUE_H * 3_600_000));
+    const { patchOwed } = await import('@/lib/owed');
+    await patchOwed(o.id, { taskId });
+  }, 'Said yes');
   const { qstashReady, scheduleAt } = await import('@/lib/qstash');
   if (qstashReady()) await scheduleAt(new Date(Date.now() + (DUE_H - 4) * 3_600_000), { owed: o.id }).catch(() => {});
   changed();
@@ -678,6 +686,7 @@ export async function markOwedSent(form: FormData) {
   await requireSession();
   const { patchOwed, NUDGE_D } = await import('@/lib/owed');
   const o = await patchOwed(str(form, 'id'), { sentAt: new Date().toISOString() });
+  if (o?.taskId) await crmAfter(o.firmId ?? o.id, (m) => m.completeTask(o.taskId!), 'Complete task');
   const { qstashReady, scheduleAt } = await import('@/lib/qstash');
   if (o && qstashReady()) await scheduleAt(new Date(Date.now() + NUDGE_D * 86_400_000), { nudge: o.id }).catch(() => {});
   changed();
@@ -688,7 +697,8 @@ export async function closeOwed(form: FormData) {
   const outcome = str(form, 'outcome');
   if (!['replied', 'nudged', 'dropped'].includes(outcome)) return;
   const { patchOwed } = await import('@/lib/owed');
-  await patchOwed(str(form, 'id'), { closedAt: new Date().toISOString(), outcome: outcome as 'replied' | 'nudged' | 'dropped' });
+  const o = await patchOwed(str(form, 'id'), { closedAt: new Date().toISOString(), outcome: outcome as 'replied' | 'nudged' | 'dropped' });
+  if (o?.taskId && !o.sentAt) await crmAfter(o.firmId ?? o.id, (m) => m.completeTask(o.taskId!), 'Close task');
   changed();
 }
 

@@ -9,15 +9,18 @@ import { TabIntro, Errors, Badge, Card, Empty, ago, linkProps } from '@/componen
 import { ConnectCard } from '@/components/dashboard/kit';
 import { setProspect, refreshProspectSearches, importWave1, startAllReady, researchNow } from '@/app/dashboard/actions';
 import { SearchForm, DraftEditor } from '@/app/dashboard/(app)/outreach/OutreachClient';
+import { pullDealStagesSoon, outcomeOf } from '@/lib/crmSync';
 
 export const dynamic = 'force-dynamic';
 
 const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') as 'good' | 'accent' | 'muted';
-type Step = 'review' | 'researching' | 'ready' | 'outreach' | 'replied' | 'skipped';
+type Step = 'review' | 'researching' | 'ready' | 'outreach' | 'replied' | 'booked' | 'skipped';
 const working = (p: Prospect) => !!p.researchAt && Date.now() - Date.parse(p.researchAt) < 10 * 60_000;
 const firmLink = (p: Prospect) => <Link href={`/dashboard/outreach/firm/${encodeURIComponent(p.id)}`} className="font-medium hover:text-[#F2613F]">{p.firm}</Link>;
 
 export default async function OutreachProspects({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+  // Won/Lost set in HubSpot closes firms here too (throttled to every 15 minutes).
+  if (!demoOn()) await pullDealStagesSoon().catch(() => {});
   const d = await outreachData();
   const q = d.queue;
   const all = demoOn() ? (Object.values(q).flat() as Prospect[]) : await getProspects().catch(() => [] as Prospect[]);
@@ -27,26 +30,29 @@ export default async function OutreachProspects({ searchParams }: { searchParams
   const wave1Left = WAVE1.filter((w) => !have.has(domainOf(w.website) ?? '') && !have.has((w.instagram ?? '').toLowerCase())).length;
   const skipped = all.filter((p) => p.status === 'rejected').slice(-40).reverse();
   const outreach = [...q.scheduled, ...q.active];
+  const booked = all.filter((p) => p.bookedAt).sort((a, b) => b.bookedAt!.localeCompare(a.bookedAt!));
+  const replied = q.replied.filter((p) => !p.bookedAt);
 
   const steps: { key: Step; label: string; count: number; hint: string }[] = [
     { key: 'review', label: 'Review', count: q.review.length, hint: 'Approve the ones that look right' },
     { key: 'researching', label: 'Researching', count: q.approved.length, hint: 'About a minute per firm' },
     { key: 'ready', label: 'Ready to start', count: q.drafted.length, hint: 'Pick a channel, press Start' },
     { key: 'outreach', label: 'In outreach', count: outreach.length, hint: 'Working through the cadence' },
-    { key: 'replied', label: 'Replied', count: q.replied.length, hint: 'Talking to you' },
+    { key: 'replied', label: 'Replied', count: replied.length, hint: 'Talking to you' },
+    { key: 'booked', label: 'Booked', count: booked.length, hint: 'Booked an audit call' },
     { key: 'skipped', label: 'Skipped', count: skipped.length, hint: 'Didn’t fit, with the reason' },
   ];
   const asked = (await searchParams).step as Step | undefined;
   const step: Step = asked && steps.some((s) => s.key === asked) ? asked : q.drafted.length ? 'ready' : 'review';
   const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
-  const list = step === 'outreach' ? outreach : q.replied;
+  const list = step === 'outreach' ? outreach : step === 'booked' ? booked : replied;
 
   return (
     <>
       <TabIntro sub="Who we target: US residential, full-service interior design firms, 3 to 20 people, owner-led. Each firm moves left to right." />
       <Errors errors={d.errors} />
 
-      <nav className="grid grid-cols-3 lg:grid-cols-6 gap-2" aria-label="Prospect steps">
+      <nav className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2" aria-label="Prospect steps">
         {steps.map((s, i) => (
           <Link key={s.key} href={`/dashboard/outreach/prospects?step=${s.key}`} aria-current={s.key === step ? 'page' : undefined}
             className={`rounded-xl border px-3 py-2.5 transition-colors ${s.key === step ? 'border-[#F2613F]/60 bg-[#F2613F]/[0.08]' : 'border-white/[0.07] bg-white/[0.02] hover:border-white/20'}`}>
@@ -155,18 +161,18 @@ export default async function OutreachProspects({ searchParams }: { searchParams
         </>
       )}
 
-      {(step === 'outreach' || step === 'replied') && (
+      {(step === 'outreach' || step === 'replied' || step === 'booked') && (
         <Card pad={false}>
           {list.length ? (
             <ul className="divide-y divide-white/[0.05]">
               {list.map((p) => (
                 <li key={p.id} className="px-5 py-2.5 text-[13px] flex flex-wrap items-center justify-between gap-3">
-                  <span>{firmLink(p)} {p.channel && <Badge tone="muted">{CHANNEL_LABEL[p.channel]}</Badge>}</span>
-                  <span className="text-xs text-white/40">{step === 'replied' ? `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}` : `started ${ago(p.scheduledAt ?? p.startedAt ?? p.createdAt)}`}</span>
+                  <span>{firmLink(p)} {p.channel && <Badge tone="muted">{CHANNEL_LABEL[p.channel]}</Badge>} {outcomeOf(p) && step !== 'outreach' && <Badge tone={p.wonAt ? 'good' : p.lostAt ? 'muted' : 'accent'}>{outcomeOf(p)}</Badge>}</span>
+                  <span className="text-xs text-white/40">{step === 'booked' ? `booked ${ago(p.bookedAt!)}` : step === 'replied' ? `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}` : `started ${ago(p.scheduledAt ?? p.startedAt ?? p.createdAt)}`}</span>
                 </li>
               ))}
             </ul>
-          ) : <Empty>{step === 'outreach' ? 'No firms in outreach yet. Start some from Ready to start.' : 'No replies yet.'}</Empty>}
+          ) : <Empty>{step === 'outreach' ? 'No firms in outreach yet. Start some from Ready to start.' : step === 'booked' ? 'No audit calls booked from cold outreach yet.' : 'No replies yet.'}</Empty>}
           {step === 'outreach' && <p className="px-5 py-3 text-xs text-white/40 border-t border-white/[0.06]">Day-by-day progress for each firm is on the <Link href="/dashboard/outreach/sequences" className="underline hover:text-white">Sequences</Link> tab.</p>}
         </Card>
       )}

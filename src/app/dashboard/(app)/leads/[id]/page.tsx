@@ -7,6 +7,8 @@ import { Card, Badge, Empty, Errors, gbp, ago, linkProps } from '@/components/da
 import { Field, when, SectionError, errFor } from '@/components/dashboard/kit';
 import { setLeadOutreachStatus, leadSequence } from '../../../actions';
 import { ReplyBox, NoteBox, StageControl } from './LeadClient';
+import { getProspects, CHANNEL_LABEL, type Prospect } from '@/lib/outreach';
+import { demoOn } from '@/lib/ops/demo';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +56,8 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
   if (!p) notFound();
   const href = (t: string) => `/dashboard/leads/${id}${t === 'overview' ? '' : `?tab=${t}`}`;
   const groups = p.email_status?.groups ?? [];
+  // The cold-outreach firm behind this contact, if any (research, channel, leak report, firm page).
+  const firm = demoOn() ? undefined : (await getProspects().catch(() => [] as Prospect[])).find((x) => x.contactId === id);
 
   return (
     <>
@@ -120,13 +124,23 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
 
           {tab === 'overview' && (
             <>
+              {firm && (
+                <Card title="From cold outreach" action={<a href={`/dashboard/outreach/firm/${encodeURIComponent(firm.id)}`} className="text-xs text-white/50 hover:text-white">Firm page ›</a>}>
+                  <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-[13px]">
+                    {([['Firm', firm.firm], ['Channel', firm.channel ? CHANNEL_LABEL[firm.channel] : undefined], ['Opener', firm.dmStyle], ['The gap', firm.drafts?.research?.gap], ['Detail', firm.drafts?.research?.detail]] as const).filter(([, v]) => v).map(([k, v]) => (
+                      <div key={k} className="contents"><dt className="text-white/40">{k}</dt><dd className="text-white/80">{v}</dd></div>
+                    ))}
+                  </dl>
+                  {firm.reportToken && <p className="text-xs mt-3"><a href={`/dashboard/outreach/report/${firm.reportToken}`} className="text-[#ff8a6d] hover:underline">Leak report ›</a></p>}
+                </Card>
+              )}
               {p.notWorking && (
                 <Card title="In their words">
                   <blockquote className="border-l-2 border-[#F2613F] pl-4 text-[15px] leading-relaxed text-white/85 whitespace-pre-wrap">{p.notWorking}</blockquote>
                 </Card>
               )}
-              <Card title="Research brief" action={!p.brief ? <Badge tone="muted">Arrives the day before the call</Badge> : undefined}>
-                {p.brief ? <Prose text={p.brief} /> : <Empty>The daily routine researches their website and writes the brief (leaks, questions, quick win) when a call is booked.</Empty>}
+              <Card title="Research brief" action={!p.brief ? <Badge tone="muted">Written the minute they book</Badge> : undefined}>
+                {p.brief ? <Prose text={p.brief} /> : <Empty>When they book, their website is researched and the brief (leaks, questions, quick win) lands here and on the deal.</Empty>}
               </Card>
               {p.meetings[0] && (
                 <Card title={`Last call · ${when(p.meetings[0].at)}`} action={<a href={p.meetings[0].url} {...linkProps} className="text-xs text-white/50 hover:text-white">Watch ↗</a>}>

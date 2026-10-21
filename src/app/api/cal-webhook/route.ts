@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { preCallResearch } from '@/lib/precall';
+import { prospectForBooking, onColdBooking } from '@/lib/crmSync';
 import crypto from 'node:crypto';
 import { addToGroup, removeFromGroup, LEAK_MAP_GROUP, ENQUIRED_GROUP, BOOKED_GROUP } from '@/lib/mailerlite';
 import { upsertContact, ensureDeal, splitName, STAGE, hubspotUrl, linkCompany, addNote, openDealForEmail } from '@/lib/hubspot';
@@ -178,6 +179,19 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         await alertError('CalWebhook: HubSpot brief note', err);
       }
+    }
+    // A firm from cold outreach booked: stop its sequences, tie the deal to the firm, add research + leak report.
+    const cold = await prospectForBooking(booker.email, val('website')).catch(() => null);
+    if (cold) {
+      after(async () => {
+        await onColdBooking(cold, { contactId, dealId }).catch((err) => alertError('CalWebhook: cold prospect booking', err, `${cold.firm} booked, but the firm wasn't linked to the deal.`));
+        await notify({
+          level: 'lead', title: `${cold.firm} booked from cold outreach`,
+          lines: [line('📣', 'Channel', cold.channel ?? 'cold'), line('🗓️', 'Call', formatCallTime(event.payload?.startTime, OWNER_TZ)), line('🕳️', 'Gap', cold.drafts?.research?.gap)],
+          next: 'Sequences stopped. Research and the leak report are on the deal.',
+          buttons: [{ text: 'Firm page', url: `${FUNNEL.site}/dashboard/outreach/firm/${encodeURIComponent(cold.id)}` }, ...(dealId ? [{ text: 'Deal in HubSpot', url: hubspotUrl.deal(dealId) }] : [])],
+        });
+      });
     }
     // Website research brief (was the routine's job 2): runs after the response, about 30 seconds.
     after(() => preCallResearch({ name: booker.name ?? val('name') ?? booker.email ?? 'Booker', website: val('website'), business, whatsNotWorking: val('whats-not-working'), contactId, dealId, callTime: formatCallTime(event.payload?.startTime, OWNER_TZ) }));
