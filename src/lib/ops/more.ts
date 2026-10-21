@@ -36,7 +36,7 @@ function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], 
   };
 }
 const H = 3_600_000;
-export function igSequence(all: Prospect[], demoMode = false, caps: { ig: number; li: number } = { ig: 10, li: 5 }) {
+export function igSequence(all: Prospect[], demoMode = false, caps: { ig: number; li: number } = { ig: 10, li: 10 }) {
   const now = Date.now();
   const today = repDay();
   const live = all.filter((p) => p.instagram && !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
@@ -158,7 +158,7 @@ export async function leadProfile(id: string) {
 
 // ---------------------------------------------------------------- Outreach
 export async function outreachData() {
-  if (demoOn()) { const o = demo.outreach() as { queue: Record<string, Prospect[]> }; return { ...o, reps2: demoReps(), ig: igSequence(Object.values(o.queue).flat(), true), channels: channelBoard(Object.values(o.queue).flat(), { sending: false, dailyNew: 10, dailyTotal: 25, monthlyCapUsd: 10, igNew: 10, liNew: 5 }) } as never; }
+  if (demoOn()) { const o = demo.outreach() as { queue: Record<string, Prospect[]> }; return { ...o, reps2: demoReps(), ig: igSequence(Object.values(o.queue).flat(), true), channels: channelBoard(Object.values(o.queue).flat(), { sending: false, dailyNew: 10, dailyTotal: 25, monthlyCapUsd: 10, igNew: 10, liNew: 10 }) } as never; }
   const { errors, safe } = collector();
   if (apifyReady()) await safe('Apify', syncSearches(), [] as Search[]);
   await safe('Drafts', ingestDrafts(), 0);
