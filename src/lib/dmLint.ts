@@ -1,7 +1,9 @@
 // Pre-send checks for outreach copy (Instagram DM playbook, 2026-10-20). Placeholders like
 // "[coaches / agencies / consultants]" once shipped in real DMs, so they BLOCK; the rest are warnings.
 
-export const hasPlaceholder = (s: string) => /[[\]{}]|\b(?:FIRST_?NAME|COMPANY|PROJECT)\b|<[a-z ]+>/i.test(s);
+// Brackets/braces anywhere, ALL-CAPS merge tags (FIRST_NAME), or <name>-style tags. Case-sensitive on purpose:
+// ordinary words like "project" or "company" in a real sentence must pass.
+export const hasPlaceholder = (s: string) => /[[\]{}]|\b(?:FIRST_?NAME|LAST_?NAME|COMPANY(?:_NAME)?|FIRM(?:_NAME)?|PROJECT(?:_NAME)?)\b|<(?:first ?name|name|company|firm|project|city)>/.test(s);
 
 export function lintMessage(text: string, opts: { dm?: boolean } = {}) {
   const block: string[] = [];

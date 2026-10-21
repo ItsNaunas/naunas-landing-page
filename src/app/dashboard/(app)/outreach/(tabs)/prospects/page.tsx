@@ -1,4 +1,5 @@
 import { outreachData } from '@/lib/ops/more';
+import { ActionForm } from '@/components/dashboard/ActionForm';
 import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
@@ -21,7 +22,7 @@ export default async function OutreachProspects() {
       <TabIntro sub="Find firms, approve the good ones, and review Claude’s drafts before anything is scheduled." />
       <Errors errors={d.errors} />
       {/* Find */}
-      <SectionTitle action={<form action={refreshProspectSearches}><button className="text-xs text-white/45 hover:text-white">Refresh searches ↻</button></form>}>Find prospects</SectionTitle>
+      <SectionTitle action={<ActionForm action={refreshProspectSearches}><button className="text-xs text-white/45 hover:text-white">Refresh searches ↻</button></ActionForm>}>Find prospects</SectionTitle>
       {!d.connected.apify ? <ConnectCard title="Connect Apify" why="Searches Google Maps for firms with a website, email and Instagram." steps={['Apify → Settings → Integrations → API token']} env="APIFY_TOKEN" /> : (
         <Card>
           <SearchForm />
@@ -48,8 +49,8 @@ export default async function OutreachProspects() {
 
       {/* Review */}
       <SectionTitle action={goodOnes.length ? (
-        <form action={setProspect}><input type="hidden" name="ids" value={goodOnes.join(',')} /><input type="hidden" name="status" value="approved" />
-          <button className="text-xs text-[#ff8a6d] hover:text-white">Approve all {goodOnes.length} strong fits (5+)</button></form>
+        <ActionForm action={setProspect}><input type="hidden" name="ids" value={goodOnes.join(',')} /><input type="hidden" name="status" value="approved" />
+          <button className="text-xs text-[#ff8a6d] hover:text-white">Approve all {goodOnes.length} strong fits (5+)</button></ActionForm>
       ) : undefined}>To review · {q.review.length}</SectionTitle>
       <Card pad={false}>
         {q.review.length ? (
@@ -71,8 +72,8 @@ export default async function OutreachProspects() {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex justify-end gap-2">
-                        <form action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="approved" /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Approve</button></form>
-                        <form action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="rejected" /><button className="rounded-full border border-white/15 text-xs px-3 py-1.5 text-white/60 hover:text-white">Skip</button></form>
+                        <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="approved" /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Approve</button></ActionForm>
+                        <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="rejected" /><button className="rounded-full border border-white/15 text-xs px-3 py-1.5 text-white/60 hover:text-white">Skip</button></ActionForm>
                       </div>
                     </td>
                   </tr>

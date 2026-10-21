@@ -1,4 +1,5 @@
 import { outreachData } from '@/lib/ops/more';
+import { ActionForm } from '@/components/dashboard/ActionForm';
 import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
@@ -32,7 +33,7 @@ export default async function OutreachToday() {
   const everyone = Object.values(d.queue).flat();
   const doneToday = owedAll.filter((o) => isToday(o.sentAt) || isToday(o.closedAt)).length
     + Object.values(touches).filter((t) => t.outcome !== 'dropped' && isToday(t.at)).length
-    + everyone.reduce((n, p) => n + [p.warmedAt, p.dmSentAt, p.fu1At, p.fu2At].filter(isToday).length, 0);
+    + everyone.reduce((n, p) => n + [p.warmedAt, p.dmSentAt, p.fu1At, p.fu2At, p.igRepliedAt].filter(isToday).length, 0);
 
   return (
     <>
@@ -55,7 +56,7 @@ export default async function OutreachToday() {
 
       <SectionTitle>Someone said yes to a Loom or PDF?</SectionTitle>
       <Card pad={false}>
-        <form action={addOwedAsset} className="px-5 py-3.5 flex flex-wrap items-end gap-2 ">
+        <ActionForm action={addOwedAsset} className="px-5 py-3.5 flex flex-wrap items-end gap-2 ">
           <label className="flex flex-col gap-1 text-[11px] text-white/45 flex-1 min-w-[160px]">Who said yes
             <input name="who" required placeholder="Name · firm" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30" />
           </label>
@@ -73,7 +74,7 @@ export default async function OutreachToday() {
             <input name="link" type="url" placeholder="https://" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30" />
           </label>
           <button className="rounded-lg bg-white text-black text-sm font-medium px-4 py-2">Add</button>
-        </form>
+        </ActionForm>
         <p className="px-5 pb-3 text-[11px] text-white/35">It goes to the top of the list with a 24-hour clock. Telegram reminds you at 20 hours, and a nudge comes back 5 days after you send it.</p>
       </Card>
 
@@ -84,7 +85,7 @@ export default async function OutreachToday() {
           <ul className="divide-y divide-white/[0.05]">
             {([
               ['Cold emails', d.reps2.today.auto.emails, d.reps2.targets.emails, 'Sent by the 14:00 UTC run once sending is on'],
-              ['Instagram openers', d.reps2.today.auto.dms, d.reps2.targets.dms, 'From the Instagram sequence below: Sent this one'],
+              ['Instagram openers', d.reps2.today.auto.dms, d.reps2.targets.dms, 'From Today’s list above: Sent this one'],
               ['Posts', d.reps2.today.auto.posts, d.reps2.targets.posts, 'Published from Content'],
             ] as const).map(([label, done, target, hint]) => (
               <li key={label} className="px-5 py-3 flex items-center gap-3">
@@ -100,8 +101,8 @@ export default async function OutreachToday() {
                 <span className="flex-1 min-w-0"><span className="block text-[13.5px]">{r.label}</span><span className="block text-[11px] text-white/40">{r.hint}</span></span>
                 <span className="tabular-nums text-sm w-14 text-right">{r.done}<span className="text-white/35">/{r.target}</span></span>
                 <span className="flex gap-1 w-[68px] justify-end">
-                  <form action={bumpRepCount}><input type="hidden" name="key" value={r.key} /><input type="hidden" name="delta" value="-1" /><button aria-label={`One less ${r.label}`} className="size-7 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white/60">−</button></form>
-                  <form action={bumpRepCount}><input type="hidden" name="key" value={r.key} /><input type="hidden" name="delta" value="1" /><button aria-label={`One more ${r.label}`} className="size-7 rounded-lg bg-white text-black font-medium">+</button></form>
+                  <ActionForm action={bumpRepCount}><input type="hidden" name="key" value={r.key} /><input type="hidden" name="delta" value="-1" /><button aria-label={`One less ${r.label}`} className="size-7 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white/60">−</button></ActionForm>
+                  <ActionForm action={bumpRepCount}><input type="hidden" name="key" value={r.key} /><input type="hidden" name="delta" value="1" /><button aria-label={`One more ${r.label}`} className="size-7 rounded-lg bg-white text-black font-medium">+</button></ActionForm>
                 </span>
               </li>
             ))}

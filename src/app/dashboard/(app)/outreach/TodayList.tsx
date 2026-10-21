@@ -1,4 +1,5 @@
 import { Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
+import { ActionForm } from '@/components/dashboard/ActionForm';
 import { Meter } from '@/components/dashboard/kit';
 import { lintMessage } from '@/lib/dmLint';
 import { dueAt, type Owed } from '@/lib/owed';
@@ -73,8 +74,8 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
               return (
                 <Row key={o.id} who={o.who} channel={o.channel} href={o.link} task={`Send the ${o.what} you promised${late ? ' (late)' : ''}. Include one real finding about them.`}>
                   <div className="flex gap-3 items-center">
-                    <form action={markOwedSent}><input type="hidden" name="id" value={o.id} /><button className={btn}>Sent it</button></form>
-                    <form action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="dropped" /><button className={quiet}>Drop</button></form>
+                    <ActionForm action={markOwedSent}><input type="hidden" name="id" value={o.id} /><button className={btn}>Sent it</button></ActionForm>
+                    <ActionForm action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="dropped" /><button className={quiet}>Drop</button></ActionForm>
                   </div>
                 </Row>
               );
@@ -97,8 +98,8 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
                   <Msg text={text} />
                   <div className="flex flex-wrap gap-3 items-center">
                     <CopyText text={text} label="Copy message" />
-                    <form action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="nudged" /><button className={btn}>Nudged</button></form>
-                    <form action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="replied" /><button className={quiet}>They replied</button></form>
+                    <ActionForm action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="nudged" /><button className={btn}>Nudged</button></ActionForm>
+                    <ActionForm action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="replied" /><button className={quiet}>They replied</button></ActionForm>
                   </div>
                 </Row>
               );
@@ -111,9 +112,9 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
                 task={`${l.status === 'interested' ? 'Was interested' : 'Replied before'}, then went quiet. Re-open the conversation.`}>
                 <CheckinMessage lead={{ id: l.id, name: l.name, company: l.company, channel: l.channel }} initial={drafts[l.id]?.text} />
                 <div className="flex gap-3 items-center">
-                  <form action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="channel" value={l.channel} /><input type="hidden" name="outcome" value="sent" /><button className={btn}>Sent</button></form>
-                  <form action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="snoozed" /><button className={quiet}>Not now (30 days)</button></form>
-                  <form action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="dropped" /><button className="text-xs text-white/30 hover:text-rose-300">Drop</button></form>
+                  <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="channel" value={l.channel} /><input type="hidden" name="outcome" value="sent" /><button className={btn}>Sent</button></ActionForm>
+                  <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="snoozed" /><button className={quiet}>Not now (30 days)</button></ActionForm>
+                  <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="dropped" /><button className="text-xs text-white/30 hover:text-rose-300">Drop</button></ActionForm>
                 </div>
               </Row>
             ))}
@@ -129,8 +130,8 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
                   <Msg text={text} />
                   <div className="flex flex-wrap gap-3 items-center">
                     <CopyText text={text} label="Copy message" />
-                    <form action={markIgFollowup}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="n" value={n} /><button className={btn}>Sent</button></form>
-                    <form action={markIgReplied}><input type="hidden" name="id" value={p.id} /><button className={quiet}>They replied</button></form>
+                    <ActionForm action={markIgFollowup}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="n" value={n} /><button className={btn}>Sent</button></ActionForm>
+                    <ActionForm action={markIgReplied}><input type="hidden" name="id" value={p.id} /><button className={quiet}>They replied</button></ActionForm>
                   </div>
                 </Row>
               );
@@ -152,7 +153,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
                         {lint.ok ? (
                           <div className="flex gap-3 items-center">
                             <CopyText text={o.text} label="Copy" />
-                            <form action={markDmSent}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="style" value={o.style} /><button className={btn}>Sent this one</button></form>
+                            <ActionForm action={markDmSent}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="style" value={o.style} /><button className={btn}>Sent this one</button></ActionForm>
                           </div>
                         ) : <span className="text-[11px] text-white/40">Fix it on Prospects → Drafts first</span>}
                       </div>
@@ -166,7 +167,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
           <Group n={7} title="Instagram warm-ups" count={ig.warm.length}>
             {ig.warm.map((p) => (
               <Row key={p.id} who={`@${p.instagram}`} channel="Instagram" href={igProfile(p.instagram)} hrefLabel="Open profile" task={`${p.firm}: follow, like 2 to 3 project posts, one specific comment about a room or detail, view their story. No DM today.`}>
-                <form action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className={btn}>Done</button></form>
+                <ActionForm action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className={btn}>Done</button></ActionForm>
               </Row>
             ))}
           </Group>

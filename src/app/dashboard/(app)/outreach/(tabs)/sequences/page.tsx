@@ -1,4 +1,5 @@
 import { outreachData } from '@/lib/ops/more';
+import { ActionForm } from '@/components/dashboard/ActionForm';
 import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
@@ -34,7 +35,7 @@ export default async function OutreachSequences() {
                     <td className="px-3 py-3"><div className="flex gap-1" aria-label={`${step} of 4 sent`}>{[0, 1, 2, 3].map((i) => <span key={i} className={`h-1.5 w-6 rounded-full ${i < step ? 'bg-[#F2613F]' : 'bg-white/10'}`} />)}</div></td>
                     <td className="px-3 py-3 text-xs text-white/55">{p.status === 'scheduled' ? 'E1 in the next daily send' : due ? `${STEP_LABEL[step].split(' · ')[0]} ${untilOrAgo(due)}` : ''}</td>
                     <td className="px-5 py-3 text-right">
-                      <form action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="stopped" /><button className="text-xs text-white/40 hover:text-rose-300">Stop</button></form>
+                      <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="stopped" /><button className="text-xs text-white/40 hover:text-rose-300">Stop</button></ActionForm>
                     </td>
                   </tr>
                 );

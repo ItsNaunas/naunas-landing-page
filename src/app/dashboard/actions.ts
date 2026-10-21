@@ -67,7 +67,7 @@ export async function saveCampaign(_prev: SaveState, form: FormData): Promise<Sa
     ...(endsAt ? { endsAt: new Date(endsAt).toISOString() } : {}),
   };
   await saveCampaigns(all.some((c) => c.id === id) ? all.map((c) => (c.id === id ? campaign : c)) : [...all, campaign]);
-  revalidatePath('/dashboard', 'layout');
+  revalidatePath('/dashboard/(app)', 'layout');
   return { savedAt: Date.now() };
 }
 
@@ -76,7 +76,7 @@ export async function toggleCampaign(form: FormData) {
   const id = String(form.get('id'));
   const all = await getCampaigns();
   await saveCampaigns(all.map((c) => (c.id === id ? { ...c, active: !c.active } : c)));
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 export async function deleteCampaign(form: FormData) {
@@ -84,7 +84,7 @@ export async function deleteCampaign(form: FormData) {
   const id = String(form.get('id'));
   if (id === DEFAULT_CAMPAIGN.id) return; // the default can be edited or paused, not removed
   await saveCampaigns((await getCampaigns()).filter((c) => c.id !== id));
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 /** Dashboard Refresh button: drop the cached API data so the next render fetches fresh. */
@@ -98,7 +98,11 @@ export async function refreshOps() {
 
 async function done() {
   updateTag('ops');
-  revalidatePath('/dashboard', 'layout');
+  revalidatePath('/dashboard/(app)', 'layout');
+}
+/** After a dashboard button changes something: fresh data on every page, and the open page re-renders now. */
+function changed() {
+  revalidatePath('/dashboard/(app)', 'layout');
 }
 const str = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 
@@ -567,7 +571,7 @@ export async function bumpRepCount(form: FormData) {
   const rep = MANUAL_REPS.find((r) => r.key === key);
   if (!rep) return;
   await bumpRep(rep.key, form.get('delta') === '-1' ? -1 : 1);
-  revalidatePath('/dashboard/outreach');
+  changed();
 }
 
 /** Day 0 of the Instagram sequence done for one firm (followed + commented): counts as a warm-up rep. */
@@ -579,7 +583,7 @@ export async function markWarmed(form: FormData) {
   await saveProspects(list.map((x) => (x.id === id ? { ...x, warmedAt: new Date().toISOString() } : x)));
   const { bumpRep } = await import('@/lib/reps');
   await bumpRep('warmups', 1);
-  revalidatePath('/dashboard/outreach');
+  changed();
 }
 
 // ---------------------------------------------------------------- Newsletter + performance (Content)
@@ -636,7 +640,7 @@ export async function addOwedAsset(form: FormData) {
   const o = await addOwed({ who: who.slice(0, 120), what: what.slice(0, 80), channel: str(form, 'channel') || 'LinkedIn', link: str(form, 'link').slice(0, 400) || undefined });
   const { qstashReady, scheduleAt } = await import('@/lib/qstash');
   if (qstashReady()) await scheduleAt(new Date(Date.now() + (DUE_H - 4) * 3_600_000), { owed: o.id }).catch(() => {});
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 export async function markOwedSent(form: FormData) {
@@ -645,7 +649,7 @@ export async function markOwedSent(form: FormData) {
   const o = await patchOwed(str(form, 'id'), { sentAt: new Date().toISOString() });
   const { qstashReady, scheduleAt } = await import('@/lib/qstash');
   if (o && qstashReady()) await scheduleAt(new Date(Date.now() + NUDGE_D * 86_400_000), { nudge: o.id }).catch(() => {});
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 export async function closeOwed(form: FormData) {
@@ -654,7 +658,7 @@ export async function closeOwed(form: FormData) {
   if (!['replied', 'nudged', 'dropped'].includes(outcome)) return;
   const { patchOwed } = await import('@/lib/owed');
   await patchOwed(str(form, 'id'), { closedAt: new Date().toISOString(), outcome: outcome as 'replied' | 'nudged' | 'dropped' });
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 // ---------------------------------------------------------------- Instagram sequence (Outreach → Today)
@@ -669,7 +673,7 @@ export async function markIgFollowup(form: FormData) {
   await saveProspects(list.map((x) => (x.id === id ? { ...x, [n]: new Date().toISOString() } : x)));
   const { bumpRep } = await import('@/lib/reps');
   await bumpRep('followups', 1);
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 /** They replied on Instagram: stop the IG follow-ups AND the email sequence. */
@@ -684,7 +688,7 @@ export async function markIgReplied(form: FormData) {
   await saveProspects(list.map((x) => (x.id === id ? { ...x, igRepliedAt: now, ...(stop ? { status: 'replied' as const, repliedAt: now } : {}) } : x)));
   if (p.contactId) await updateContact(p.contactId, { naunas_outreach_status: 'replied' }).catch(() => {});
   await logEvent('lead', `Instagram reply · ${p.firm}`, p.instagram ? `https://instagram.com/${p.instagram}` : undefined);
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }
 
 // ---------------------------------------------------------------- Old warm leads (Outreach → Today's list)
@@ -708,5 +712,5 @@ export async function markCheckin(form: FormData) {
   if (!/^\d+$/.test(id) || !['sent', 'snoozed', 'dropped'].includes(outcome)) return;
   const { recordCheckin } = await import('@/lib/checkins');
   await recordCheckin({ id, channel: str(form, 'channel') || 'Instagram' }, outcome as 'sent' | 'snoozed' | 'dropped');
-  revalidatePath('/dashboard', 'layout');
+  changed();
 }

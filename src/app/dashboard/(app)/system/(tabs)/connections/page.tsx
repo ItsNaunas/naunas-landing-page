@@ -41,11 +41,11 @@ export default async function Connections() {
   return (
     <>
       <TabIntro sub="Your accounts and keys in one place. Reconnect here when something expires." />
-      <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
         {accounts.map((a) => (
           <Link key={a.name} href={a.href} className="group">
             <Card>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium">{a.name}</p>
                 <Badge tone={a.tone}>{a.state}</Badge>
               </div>
