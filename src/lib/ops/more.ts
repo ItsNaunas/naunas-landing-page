@@ -11,6 +11,7 @@ import { src } from './cache';
 import { demo, demoOn } from './demo';
 import { getReps, repDay, MANUAL_REPS, AUTO_TARGETS } from '@/lib/reps';
 import { getIndex, type IndexRow } from '@/lib/content';
+import { channelBoard } from '@/lib/channels';
 
 /** Today's reps + the last 7 days, from the rep log, the activity log and the content index. */
 function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], posts: IndexRow[], prospects: Prospect[]) {
@@ -35,12 +36,15 @@ function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], 
   };
 }
 const H = 3_600_000;
-export function igSequence(all: Prospect[], demoMode = false) {
+export function igSequence(all: Prospect[], demoMode = false, caps: { ig: number; li: number } = { ig: 10, li: 5 }) {
   const now = Date.now();
   const today = repDay();
   const live = all.filter((p) => p.instagram && !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
   const sinceDm = (p: Prospect) => (p.dmSentAt ? now - Date.parse(p.dmSentAt) : 0);
-  const warm = live.filter((p) => !p.warmedAt && !p.dmSentAt).sort((a, b) => b.fit - a.fit).slice(0, 10);
+  // New firms per channel per day: only offer as many fresh starts as today's target still allows.
+  const igLeft = Math.max(0, caps.ig - all.filter((p) => p.warmedAt && repDay(p.warmedAt) === today).length);
+  const liLeft = Math.max(0, caps.li - all.filter((p) => p.liEngagedAt && repDay(p.liEngagedAt) === today).length);
+  const warm = live.filter((p) => !p.warmedAt && !p.dmSentAt).sort((a, b) => b.fit - a.fit).slice(0, igLeft);
   // Opener goes the day after the warm-up (warmed before today); demo shows one straight away.
   const openers = live.filter((p) => !p.dmSentAt && (p.drafts?.dm || p.drafts?.dms?.length) && (demoMode || (p.warmedAt && repDay(p.warmedAt) < today))).slice(0, 10);
   const followups = live.flatMap((p): { p: Prospect; n: 1 | 2 }[] => {
@@ -67,7 +71,7 @@ export function igSequence(all: Prospect[], demoMode = false) {
   const liLive = all.filter((p) => !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
   const linkedin = liLive.flatMap((p): { p: Prospect; step: 'engage' | 'connect' | 'dm' | 'fu' }[] => {
     if (!liReady(p)) return [];
-    if (!p.liEngagedAt) return [{ p, step: 'engage' }];
+    if (!p.liEngagedAt) return [{ p, step: 'engage' as const }];
     if (!p.liAt) return repDay(p.liEngagedAt) < today ? [{ p, step: 'connect' }] : [];
     if (!p.liDmAt) {
       if (before(p.liAt, 21)) return []; // never accepted: let it go quietly
@@ -75,8 +79,11 @@ export function igSequence(all: Prospect[], demoMode = false) {
       return before(p.liAt, 2) ? [{ p, step: 'dm' }] : [];
     }
     return !p.liFuAt && before(p.liDmAt, 5) ? [{ p, step: 'fu' }] : [];
-  }).slice(0, 10);
-  return { warm, openers, followups, linkedin, waiting: Math.max(0, waiting), finished, styles };
+  });
+  // Engage = a new firm on LinkedIn: capped by today's target. Later steps always show.
+  let engages = 0;
+  const linkedinCapped = linkedin.filter((x) => x.step !== 'engage' || engages++ < liLeft);
+  return { warm, openers, followups, linkedin: linkedinCapped, waiting: Math.max(0, waiting), finished, styles };
 }
 
 const demoReps = () => repsView({ [repDay()]: { warmups: 3, followups: 2, linkedin: 1, list: 5 } }, [], [], []);
@@ -151,7 +158,7 @@ export async function leadProfile(id: string) {
 
 // ---------------------------------------------------------------- Outreach
 export async function outreachData() {
-  if (demoOn()) { const o = demo.outreach() as { queue: Record<string, Prospect[]> }; return { ...o, reps2: demoReps(), ig: igSequence(Object.values(o.queue).flat(), true) } as never; }
+  if (demoOn()) { const o = demo.outreach() as { queue: Record<string, Prospect[]> }; return { ...o, reps2: demoReps(), ig: igSequence(Object.values(o.queue).flat(), true), channels: channelBoard(Object.values(o.queue).flat(), { sending: false, dailyNew: 10, dailyTotal: 25, monthlyCapUsd: 10, igNew: 10, liNew: 5 }) } as never; }
   const { errors, safe } = collector();
   if (apifyReady()) await safe('Apify', syncSearches(), [] as Search[]);
   await safe('Drafts', ingestDrafts(), 0);
@@ -185,7 +192,8 @@ export async function outreachData() {
     queue: { review: by('new').sort((a, b) => b.fit - a.fit), approved: by('approved'), drafted: by('drafted'), scheduled: by('scheduled'), active: by('active'), replied: by('replied'), finished: by('finished') },
     reps2: repsView(repLog, events, contentRows, prospects),
     // Instagram sequence (DM playbook): warm up day 1, opener day 2, follow-ups day 5 and 9, then stop.
-    ig: igSequence(prospects),
+    ig: igSequence(prospects, false, { ig: settings.igNew, li: settings.liNew }),
+    channels: channelBoard(prospects, settings),
     dmList: prospects.filter((p) => p.instagram && p.drafts?.dm && !p.dmSentAt && ['drafted', 'scheduled', 'active'].includes(p.status)).slice(0, 10),
     reps: {
       emails: todays.filter((e) => e.kind === 'outreach_email').length, emailTarget: settings.dailyNew,

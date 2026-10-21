@@ -751,3 +751,12 @@ export async function markLiStep(form: FormData) {
   if (step !== 'notyet') { const { bumpRep } = await import('@/lib/reps'); await bumpRep('linkedin', 1); }
   changed();
 }
+
+/** Daily new-firm targets per channel (Outreach → Today). Email = dailyNew, which the 14:00 UTC send also uses as its cap. */
+export async function setChannelTargets(form: FormData) {
+  await requireSession();
+  const s = await getSettings();
+  const n = (k: string, fallback: number, max: number) => Math.min(max, Math.max(0, Math.round(Number(form.get(k))))) || (form.get(k) === '0' ? 0 : fallback);
+  await saveSettings({ ...s, igNew: n('igNew', s.igNew, 40), liNew: n('liNew', s.liNew, 20), dailyNew: n('dailyNew', s.dailyNew, 30) });
+  changed();
+}

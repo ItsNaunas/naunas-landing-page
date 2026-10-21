@@ -14,6 +14,7 @@ const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') 
 import { warmLeads, dueCheckins, getTouches, getCheckinDrafts, type WarmLead } from '@/lib/checkins';
 import { repDay } from '@/lib/reps';
 import { TodayList } from '../TodayList';
+import { ChannelBoard } from '../ChannelBoard';
 import { syncIgPosts, getIgPosts } from '@/lib/igPosts';
 import { FUNNEL } from '@/config/funnel';
 import { getOwed, needsYou, dueAt, nudgeAt } from '@/lib/owed';
@@ -51,12 +52,7 @@ export default async function OutreachToday() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Emails today" value={`${d.reps.emails}/${d.reps.emailTarget}`} chart={<div className="w-24"><Meter value={d.reps.emails} max={d.reps.emailTarget} /></div>} foot={<span className="text-xs text-white/40">sent by the daily run</span>} />
-        <Kpi label="DMs today" value={`${d.reps.dms}/${d.reps.dmTarget}`} chart={<div className="w-24"><Meter value={d.reps.dms} max={d.reps.dmTarget} /></div>} foot={<span className="text-xs text-white/40">mark them sent below</span>} />
-        <Kpi label="Reply rate" value={d.stats.replyRate === null ? '—' : `${d.stats.replyRate}%`} foot={<span className="text-xs text-white/40">{d.stats.replied} of {d.stats.emailed} firms emailed</span>} />
-        <Kpi label="Interested / booked" value={d.stats.positive} foot={<span className="text-xs text-white/40">{d.stats.withDeal} with a deal</span>} href="/dashboard/leads?source=cold_email&range=0" />
-      </div>
+      <ChannelBoard channels={d.channels} />
 
       <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} />
 
@@ -85,13 +81,11 @@ export default async function OutreachToday() {
       </Card>
 
       {/* Today's reps: the daily checklist (vault daily brief) with the tally kept for you */}
-      <SectionTitle action={<span className="text-xs text-white/45">{d.reps2.hit}/{d.reps2.of} targets hit today</span>}>Today’s reps</SectionTitle>
+      <SectionTitle action={<span className="text-xs text-white/45">Channel outreach counts itself at the top</span>}>Other daily reps</SectionTitle>
       <div className="grid lg:grid-cols-[1fr_300px] gap-3 md:gap-4">
         <Card pad={false}>
           <ul className="divide-y divide-white/[0.05]">
             {([
-              ['Cold emails', d.reps2.today.auto.emails, d.reps2.targets.emails, 'Sent by the 14:00 UTC run once sending is on'],
-              ['Instagram openers', d.reps2.today.auto.dms, d.reps2.targets.dms, 'From Today’s list above: Sent this one'],
               ['Posts', d.reps2.today.auto.posts, d.reps2.targets.posts, 'Published from Content'],
             ] as const).map(([label, done, target, hint]) => (
               <li key={label} className="px-5 py-3 flex items-center gap-3">
@@ -101,7 +95,7 @@ export default async function OutreachToday() {
                 <span className="w-[68px]" />
               </li>
             ))}
-            {d.reps2.today.manual.map((r) => (
+            {d.reps2.today.manual.filter((r) => r.key === 'list' || r.key === 'zanzibar').map((r) => (
               <li key={r.key} className="px-5 py-3 flex items-center gap-3">
                 <span className={`size-5 rounded-full grid place-items-center text-[11px] shrink-0 ${r.done >= r.target ? 'bg-emerald-500/90 text-white' : 'bg-white/[0.08] text-white/40'}`}>{r.done >= r.target ? '✓' : ''}</span>
                 <span className="flex-1 min-w-0"><span className="block text-[13.5px]">{r.label}</span><span className="block text-[11px] text-white/40">{r.hint}</span></span>
