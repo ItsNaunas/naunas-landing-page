@@ -148,7 +148,6 @@ export async function saveProspectDrafts(_prev: SaveState, form: FormData): Prom
   if (!subject || !steps.length) return { error: 'Needs a subject and at least the first email.' };
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'That email address doesn’t look right.' };
   const schedule = form.get('intent') === 'schedule';
-  if (schedule && !email) return { error: 'Add their email address before scheduling.' };
   const { hasPlaceholder } = await import('@/lib/dmLint');
   if (schedule && hasPlaceholder([subject, ...steps].join(' '))) return { error: 'An email still has placeholder text ([like this]). Fix it before scheduling.' };
   const list = await getProspects();
@@ -156,6 +155,7 @@ export async function saveProspectDrafts(_prev: SaveState, form: FormData): Prom
     ...p, email: email || p.email,
     drafts: { ...(p.drafts ?? {}), subject, steps, dm: str(form, 'dm') || undefined, firstName: str(form, 'firstName') || p.drafts?.firstName, dossier: p.drafts?.dossier },
     status: schedule ? 'scheduled' : p.status === 'approved' ? 'drafted' : p.status,
+    ...(schedule ? { scheduledAt: new Date().toISOString() } : {}),
   }));
   await done();
   return { savedAt: Date.now() };

@@ -7,6 +7,7 @@ import { FUNNEL } from '@/config/funnel';
 import { refreshIgToken } from '@/lib/instagram';
 import { buildWeeklyDraft } from '@/lib/newsletter';
 import { refreshInsights } from '@/lib/performance';
+import { sendTodayBrief } from '@/lib/ops/todayBrief';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -53,6 +54,8 @@ export async function GET(req: NextRequest) {
       await alertError('Health: newsletter draft', err, 'Only the weekly draft is missing. Build it from Content → Newsletter.');
     }
   }
+  // Morning outreach brief (this cron runs 06:00 UTC = 09:00 Zanzibar).
+  await sendTodayBrief().catch((err) => console.error('[health] today brief', err));
   // Instagram insights for recent posts (the Content leaderboard). Quiet on failure: stats only.
   await refreshInsights().catch((err) => console.error('[health] insights', err));
   // 1st of the month: extend the Instagram token (it dies after 60 days unused-refresh).

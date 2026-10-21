@@ -35,7 +35,7 @@ function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], 
   };
 }
 const H = 3_600_000;
-function igSequence(all: Prospect[], demoMode = false) {
+export function igSequence(all: Prospect[], demoMode = false) {
   const now = Date.now();
   const today = repDay();
   const live = all.filter((p) => p.instagram && !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));

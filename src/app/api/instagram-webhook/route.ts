@@ -5,6 +5,9 @@ import { igProfile, privateReply, sendDm, igMedia } from '@/lib/instagram';
 import { getCampaigns, matchCampaign, renderMessage, bump } from '@/lib/campaigns';
 import { notify, line, alertError } from '@/lib/alert';
 import { logEvent } from '@/lib/events';
+import { prospectIgReply } from '@/lib/outreach';
+import { updateContact } from '@/lib/hubspot';
+import { FUNNEL } from '@/config/funnel';
 
 // Instagram webhook (Meta app, "Instagram API with Instagram Login"; subscribed fields: comments, messages).
 //  - Comment containing a campaign keyword (lib/campaigns, edited on /dashboard; LEAK/MAP by default) →
@@ -102,6 +105,23 @@ async function onMessage(accountId: string, m: Messaging) {
   try {
     const profile = await igProfile(m.sender.id);
     if (!profile.username) return;
+    // A cold-outreach prospect answering: stop their sequences and tell Naufal (this is the money moment).
+    const prospect = await prospectIgReply(profile.username).catch(() => null);
+    if (prospect) {
+      const c = await upsertInstagramContact(profile.username, { name: profile.name });
+      await updateContact(c.id, { naunas_outreach_status: 'replied' }).catch(() => {});
+      if (text) await addNote(c.id, `<p>Replied on Instagram to cold outreach (${prospect.firm.replace(/</g, '&lt;')}):</p><blockquote>${text.replace(/</g, '&lt;')}</blockquote>`);
+      await logEvent('lead', `Instagram reply · ${prospect.firm} (@${profile.username})`, `https://instagram.com/${profile.username}`);
+      await notify({
+        level: 'lead',
+        title: `${prospect.firm} replied on Instagram`,
+        lines: [line('📸', 'From', `@${profile.username}${profile.name ? ` (${profile.name})` : ''}`), line('⏹', 'Stopped', 'Instagram follow-ups and their email sequence')],
+        quote: text,
+        next: 'Answer them first, then ask how new enquiries reach them today. Call link in a separate message once the gap is named.',
+        buttons: [{ text: 'Open chat', url: `https://ig.me/m/${profile.username}` }, { text: 'Outreach', url: `${FUNNEL.site}/dashboard/outreach` }],
+      });
+      return;
+    }
     const c = await upsertInstagramContact(profile.username, { name: profile.name, campaign: campaign?.id });
     if (!c.isNew && !campaign) return; // only the first DM (or a keyword) is news; the chat lives in Instagram
     await logEvent('ig_dm', campaign ? `DM keyword → ${campaign.name} · @${profile.username}` : `New Instagram DM · @${profile.username}`, hubspotUrl.contact(c.id));

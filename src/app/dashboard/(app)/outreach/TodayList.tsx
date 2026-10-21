@@ -8,6 +8,7 @@ import type { WarmLead } from '@/lib/checkins';
 import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiConnected } from '@/app/dashboard/actions';
 import { CopyText } from './OutreachClient';
 import { CheckinMessage } from './CheckinMessage';
+import { FocusShell, OpenCopy } from './FocusShell';
 
 // One ranked list for the day, built from both playbooks: who to contact, what to do, the message to send,
 // and a tick. Order = money first: promises you made, people who replied, warm leads going cold, then the
@@ -26,15 +27,15 @@ const CH: Record<string, string> = { Instagram: 'IG', LinkedIn: 'LI', Email: 'Em
 const btn = 'rounded-full bg-white text-black text-xs font-medium px-3 py-1.5';
 const quiet = 'text-xs text-white/45 hover:text-white';
 
-function Row({ who, channel, task, href, hrefLabel = 'Open chat', children }: { who: string; channel: string; task: string; href?: string; hrefLabel?: string; children?: React.ReactNode }) {
+function Row({ itemId, who, channel, task, href, hrefLabel = 'Open chat', copy, children }: { itemId: string; who: string; channel: string; task: string; href?: string; hrefLabel?: string; copy?: string; children?: React.ReactNode }) {
   return (
-    <li className="px-5 py-3.5 flex flex-col gap-2">
+    <li data-item={itemId} className="px-5 py-3.5 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[13.5px]"><b className="font-medium">{who}</b> <Badge tone="muted">{CH[channel] ?? channel}</Badge></p>
           <p className="text-[12.5px] text-white/55 mt-0.5">{task}</p>
         </div>
-        {href && <a href={href} {...linkProps} className="shrink-0 text-xs text-[#ff8a6d] hover:underline">{hrefLabel} ↗</a>}
+        {href && (copy ? <OpenCopy href={href} text={copy} label={`${hrefLabel} & copy`} /> : <a href={href} {...linkProps} className="shrink-0 text-xs text-[#ff8a6d] hover:underline">{hrefLabel} ↗</a>)}
       </div>
       {children}
     </li>
@@ -44,7 +45,7 @@ function Row({ who, channel, task, href, hrefLabel = 'Open chat', children }: { 
 function Group({ n, title, count, children }: { n: number; title: string; count: number; children: React.ReactNode }) {
   if (!count) return null;
   return (
-    <div>
+    <div data-group>
       <p className="px-5 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40">{title} <span className="text-white/25">({count})</span></p>
       <ul className="divide-y divide-white/[0.05]">{children}</ul>
     </div>
@@ -67,12 +68,12 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
         <div className="w-40 ml-auto"><Meter value={doneToday} max={Math.max(1, total)} /></div>
       </div>
       {!left ? <Empty>{doneToday ? 'All done for today. Nice.' : 'Nothing queued. Approve firms on the Prospects tab and the Instagram sequence fills up from tomorrow.'}</Empty> : (
-        <div className="pb-2">
+        <div className="pb-2 px-5 pt-3"><FocusShell><div className="-mx-5">
           <Group n={1} title="You promised something" count={owed.toSend.length}>
             {owed.toSend.map((o) => {
               const late = dueAt(o) < Date.now();
               return (
-                <Row key={o.id} who={o.who} channel={o.channel} href={o.link} task={`Send the ${o.what} you promised${late ? ' (late)' : ''}. Include one real finding about them.`}>
+                <Row key={o.id} itemId={String(o.id)} who={o.who} channel={o.channel} href={o.link} task={`Send the ${o.what} you promised${late ? ' (late)' : ''}. Include one real finding about them.`}>
                   <div className="flex gap-3 items-center">
                     <ActionForm action={markOwedSent}><input type="hidden" name="id" value={o.id} /><button className={btn}>Sent it</button></ActionForm>
                     <ActionForm action={closeOwed}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="outcome" value="dropped" /><button className={quiet}>Drop</button></ActionForm>
@@ -84,7 +85,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
 
           <Group n={2} title="They replied" count={replies.length}>
             {replies.map((m) => (
-              <Row key={m.messageId || String(m.uid)} who={m.who} channel="Email" href={m.href} hrefLabel="Open lead (draft reply there)" task={`Replied ${ago(m.date)}: ${m.subject}`}>
+              <Row key={m.messageId || String(m.uid)} itemId={String(m.messageId || String(m.uid))} who={m.who} channel="Email" href={m.href} hrefLabel="Open lead (draft reply there)" task={`Replied ${ago(m.date)}: ${m.subject}`}>
                 <p className="text-[12.5px] text-white/65 line-clamp-2">“{m.text}”</p>
               </Row>
             ))}
@@ -94,7 +95,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
             {owed.toNudge.map((o) => {
               const text = `Did the ${o.what.toLowerCase()} make sense? Happy to walk you through it in 15 minutes this week if useful.`;
               return (
-                <Row key={o.id} who={o.who} channel={o.channel} href={o.link} task={`Quiet since you sent the ${o.what}. One nudge, then let it go.`}>
+                <Row key={o.id} itemId={String(o.id)} who={o.who} channel={o.channel} href={o.link} copy={text} task={`Quiet since you sent the ${o.what}. One nudge, then let it go.`}>
                   <Msg text={text} />
                   <div className="flex flex-wrap gap-3 items-center">
                     <CopyText text={text} label="Copy message" />
@@ -108,7 +109,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
 
           <Group n={4} title="Warm leads going cold" count={checkins.length}>
             {checkins.map((l) => (
-              <Row key={l.id} who={`${l.name}${l.company ? ` · ${l.company}` : ''}`} channel={l.channel} href={l.href}
+              <Row key={l.id} itemId={String(l.id)} who={`${l.name}${l.company ? ` · ${l.company}` : ''}`} channel={l.channel} href={l.href}
                 task={`${l.status === 'interested' ? 'Was interested' : 'Replied before'}, then went quiet. Re-open the conversation.`}>
                 <CheckinMessage lead={{ id: l.id, name: l.name, company: l.company, channel: l.channel }} initial={drafts[l.id]?.text} />
                 <div className="flex gap-3 items-center">
@@ -126,7 +127,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
                 ? 'Recorded a quick 60-second walkthrough of how a firm like yours could handle new enquiries. Happy to send it over?'
                 : `No worries if the timing’s off. I’ll leave it with you and check back in ${checkBackMonth()}.`;
               return (
-                <Row key={p.id} who={`@${p.instagram}`} channel="Instagram" href={igChat(p.instagram)} task={n === 1 ? `${p.firm}: day 5 follow-up. Only send the walkthrough offer if you’ll record it today.` : `${p.firm}: day 9, the last one. Then stop.`}>
+                <Row key={p.id} itemId={`fu-${p.id}`} who={`@${p.instagram}`} channel="Instagram" href={igChat(p.instagram)} copy={text} task={n === 1 ? `${p.firm}: day 5 follow-up. Only send the walkthrough offer if you’ll record it today.` : `${p.firm}: day 9, the last one. Then stop.`}>
                   <Msg text={text} />
                   <div className="flex flex-wrap gap-3 items-center">
                     <CopyText text={text} label="Copy message" />
@@ -144,7 +145,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
               const first = (r.owner ?? p.drafts?.firstName ?? '').split(' ')[0];
               const text = `Hi${first ? ` ${first}` : ''}, I’ve been following ${p.firm}’s work on Instagram for a while. Would be good to connect here too.`;
               return (
-                <Row key={p.id} who={`${r.owner ?? p.firm}${r.owner ? ` · ${p.firm}` : ''}`} channel="LinkedIn" href={r.ownerLinkedin} hrefLabel="Open profile" task="Day 10: they’ve seen you on Instagram and email. Connect with this note (no pitch).">
+                <Row key={p.id} itemId={`li-${p.id}`} who={`${r.owner ?? p.firm}${r.owner ? ` · ${p.firm}` : ''}`} channel="LinkedIn" href={r.ownerLinkedin} hrefLabel="Open profile" copy={text} task="Day 10: they’ve seen you on Instagram and email. Connect with this note (no pitch).">
                   <Msg text={text} />
                   <div className="flex flex-wrap gap-3 items-center">
                     <CopyText text={text} label="Copy note" />
@@ -159,7 +160,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
             {ig.openers.map((p) => {
               const options = p.drafts?.dms?.length ? p.drafts.dms : [{ style: 'default', text: p.drafts?.dm ?? '' }];
               return (
-                <Row key={p.id} who={`@${p.instagram}`} channel="Instagram" href={igChat(p.instagram)} task={`${p.firm}: you warmed them up yesterday. Pick one opener, send it, tick it.${p.drafts?.research?.gap ? ` Their gap: ${p.drafts.research.gap}` : ''}`}>
+                <Row key={p.id} itemId={`op-${p.id}`} who={`@${p.instagram}`} channel="Instagram" href={igChat(p.instagram)} task={`${p.firm}: you warmed them up yesterday. Pick one opener, send it, tick it.${p.drafts?.research?.gap ? ` Their gap: ${p.drafts.research.gap}` : ''}`}>
                   {options.map((o) => {
                     const lint = lintMessage(o.text, { dm: true });
                     return (
@@ -183,12 +184,12 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
 
           <Group n={7} title="Instagram warm-ups" count={ig.warm.length}>
             {ig.warm.map((p) => (
-              <Row key={p.id} who={`@${p.instagram}`} channel="Instagram" href={igProfile(p.instagram)} hrefLabel="Open profile" task={`${p.firm}: follow, like 2 to 3 project posts, one specific comment about a room or detail, view their story. No DM today.`}>
+              <Row key={p.id} itemId={`wu-${p.id}`} who={`@${p.instagram}`} channel="Instagram" href={igProfile(p.instagram)} hrefLabel="Open profile" task={`${p.firm}: follow, like 2 to 3 project posts, one specific comment about a room or detail, view their story. No DM today.`}>
                 <ActionForm action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className={btn}>Done</button></ActionForm>
               </Row>
             ))}
           </Group>
-        </div>
+        </div></FocusShell></div>
       )}
     </Card>
   );

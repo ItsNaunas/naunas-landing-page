@@ -80,9 +80,10 @@ export function DraftEditor({ p }: { p: Prospect }) {
           <p className="text-[11px] text-white/35">The footer “Naunas · naunas.co.uk / Not relevant? Reply "no"…” is added automatically. Sequences stop the moment they reply.</p>
           {state?.error && <p className="text-sm text-rose-300" role="alert">{state.error}</p>}
           {state?.savedAt && <p className="text-sm text-emerald-300" role="status">Saved ✓</p>}
+          <p className="text-[11px] text-white/40">Start outreach: Instagram goes first (warm-up, then the opener, both in Today’s list). Emails begin 2 days after the opener, straight away if they have no Instagram, or after 5 days if no opener has gone. No email address? It runs on Instagram and LinkedIn only.</p>
           <div className="flex flex-wrap justify-end gap-2">
             <button name="intent" value="save" disabled={pending} className="rounded-full border border-white/15 px-4 py-2 text-sm hover:border-white/30 disabled:opacity-40">Save draft</button>
-            <button name="intent" value="schedule" disabled={pending} className={btn}>Approve & schedule</button>
+            <button name="intent" value="schedule" disabled={pending} className={btn}>Start outreach</button>
           </div>
         </form>
       )}

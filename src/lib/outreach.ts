@@ -35,6 +35,8 @@ export type Prospect = {
   dmStyle?: string; fu1At?: string; fu2At?: string; igRepliedAt?: string;
   /** LinkedIn connect request sent (day 10, only when the owner's profile was found). */
   liAt?: string;
+  /** When Naufal pressed Start outreach (emails then wait for the Instagram opener, see emailHold). */
+  scheduledAt?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 export type OutreachSettings = { sending: boolean; dailyNew: number; dailyTotal: number; monthlyCapUsd: number };
@@ -184,6 +186,19 @@ export async function ingestDrafts(): Promise<number> {
 
 // ---------------------------------------------------------------- Send (daily cron)
 
+/**
+ * Email is the SECOND touch (outreach plan): for a firm on Instagram, E1 waits until 2 days after the
+ * Instagram opener. If no opener goes out within 5 days of pressing Start, email starts anyway.
+ * Returns why it's waiting, or null when E1 may go.
+ */
+export function emailHold(p: Prospect, now = Date.now()): string | null {
+  if (!p.instagram || p.igRepliedAt) return null;
+  const DAY = 86_400_000;
+  if (p.dmSentAt) return now - Date.parse(p.dmSentAt) < 2 * DAY ? 'E1 waits until 2 days after the Instagram opener' : null;
+  if (p.scheduledAt && now - Date.parse(p.scheduledAt) >= 5 * DAY) return null;
+  return 'E1 waits for the Instagram opener';
+}
+
 const localHour = (tz: string) => Number(new Date().toLocaleString('en-GB', { hour: 'numeric', hour12: false, timeZone: tz }));
 const day = (iso: string) => iso.slice(0, 10);
 
@@ -239,6 +254,7 @@ export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunR
     if (step >= 4 || step >= p.drafts!.steps.length) continue;
     if (step === 0 && fresh >= settings.dailyNew) continue;
     if (step > 0 && Date.now() < Date.parse(p.startedAt!) + STEP_DAYS[step] * 86_400_000) continue;
+    if (step === 0) { const hold = emailHold(p); if (hold) { result.skipped.push(`${p.firm}: ${hold}`); continue; } }
     if (hasPlaceholder(`${p.drafts!.subject} ${p.drafts!.steps[step]}`)) { result.skipped.push(`${p.firm}: E${step + 1} has placeholder text, fix the draft`); continue; }
     if (p.sent?.some((s) => day(s.at) === today)) continue;
     const h = localHour(p.tz);
@@ -305,4 +321,23 @@ export async function importSeeds(seeds: Seed[], source: string): Promise<number
     return [...list, ...fresh];
   });
   return added;
+}
+
+// ---------------------------------------------------------------- Instagram replies (webhook)
+
+/**
+ * A DM to @naunas_builds from a prospect we've warmed up or messaged: stop the Instagram follow-ups AND the
+ * email sequence (same rule as an email reply). Returns the prospect, or null if the sender isn't one.
+ */
+export async function prospectIgReply(username: string): Promise<Prospect | null> {
+  const h = username.toLowerCase();
+  let hit: Prospect | null = null;
+  await updateJSON<Prospect[]>(P, [], (list) => list.map((p) => {
+    if (p.instagram?.toLowerCase() !== h || p.igRepliedAt || !(p.dmSentAt || p.warmedAt)) return p;
+    const now = new Date().toISOString();
+    const next: Prospect = { ...p, igRepliedAt: now, ...(['drafted', 'scheduled', 'active'].includes(p.status) ? { status: 'replied' as const, repliedAt: now } : {}) };
+    hit = next;
+    return next;
+  }));
+  return hit;
 }
