@@ -66,6 +66,9 @@ export const FUNNEL = {
   outreach: {
     /** Path secret for the feed the Claude routine reads (approved prospects needing drafts; public business data only). */
     feedKey: 'cb2df696a4278612e3bc835e',
+    /** Re-open old warm leads (LinkedIn/Instagram audits) on Today's list. Off 2026-10-21: Naufal disqualified
+     *  most of them and wants cold outreach only for now. */
+    warmCheckins: false as boolean,
   },
 
   routine: {

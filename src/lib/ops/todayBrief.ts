@@ -9,7 +9,7 @@ import { FUNNEL } from '@/config/funnel';
 
 export async function sendTodayBrief() {
   const [prospects, owedAll, leads, touches] = await Promise.all([
-    getProspects(), getOwed().catch(() => []), warmLeads().catch(() => []), getTouches().catch(() => ({})),
+    getProspects(), getOwed().catch(() => []), FUNNEL.outreach.warmCheckins ? warmLeads().catch(() => []) : Promise.resolve([]), getTouches().catch(() => ({})),
   ]);
   const owed = needsYou(owedAll);
   const ig = igSequence(prospects);
@@ -19,7 +19,7 @@ export async function sendTodayBrief() {
     ['🔁', 'Nudges', owed.toNudge.length],
     ['🔥', 'Warm leads to re-open', checkins.length],
     ['📸', 'Instagram follow-ups', ig.followups.length],
-    ['💼', 'LinkedIn connects', ig.linkedin.length],
+    ['💼', 'LinkedIn steps', ig.linkedin.length],
     ['✉️', 'Instagram openers', ig.openers.length],
     ['👋', 'Instagram warm-ups', ig.warm.length],
   ];

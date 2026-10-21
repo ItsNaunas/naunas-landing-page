@@ -736,3 +736,18 @@ export async function markLiConnected(form: FormData) {
   await bumpRep('linkedin', 1);
   changed();
 }
+
+/** LinkedIn cold sequence steps, ticked by hand: engaged → connected → dm (after they accept) → fu. "notyet" asks again in 2 days. */
+export async function markLiStep(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const step = str(form, 'step');
+  const field = { engaged: 'liEngagedAt', connected: 'liAt', dm: 'liDmAt', fu: 'liFuAt' }[step];
+  const list = await getProspects();
+  if (!list.some((x) => x.id === id) || (!field && step !== 'notyet')) return;
+  const now = new Date();
+  const patch = step === 'notyet' ? { liSnoozeUntil: new Date(now.getTime() + 2 * 86_400_000).toISOString() } : { [field!]: now.toISOString() };
+  await saveProspects(list.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  if (step !== 'notyet') { const { bumpRep } = await import('@/lib/reps'); await bumpRep('linkedin', 1); }
+  changed();
+}

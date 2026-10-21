@@ -14,6 +14,8 @@ const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') 
 import { warmLeads, dueCheckins, getTouches, getCheckinDrafts, type WarmLead } from '@/lib/checkins';
 import { repDay } from '@/lib/reps';
 import { TodayList } from '../TodayList';
+import { syncIgPosts, getIgPosts } from '@/lib/igPosts';
+import { FUNNEL } from '@/config/funnel';
 import { getOwed, needsYou, dueAt, nudgeAt } from '@/lib/owed';
 import { demoOn } from '@/lib/ops/demo';
 import { addOwedAsset, markOwedSent, closeOwed } from '@/app/dashboard/actions';
@@ -24,7 +26,11 @@ export default async function OutreachToday() {
   const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
   const owedAll = demoOn() ? [{ id: 'o1', who: 'Laurence Grant', what: 'Loom teardown', channel: 'LinkedIn', owedAt: new Date(Date.now() - 18 * 3_600_000).toISOString() }] : await getOwed().catch(() => []);
   const owed = needsYou(owedAll);
-  const [leads, touches, drafts] = demoOn() ? [[{ id: '1', name: 'Josh Yarwood', status: 'interested', source: 'instagram_dm', instagram: 'josh.yarw', channel: 'Instagram', href: 'https://ig.me/m/josh.yarw' }, { id: '2', name: 'Laurence Grant', status: 'interested', source: 'linkedin', channel: 'LinkedIn', href: 'https://www.linkedin.com/in/laurencegrant/' }] as WarmLead[], {}, { '1': { text: 'Hey Josh, it’s been a while since our call in April. How did things settle on your side, and is anything still slipping between enquiry and booking?', at: '' } }] : await Promise.all([
+  const warmOn = FUNNEL.outreach.warmCheckins;
+  // Latest Instagram posts + comment ideas for today's warm-ups (fetched through Apify in the background).
+  if (!demoOn()) await syncIgPosts(d.ig.warm.map((p: { instagram?: string }) => p.instagram ?? '').filter(Boolean)).catch((err) => console.error('[outreach] ig posts', err));
+  const igPosts = demoOn() ? {} : await getIgPosts().catch(() => ({}));
+  const [leads, touches, drafts] = !warmOn ? [[] as WarmLead[], {}, {}] : demoOn() ? [[{ id: '1', name: 'Josh Yarwood', status: 'interested', source: 'instagram_dm', instagram: 'josh.yarw', channel: 'Instagram', href: 'https://ig.me/m/josh.yarw' }, { id: '2', name: 'Laurence Grant', status: 'interested', source: 'linkedin', channel: 'LinkedIn', href: 'https://www.linkedin.com/in/laurencegrant/' }] as WarmLead[], {}, { '1': { text: 'Hey Josh, it’s been a while since our call in April. How did things settle on your side, and is anything still slipping between enquiry and booking?', at: '' } }] : await Promise.all([
     warmLeads().catch(() => [] as WarmLead[]), getTouches().catch(() => ({})), getCheckinDrafts().catch(() => ({})),
   ]);
   const checkins = dueCheckins(leads, touches);
@@ -52,7 +58,7 @@ export default async function OutreachToday() {
         <Kpi label="Interested / booked" value={d.stats.positive} foot={<span className="text-xs text-white/40">{d.stats.withDeal} with a deal</span>} href="/dashboard/leads?source=cold_email&range=0" />
       </div>
 
-      <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} doneToday={doneToday} />
+      <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} />
 
       <SectionTitle>Someone said yes to a Loom or PDF?</SectionTitle>
       <Card pad={false}>

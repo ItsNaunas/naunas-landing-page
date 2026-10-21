@@ -33,8 +33,9 @@ export type Prospect = {
   startedAt?: string; repliedAt?: string; dmSentAt?: string; warmedAt?: string; contactId?: string;
   /** Instagram sequence: opener style used, the two follow-ups, and a reply on Instagram (stops everything). */
   dmStyle?: string; fu1At?: string; fu2At?: string; igRepliedAt?: string;
-  /** LinkedIn connect request sent (day 10, only when the owner's profile was found). */
-  liAt?: string;
+  /** LinkedIn cold sequence (only when the owner's profile was found): engaged with posts → connect (liAt) →
+   *  DM once accepted → one follow-up. liSnoozeUntil = "not accepted yet, ask again then". */
+  liEngagedAt?: string; liAt?: string; liDmAt?: string; liFuAt?: string; liSnoozeUntil?: string;
   /** When Naufal pressed Start outreach (emails then wait for the Instagram opener, see emailHold). */
   scheduledAt?: string;
 };

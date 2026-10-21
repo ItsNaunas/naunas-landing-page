@@ -60,8 +60,22 @@ export function igSequence(all: Prospect[], demoMode = false) {
     return acc;
   }, {})).map(([style, v]) => ({ style, ...v, rate: v.sent ? Math.round((v.replied / v.sent) * 100) : 0 })).sort((a, b) => b.sent - a.sent);
   const finished = live.filter((p) => p.fu2At).length;
-  // Day 10 (outreach plan): LinkedIn connect with a note, only where the routine found the owner's profile.
-  const linkedin = live.filter((p) => p.drafts?.research?.ownerLinkedin && !p.liAt && p.dmSentAt && sinceDm(p) >= 9 * 24 * H).slice(0, 5);
+  // LinkedIn cold sequence (owner profile found): starts the day after the Instagram opener (or straight away
+  // for firms not on Instagram) so one person isn't hit on every channel the same day.
+  const liReady = (p: Prospect) => !!p.drafts?.research?.ownerLinkedin && (!p.instagram || !!p.dmSentAt);
+  const before = (t?: string, days = 1) => !!t && now - Date.parse(t) >= days * 24 * H;
+  const liLive = all.filter((p) => !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
+  const linkedin = liLive.flatMap((p): { p: Prospect; step: 'engage' | 'connect' | 'dm' | 'fu' }[] => {
+    if (!liReady(p)) return [];
+    if (!p.liEngagedAt) return [{ p, step: 'engage' }];
+    if (!p.liAt) return repDay(p.liEngagedAt) < today ? [{ p, step: 'connect' }] : [];
+    if (!p.liDmAt) {
+      if (before(p.liAt, 21)) return []; // never accepted: let it go quietly
+      if (p.liSnoozeUntil && Date.parse(p.liSnoozeUntil) > now) return [];
+      return before(p.liAt, 2) ? [{ p, step: 'dm' }] : [];
+    }
+    return !p.liFuAt && before(p.liDmAt, 5) ? [{ p, step: 'fu' }] : [];
+  }).slice(0, 10);
   return { warm, openers, followups, linkedin, waiting: Math.max(0, waiting), finished, styles };
 }
 

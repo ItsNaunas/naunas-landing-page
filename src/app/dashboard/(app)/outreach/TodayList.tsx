@@ -5,7 +5,8 @@ import { lintMessage } from '@/lib/dmLint';
 import { dueAt, type Owed } from '@/lib/owed';
 import type { Prospect } from '@/lib/outreach';
 import type { WarmLead } from '@/lib/checkins';
-import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiConnected } from '@/app/dashboard/actions';
+import type { IgPost } from '@/lib/igPosts';
+import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiStep } from '@/app/dashboard/actions';
 import { CopyText } from './OutreachClient';
 import { CheckinMessage } from './CheckinMessage';
 import { FocusShell, OpenCopy } from './FocusShell';
@@ -19,7 +20,8 @@ type Props = {
   owed: { toSend: Owed[]; toNudge: Owed[] };
   replies: Reply[];
   checkins: WarmLead[]; drafts: Record<string, { text: string }>;
-  ig: { warm: Prospect[]; openers: Prospect[]; followups: { p: Prospect; n: 1 | 2 }[]; linkedin: Prospect[] };
+  ig: { warm: Prospect[]; openers: Prospect[]; followups: { p: Prospect; n: 1 | 2 }[]; linkedin: { p: Prospect; step: 'engage' | 'connect' | 'dm' | 'fu' }[] };
+  posts: Record<string, { items: IgPost[] }>;
   doneToday: number;
 };
 
@@ -57,7 +59,7 @@ const checkBackMonth = () => new Date(Date.now() + 60 * 86_400_000).toLocaleDate
 const igChat = (h?: string) => (h ? `https://ig.me/m/${h}` : undefined);
 const igProfile = (h?: string) => (h ? `https://instagram.com/${h}` : undefined);
 
-export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Props) {
+export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToday }: Props) {
   const left = owed.toSend.length + replies.length + owed.toNudge.length + checkins.length + ig.followups.length + ig.linkedin.length + ig.openers.length + ig.warm.length;
   const total = left + doneToday;
   return (
@@ -139,17 +141,33 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
             })}
           </Group>
 
-          <Group n={5} title="LinkedIn connects" count={ig.linkedin.length}>
-            {ig.linkedin.map((p) => {
+          <Group n={5} title="LinkedIn" count={ig.linkedin.length}>
+            {ig.linkedin.map(({ p, step }) => {
               const r = p.drafts!.research!;
               const first = (r.owner ?? p.drafts?.firstName ?? '').split(' ')[0];
-              const text = `Hi${first ? ` ${first}` : ''}, I’ve been following ${p.firm}’s work on Instagram for a while. Would be good to connect here too.`;
+              const profile = r.ownerLinkedin!.replace(/\/$/, '');
+              const who = `${r.owner ?? p.firm}${r.owner ? ` · ${p.firm}` : ''}`;
+              const texts = {
+                engage: '',
+                connect: `Hi${first ? ` ${first}` : ''}, I’ve been admiring ${p.firm}’s projects. Would be good to connect.`,
+                dm: `Thanks for connecting${first ? `, ${first}` : ''}. Genuine question: how do most new enquiries reach ${p.firm} these days, the website or referrals?`,
+                fu: `No pressure at all. If enquiries ever start slipping between the first message and the consultation, happy to show you what I’d change.`,
+              };
+              const tasks = {
+                engage: 'Like 2 of their recent posts and leave one real comment about the work. No connect yet.',
+                connect: 'Send a connection request with this note (no pitch).',
+                dm: 'Have they accepted? If yes, send this DM. If not, check again in 2 days.',
+                fu: 'One follow-up, then stop.',
+              };
+              const text = texts[step];
               return (
-                <Row key={p.id} itemId={`li-${p.id}`} who={`${r.owner ?? p.firm}${r.owner ? ` · ${p.firm}` : ''}`} channel="LinkedIn" href={r.ownerLinkedin} hrefLabel="Open profile" copy={text} task="Day 10: they’ve seen you on Instagram and email. Connect with this note (no pitch).">
-                  <Msg text={text} />
+                <Row key={`li-${step}-${p.id}`} itemId={`li-${step}-${p.id}`} who={who} channel="LinkedIn"
+                  href={step === 'engage' ? `${profile}/recent-activity/all/` : profile} hrefLabel={step === 'engage' ? 'Open their posts' : 'Open profile'} copy={text || undefined} task={tasks[step]}>
+                  {text && <Msg text={text} />}
                   <div className="flex flex-wrap gap-3 items-center">
-                    <CopyText text={text} label="Copy note" />
-                    <ActionForm action={markLiConnected}><input type="hidden" name="id" value={p.id} /><button className={btn}>Connected</button></ActionForm>
+                    {text && <CopyText text={text} label="Copy" />}
+                    <ActionForm action={markLiStep}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="step" value={{ engage: 'engaged', connect: 'connected', dm: 'dm', fu: 'fu' }[step]} /><button className={btn}>{{ engage: 'Done', connect: 'Request sent', dm: 'Accepted · DM sent', fu: 'Sent' }[step]}</button></ActionForm>
+                    {step === 'dm' && <ActionForm action={markLiStep}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="step" value="notyet" /><button className={quiet}>Not accepted yet</button></ActionForm>}
                   </div>
                 </Row>
               );
@@ -183,11 +201,25 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
           </Group>
 
           <Group n={7} title="Instagram warm-ups" count={ig.warm.length}>
-            {ig.warm.map((p) => (
-              <Row key={p.id} itemId={`wu-${p.id}`} who={`@${p.instagram}`} channel="Instagram" href={igProfile(p.instagram)} hrefLabel="Open profile" task={`${p.firm}: follow, like 2 to 3 project posts, one specific comment about a room or detail, view their story. No DM today.`}>
-                <ActionForm action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className={btn}>Done</button></ActionForm>
-              </Row>
-            ))}
+            {ig.warm.map((p) => {
+              const found = posts[(p.instagram ?? '').toLowerCase()]?.items ?? [];
+              return (
+                <Row key={p.id} itemId={`wu-${p.id}`} who={`@${p.instagram}`} channel="Instagram" href={igProfile(p.instagram)} hrefLabel="Open profile" task={`${p.firm}: follow, like these posts, leave one comment, view their story. No DM today.`}>
+                  {found.length ? (
+                    <div className="grid sm:grid-cols-3 gap-2">
+                      {found.map((post) => (
+                        <div key={post.url} className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-2 flex flex-col gap-1.5 min-w-0">
+                          <a href={post.url} {...linkProps} className="text-[11px] text-[#ff8a6d] hover:underline">Open post ↗{post.at ? ` · ${ago(post.at)}` : ''}</a>
+                          {post.caption && <p className="text-[11px] text-white/45 line-clamp-2">{post.caption}</p>}
+                          {post.comment && <><p className="text-[12.5px] text-white/85">“{post.comment}”</p><CopyText text={post.comment} label="Copy comment" /></>}
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-[11px] text-white/35">Fetching their latest posts and comment ideas (a minute or two after the drafts arrive). Meanwhile, open the profile and pick 2 recent project posts.</p>}
+                  <ActionForm action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className={btn}>Done</button></ActionForm>
+                </Row>
+              );
+            })}
           </Group>
         </div></FocusShell></div>
       )}
