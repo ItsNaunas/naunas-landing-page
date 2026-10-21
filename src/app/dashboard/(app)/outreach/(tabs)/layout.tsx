@@ -4,6 +4,7 @@ import { setOutreachSending, setChannelTargets } from '@/app/dashboard/actions';
 import { getSettings } from '@/lib/outreach';
 import { demoOn } from '@/lib/ops/demo';
 import { attention } from '@/lib/ops/attention';
+import { FUNNEL } from '@/config/funnel';
 
 const DEMO = { sending: false, igNew: 7, liNew: 7, dailyNew: 6 };
 
@@ -38,6 +39,10 @@ export default async function OutreachLayout({ children }: { children: React.Rea
                 <button className="self-start rounded-lg bg-white text-black text-xs font-medium px-3 py-1.5">Save targets</button>
                 <p className="text-[11px] text-white/35">Each channel gets different firms. Week one: 7 / 7 / 6, then 10 / 10 / 10.</p>
               </ActionForm>
+              <div className="border-t border-white/[0.06] pt-3 text-[11px] text-white/45 flex flex-col gap-1">
+                <span>Research runs here as soon as you approve a firm. The 13:00 Claude routine now handles replies in contact@, post-call proposals and Monday content.</span>
+                <a href={FUNNEL.routine.url} target="_blank" rel="noopener noreferrer" className="text-[#ff8a6d] hover:underline">Run the routine now (Run now on claude.ai) ↗</a>
+              </div>
             </div>
           </details>
         }

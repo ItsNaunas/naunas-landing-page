@@ -123,7 +123,7 @@ export async function leadProfile(id: string) {
   // One clear next step, most urgent first.
   let next: { title: string; why: string; tone: 'accent' | 'good' | 'bad' | 'neutral' } | null = null;
   if (waiting) next = { title: 'Reply to them', why: `They emailed ${Math.max(0, Math.floor((now - ts(lastIn!.date)) / DAY))}d ago and haven’t had an answer.`, tone: 'bad' };
-  else if (stage === STAGE.auditBooked) next = brief ? { title: 'Prep for the call', why: 'Read the research brief below before you join.', tone: 'good' } : { title: 'Call booked', why: 'The research brief lands in the 13:00 digest the day before.', tone: 'neutral' };
+  else if (stage === STAGE.auditBooked) next = brief ? { title: 'Prep for the call', why: 'Read the research brief below before you join.', tone: 'good' } : { title: 'Call booked', why: 'The website research brief lands on this deal within a minute of booking.', tone: 'neutral' };
   else if (stage === STAGE.auditDone) next = { title: 'Send the recap and proposal', why: 'Same-day recap closes best (Soul in the Horn). The proposal draft is in Google Docs.', tone: 'accent' };
   else if (stage === STAGE.scopeSent && idle >= 5) next = { title: 'Nudge the proposal', why: `Nothing for ${idle} days since the scope went out.`, tone: 'accent' };
   else if ((stage === STAGE.newEnquiry || stage === STAGE.contacted) && idle >= 2) next = { title: 'Follow up', why: `Quiet for ${idle} days. Offer the free audit.`, tone: 'accent' };

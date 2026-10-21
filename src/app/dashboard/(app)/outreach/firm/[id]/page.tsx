@@ -7,11 +7,15 @@ import { demoOn } from '@/lib/ops/demo';
 import { Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle } from '@/components/dashboard/kit';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { setProspect, markIgReplied, addOwedAsset } from '@/app/dashboard/actions';
+import { setProspect, markIgReplied, addOwedAsset, researchNow } from '@/app/dashboard/actions';
+import { getReport } from '@/lib/leakReport';
+import { FUNNEL } from '@/config/funnel';
+import { ReportPanel } from './ReportPanel';
 import { DraftEditor, CopyText } from '../../OutreachClient';
 import { Timeline } from '../../FirmTimeline';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 120; // building a leak report reads their site + one AI call
 
 const STATUS: Record<Prospect['status'], string> = {
   new: 'To review', rejected: 'Skipped', approved: 'Researching', drafted: 'Ready to start', scheduled: 'In outreach', active: 'In outreach',
@@ -28,6 +32,9 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
   const r = p.drafts?.research;
   const posts = p.instagram ? (await getIgPosts().catch(() => ({} as Record<string, { items: { url: string; caption?: string; comment?: string; at?: string }[] }>)))[p.instagram.toLowerCase()]?.items ?? [] : [];
   const live = ['drafted', 'scheduled', 'active'].includes(p.status);
+  const report = p.reportToken ? await getReport(p.reportToken).catch(() => null) : null;
+  const reportable = !!p.website && ['drafted', 'scheduled', 'active', 'replied', 'finished'].includes(p.status);
+  const researching = !!p.researchAt && Date.now() - Date.parse(p.researchAt) < 10 * 60_000;
   const hold = p.status === 'scheduled' && (!p.channel || p.channel === 'email') ? emailHold(p) : null;
 
   return (
@@ -100,7 +107,21 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
                 ))}
               </Card>
             )
-          ) : <Card><Empty>{p.status === 'approved' ? 'The routine researches this firm at the next 13:00 run.' : 'No drafts yet. Approve the firm and the routine writes them.'}</Empty></Card>}
+          ) : p.status === 'approved' ? (
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-white/55">{researching ? 'Researching now: website, Instagram and LinkedIn. Refresh in a minute.' : p.researchError ? `Research failed: ${p.researchError}` : 'Approved, waiting for research.'}</p>
+                {!researching && <ActionForm action={researchNow}><input type="hidden" name="id" value={p.id} /><button className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium">{p.researchError ? 'Try again' : 'Research now'}</button></ActionForm>}
+              </div>
+            </Card>
+          ) : <Card><Empty>No drafts yet. Approve the firm and research starts straight away.</Empty></Card>}
+
+          {reportable && (
+            <>
+              <SectionTitle>Leak report</SectionTitle>
+              <Card><ReportPanel id={p.id} report={report} site={FUNNEL.site} /></Card>
+            </>
+          )}
         </div>
 
         <div className="flex flex-col gap-3 min-w-0">

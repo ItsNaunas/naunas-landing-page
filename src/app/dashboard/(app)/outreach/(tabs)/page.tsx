@@ -14,6 +14,7 @@ const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') 
 import { warmLeads, dueCheckins, getTouches, getCheckinDrafts, type WarmLead } from '@/lib/checkins';
 import { repDay } from '@/lib/reps';
 import { TodayList } from '../TodayList';
+import { openAsks } from '@/lib/asks';
 import { ChannelBoard } from '../ChannelBoard';
 import { syncIgPosts, getIgPosts } from '@/lib/igPosts';
 import { FUNNEL } from '@/config/funnel';
@@ -35,6 +36,7 @@ export default async function OutreachToday() {
     warmLeads().catch(() => [] as WarmLead[]), getTouches().catch(() => ({})), getCheckinDrafts().catch(() => ({})),
   ]);
   const checkins = dueCheckins(leads, touches);
+  const asks = demoOn() ? [] : await openAsks().catch(() => []);
   const today = repDay();
   const isToday = (t?: string) => !!t && repDay(t) === today;
   const everyone = Object.values(d.queue).flat();
@@ -54,7 +56,7 @@ export default async function OutreachToday() {
       )}
       <ChannelBoard channels={d.channels} />
 
-      <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} />
+      <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} asks={asks} />
 
       <details className="rounded-2xl border border-white/[0.07] bg-[#121212]">
         <summary className="cursor-pointer px-5 py-3 text-sm">+ Someone said yes to a Loom or PDF</summary>

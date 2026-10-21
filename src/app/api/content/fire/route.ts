@@ -6,6 +6,7 @@ import { putJSON } from '@/lib/store';
 import { getPost, CHANNELS, CHANNEL_LABEL } from '@/lib/content';
 import { FUNNEL } from '@/config/funnel';
 import { getOwed, NUDGE_D } from '@/lib/owed';
+import { researchProspect } from '@/lib/research';
 
 // QStash calls this at the minute Naufal scheduled. Only signed QStash requests get through, and a post that
 // was cancelled, rescheduled or already published is skipped (runPost checks it's still "scheduled").
@@ -19,7 +20,14 @@ export async function POST(req: Request) {
   let remind = '';
   let owed = '';
   let nudge = '';
-  try { ({ postId = '', ping = '', remind = '', owed = '', nudge = '' } = JSON.parse(body) as Record<string, string>); } catch { /* handled below */ }
+  let research = '';
+  try { ({ postId = '', ping = '', remind = '', owed = '', nudge = '', research = '' } = JSON.parse(body) as Record<string, string>); } catch { /* handled below */ }
+
+  // Prospect research, queued from Prospects (Approve / Research now), one firm per call.
+  if (research) {
+    const r = await researchProspect(research);
+    return NextResponse.json({ ok: true, research, result: r });
+  }
 
   // Asset owed: 20h after a yes, if the Loom/PDF still isn't marked sent; 5 days after sending, if still open.
   if (owed || nudge) {

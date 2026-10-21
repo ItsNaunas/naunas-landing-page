@@ -38,6 +38,14 @@ async function suggest(captions: string[]): Promise<string[]> {
   return captions.map((_, i) => (out.comments[i] ?? '').replace(/[[\]{}]/g, '').trim());
 }
 
+/** Store posts already fetched elsewhere (prospect research reads the profile's latest posts), with comments. */
+export async function saveIgPosts(handle: string, posts: { url: string; caption?: string; at?: string; image?: string }[]): Promise<void> {
+  const mine = posts.filter((p) => p.url).slice(0, 3);
+  if (!mine.length) return;
+  const comments = await suggest(mine.map((m) => m.caption ?? '')).catch(() => mine.map(() => ''));
+  await updateJSON<Store>(PATH, EMPTY, (st) => ({ ...st, posts: { ...st.posts, [handle.toLowerCase()]: { at: new Date().toISOString(), items: mine.map((m, i) => ({ ...m, caption: m.caption?.slice(0, 300), comment: comments[i] || undefined })) } } }));
+}
+
 /**
  * Collect finished runs, then start one for handles that still have no posts (max 10 per run, one run at a
  * time). Call from the Outreach page load; cheap when there's nothing to do.

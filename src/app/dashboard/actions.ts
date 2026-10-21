@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath, updateTag } from 'next/cache';
 import { DASH_COOKIE, DASH_MAX_AGE, passwordMatches, sessionToken, validSession } from '@/lib/dashAuth';
 import { storeReady } from '@/lib/store';
-import { startSearch, syncSearches, ingestDrafts, getProspects, saveProspects, getSettings, saveSettings, type ProspectStatus } from '@/lib/outreach';
+import { startSearch, syncSearches, ingestDrafts, getProspects, saveProspects, getSettings, saveSettings, type ProspectStatus, type Prospect } from '@/lib/outreach';
 import { setDealStage, addNote, updateContact } from '@/lib/hubspot';
 import { addToGroup, removeFromGroup } from '@/lib/mailerlite';
 import { sendEmail } from '@/lib/send';
@@ -134,7 +134,28 @@ export async function setProspect(form: FormData) {
   const ids = str(form, 'ids').split(',').filter(Boolean);
   if (!ids.length || !['approved', 'rejected', 'stopped', 'new'].includes(status)) return;
   const list = await getProspects();
-  await saveProspects(list.map((p) => (ids.includes(p.id) ? { ...p, status } : p)));
+  await saveProspects(list.map((p) => (ids.includes(p.id) ? { ...p, status, ...(status === 'approved' ? {} : { researchAt: undefined }) } : p)));
+  // Approving starts research straight away (lib/research), instead of waiting for the 13:00 routine.
+  if (status === 'approved') await startResearch(ids);
+  await done();
+}
+
+async function startResearch(ids: string[]) {
+  const { queueResearch } = await import('@/lib/research');
+  const { after } = await import('next/server');
+  await queueResearch(ids, (fn) => after(fn)).catch(async (err) => {
+    const { alertError } = await import('@/lib/alert');
+    await alertError('Research: queue', err, 'Approved, but research did not start. Press Research now on Prospects.');
+  });
+}
+
+/** Research now: one firm (id) or every approved firm that isn't already being researched. */
+export async function researchNow(form: FormData) {
+  await requireSession();
+  const one = str(form, 'id');
+  const stale = (p: Prospect) => !p.researchAt || Date.now() - Date.parse(p.researchAt) > 10 * 60_000;
+  const ids = (await getProspects()).filter((p) => p.status === 'approved' && (one ? p.id === one : stale(p))).map((p) => p.id);
+  if (ids.length) await startResearch(ids);
   await done();
 }
 
@@ -791,4 +812,41 @@ export async function startAllReady() {
   await saveProspects(list);
   await logEvent('lead', `Started outreach on ${started} firms`, '/dashboard/outreach/sequences');
   changed();
+}
+
+// ---------------------------------------------------------------- Leak report (lib/leakReport)
+
+export type ReportState = { error?: string; savedAt?: number };
+
+export async function buildReport(_prev: ReportState, form: FormData): Promise<ReportState> {
+  await requireSession();
+  const { buildLeakReport } = await import('@/lib/leakReport');
+  try { await buildLeakReport(str(form, 'id')); } catch (err) { return { error: String((err as Error).message ?? err) }; }
+  await done();
+  return { savedAt: Date.now() };
+}
+
+export async function saveReportEdits(_prev: ReportState, form: FormData): Promise<ReportState> {
+  await requireSession();
+  const { getReport, saveReport } = await import('@/lib/leakReport');
+  const r = await getReport(str(form, 'token'));
+  if (!r) return { error: 'Report not found.' };
+  const findings = r.findings.map((f, i) => ({ ...f, title: str(form, `f${i}_title`) || f.title, seen: str(form, `f${i}_seen`) || f.seen, why: str(form, `f${i}_why`) || f.why, fix: str(form, `f${i}_fix`) || f.fix }))
+    .filter((_, i) => form.get(`f${i}_drop`) !== 'on');
+  const publish = form.get('intent') === 'publish' ? true : form.get('intent') === 'unpublish' ? false : r.published;
+  await saveReport({
+    ...r, findings, intro: str(form, 'intro') || r.intro, quickWin: str(form, 'quickWin'), loom: str(form, 'loom') || r.loom,
+    askOnCall: str(form, 'askOnCall').split('\n').map((x) => x.trim()).filter(Boolean),
+    published: publish, publishedAt: publish && !r.published ? new Date().toISOString() : r.publishedAt,
+  });
+  await done();
+  return { savedAt: Date.now() };
+}
+
+/** Review/referral ask (lib/asks): sent or skipped. */
+export async function markAskDone(form: FormData) {
+  await requireSession();
+  const { markAsk } = await import('@/lib/asks');
+  await markAsk(str(form, 'id'), str(form, 'outcome') === 'skipped' ? 'skipped' : 'sent');
+  await done();
 }

@@ -6,7 +6,8 @@ import { dueAt, type Owed } from '@/lib/owed';
 import type { Prospect } from '@/lib/outreach';
 import type { WarmLead } from '@/lib/checkins';
 import type { IgPost } from '@/lib/igPosts';
-import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiStep } from '@/app/dashboard/actions';
+import type { Ask } from '@/lib/asks';
+import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiStep, markAskDone } from '@/app/dashboard/actions';
 import { CopyText } from './OutreachClient';
 import { CheckinMessage } from './CheckinMessage';
 import { FocusShell, OpenCopy } from './FocusShell';
@@ -23,6 +24,7 @@ type Props = {
   ig: { warm: Prospect[]; openers: Prospect[]; followups: { p: Prospect; n: 1 | 2 }[]; linkedin: { p: Prospect; step: 'engage' | 'connect' | 'dm' | 'fu' }[] };
   posts: Record<string, { items: IgPost[] }>;
   doneToday: number;
+  asks: Ask[];
 };
 
 const CH: Record<string, string> = { Instagram: 'IG', LinkedIn: 'LI', Email: 'Email' };
@@ -59,8 +61,8 @@ const checkBackMonth = () => new Date(Date.now() + 60 * 86_400_000).toLocaleDate
 const igChat = (h?: string) => (h ? `https://ig.me/m/${h}` : undefined);
 const igProfile = (h?: string) => (h ? `https://instagram.com/${h}` : undefined);
 
-export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToday }: Props) {
-  const left = owed.toSend.length + replies.length + owed.toNudge.length + checkins.length + ig.followups.length + ig.linkedin.length + ig.openers.length + ig.warm.length;
+export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToday, asks }: Props) {
+  const left = owed.toSend.length + replies.length + asks.length + owed.toNudge.length + checkins.length + ig.followups.length + ig.linkedin.length + ig.openers.length + ig.warm.length;
   const total = left + doneToday;
   return (
     <Card pad={false}>
@@ -89,6 +91,21 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
             {replies.map((m) => (
               <Row key={m.messageId || String(m.uid)} itemId={String(m.messageId || String(m.uid))} who={m.who} channel="Email" href={m.href} hrefLabel="Open lead (draft reply there)" task={`Replied ${ago(m.date)}: ${m.subject}`}>
                 <p className="text-[12.5px] text-white/65 line-clamp-2">“{m.text}”</p>
+              </Row>
+            ))}
+          </Group>
+
+          <Group n={2} title="Ask a happy client" count={asks.length}>
+            {asks.map((a) => (
+              <Row key={a.id} itemId={a.id} who={a.who} channel="Email" href={a.dealUrl} hrefLabel="Deal in HubSpot"
+                task={a.kind === 'review' ? 'Finished 3 weeks ago: ask how it’s going, and for a short testimonial.' : 'Finished 2 months ago: ask who else they know who needs this.'}>
+                <p className="text-[13px] text-white/80 rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 whitespace-pre-wrap">{a.draft}</p>
+                <div className="flex flex-wrap gap-3 items-center">
+                  <CopyText text={a.draft} label="Copy email" />
+                  {a.email && <span className="text-xs text-white/40">{a.email}</span>}
+                  <ActionForm action={markAskDone}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="outcome" value="sent" /><button className={btn}>Sent</button></ActionForm>
+                  <ActionForm action={markAskDone}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="outcome" value="skipped" /><button className={quiet}>Skip</button></ActionForm>
+                </div>
               </Row>
             ))}
           </Group>

@@ -42,6 +42,10 @@ export type Prospect = {
   /** The ONE channel this firm is worked on (2026-10-21: 10 different firms per channel per day, no overlap).
    *  Unset = older firms on the multi-channel flow. */
   channel?: OutreachChannel;
+  /** Dashboard research (lib/research): queued/started at, the last error, and who wrote the drafts. */
+  researchAt?: string; researchError?: string; researchedBy?: 'dashboard' | 'routine';
+  /** Leak report page for this firm (lib/leakReport), naunas.co.uk/r/<token>. */
+  reportToken?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 /** dailyNew = new firms per day by EMAIL (first emails); igNew / liNew = new firms per day started on Instagram / LinkedIn. */

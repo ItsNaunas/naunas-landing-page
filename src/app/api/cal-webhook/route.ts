@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { preCallResearch } from '@/lib/precall';
 import crypto from 'node:crypto';
 import { addToGroup, removeFromGroup, LEAK_MAP_GROUP, ENQUIRED_GROUP, BOOKED_GROUP } from '@/lib/mailerlite';
 import { upsertContact, ensureDeal, splitName, STAGE, hubspotUrl, linkCompany, addNote, openDealForEmail } from '@/lib/hubspot';
@@ -9,6 +10,8 @@ import { preCallBrief } from '@/lib/brief';
 import { notify, line, alertError } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
 import { logEvent } from '@/lib/events';
+
+export const maxDuration = 120;
 
 // The owner's time zone, for the call time in alerts.
 const OWNER_TZ = FUNNEL.ownerTz;
@@ -176,6 +179,8 @@ export async function POST(req: NextRequest) {
         await alertError('CalWebhook: HubSpot brief note', err);
       }
     }
+    // Website research brief (was the routine's job 2): runs after the response, about 30 seconds.
+    after(() => preCallResearch({ name: booker.name ?? val('name') ?? booker.email ?? 'Booker', website: val('website'), business, whatsNotWorking: val('whats-not-working'), contactId, dealId, callTime: formatCallTime(event.payload?.startTime, OWNER_TZ) }));
     // High-value bookings ping Naufal's phone with the call time in his own time zone.
     if (priority === 'high') {
       await notify({

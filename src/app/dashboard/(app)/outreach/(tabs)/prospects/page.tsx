@@ -7,13 +7,14 @@ import { demoOn } from '@/lib/ops/demo';
 import { ActionForm } from '@/components/dashboard/ActionForm';
 import { TabIntro, Errors, Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { ConnectCard } from '@/components/dashboard/kit';
-import { setProspect, refreshProspectSearches, importWave1, startAllReady } from '@/app/dashboard/actions';
+import { setProspect, refreshProspectSearches, importWave1, startAllReady, researchNow } from '@/app/dashboard/actions';
 import { SearchForm, DraftEditor } from '@/app/dashboard/(app)/outreach/OutreachClient';
 
 export const dynamic = 'force-dynamic';
 
 const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') as 'good' | 'accent' | 'muted';
 type Step = 'review' | 'researching' | 'ready' | 'outreach' | 'replied' | 'skipped';
+const working = (p: Prospect) => !!p.researchAt && Date.now() - Date.parse(p.researchAt) < 10 * 60_000;
 const firmLink = (p: Prospect) => <Link href={`/dashboard/outreach/firm/${encodeURIComponent(p.id)}`} className="font-medium hover:text-[#F2613F]">{p.firm}</Link>;
 
 export default async function OutreachProspects({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
@@ -29,7 +30,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
 
   const steps: { key: Step; label: string; count: number; hint: string }[] = [
     { key: 'review', label: 'Review', count: q.review.length, hint: 'Approve the ones that look right' },
-    { key: 'researching', label: 'Researching', count: q.approved.length, hint: 'The 13:00 routine checks each one' },
+    { key: 'researching', label: 'Researching', count: q.approved.length, hint: 'About a minute per firm' },
     { key: 'ready', label: 'Ready to start', count: q.drafted.length, hint: 'Pick a channel, press Start' },
     { key: 'outreach', label: 'In outreach', count: outreach.length, hint: 'Working through the cadence' },
     { key: 'replied', label: 'Replied', count: q.replied.length, hint: 'Talking to you' },
@@ -119,10 +120,21 @@ export default async function OutreachProspects({ searchParams }: { searchParams
 
       {step === 'researching' && (
         <Card pad={false}>
-          <p className="px-5 py-3 text-sm text-white/55 border-b border-white/[0.06]">The routine runs at 13:00 your time and researches up to 20 a day: website, Instagram and the owner’s LinkedIn, checked against the profile. Passes move to Ready to start; the rest go to Skipped with the reason.</p>
+          <div className="px-5 py-3 border-b border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <p className="text-sm text-white/55">Research starts the moment you approve: their website, Instagram and the owner’s LinkedIn, checked against the profile. About a minute each. Passes move to Ready to start; the rest go to Skipped with the reason. Refresh to see progress.</p>
+            {q.approved.some((p) => !working(p)) && <ActionForm action={researchNow}><button className="shrink-0 rounded-lg bg-white text-black text-xs font-medium px-3 py-1.5">Research all now</button></ActionForm>}
+          </div>
           {q.approved.length ? (
             <ul className="divide-y divide-white/[0.05]">
-              {q.approved.map((p) => <li key={p.id} className="px-5 py-2.5 text-[13px] flex justify-between gap-3">{firmLink(p)}<span className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}</span></li>)}
+              {q.approved.map((p) => (
+                <li key={p.id} data-item={`rs-${p.id}`} className="px-5 py-2.5 text-[13px] flex flex-wrap items-center justify-between gap-3">
+                  <span className="min-w-0">{firmLink(p)} <span className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}</span>
+                    {p.researchError && <span className="block text-xs text-rose-300/80">Research failed: {p.researchError}</span>}</span>
+                  {working(p) ? <span className="text-xs text-[#ff8a6d]">Researching now…</span> : (
+                    <ActionForm action={researchNow}><input type="hidden" name="id" value={p.id} /><button className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white">{p.researchError ? 'Try again' : 'Research now'}</button></ActionForm>
+                  )}
+                </li>
+              ))}
             </ul>
           ) : <Empty>Nothing waiting. Approve firms in Review.</Empty>}
         </Card>
