@@ -667,6 +667,8 @@ export async function addOwedAsset(form: FormData) {
   if (!who) return;
   const { addOwed, DUE_H } = await import('@/lib/owed');
   const o = await addOwed({ who: who.slice(0, 120), what: what.slice(0, 80), channel: str(form, 'channel') || 'LinkedIn', link: str(form, 'link').slice(0, 400) || undefined });
+  const firmId = str(form, 'firmId');
+  if (firmId) await crmAfter(firmId, (m) => m.prospectNote(firmId, `<p>Said yes to a ${what.replace(/</g, '&lt;')} (${str(form, 'channel') || 'DM'}). Promised within 24 hours.</p>`, 'interested'), 'Said yes');
   const { qstashReady, scheduleAt } = await import('@/lib/qstash');
   if (qstashReady()) await scheduleAt(new Date(Date.now() + (DUE_H - 4) * 3_600_000), { owed: o.id }).catch(() => {});
   changed();
@@ -705,7 +707,7 @@ export async function markIgFollowup(form: FormData) {
   changed();
 }
 
-/** They replied on Instagram: stop the IG follow-ups AND the email sequence. */
+/** They replied (Instagram, LinkedIn or from the firm page): stop every sequence and put them in HubSpot. */
 export async function markIgReplied(form: FormData) {
   await requireSession();
   const id = str(form, 'id');
@@ -715,8 +717,9 @@ export async function markIgReplied(form: FormData) {
   const now = new Date().toISOString();
   const stop = ['drafted', 'scheduled', 'active'].includes(p.status);
   await saveProspects(list.map((x) => (x.id === id ? { ...x, igRepliedAt: now, ...(stop ? { status: 'replied' as const, repliedAt: now } : {}) } : x)));
-  if (p.contactId) await updateContact(p.contactId, { naunas_outreach_status: 'replied' }).catch(() => {});
-  await logEvent('lead', `Instagram reply · ${p.firm}`, p.instagram ? `https://instagram.com/${p.instagram}` : undefined);
+  // Into HubSpot now that they've engaged: contact, company, deal at Contacted, research note (lib/crmSync).
+  await crmAfter(p.id, (m) => m.syncProspect(p.id, { status: 'replied' }), 'They replied');
+  await logEvent('lead', `Reply · ${p.firm}`, p.instagram ? `https://instagram.com/${p.instagram}` : undefined);
   changed();
 }
 
@@ -834,6 +837,10 @@ export async function saveReportEdits(_prev: ReportState, form: FormData): Promi
   const findings = r.findings.map((f, i) => ({ ...f, title: str(form, `f${i}_title`) || f.title, seen: str(form, `f${i}_seen`) || f.seen, why: str(form, `f${i}_why`) || f.why, fix: str(form, `f${i}_fix`) || f.fix }))
     .filter((_, i) => form.get(`f${i}_drop`) !== 'on');
   const publish = form.get('intent') === 'publish' ? true : form.get('intent') === 'unpublish' ? false : r.published;
+  if (publish && !r.published) {
+    const url = `${(await import('@/config/funnel')).FUNNEL.site}/r/${r.token}`;
+    await crmAfter(r.prospectId, (m) => m.prospectNote(r.prospectId, `<p>Leak report published: <a href="${url}">${url}</a></p>`), 'Leak report');
+  }
   await saveReport({
     ...r, findings, intro: str(form, 'intro') || r.intro, quickWin: str(form, 'quickWin'), loom: str(form, 'loom') || r.loom,
     askOnCall: str(form, 'askOnCall').split('\n').map((x) => x.trim()).filter(Boolean),
@@ -847,6 +854,26 @@ export async function saveReportEdits(_prev: ReportState, form: FormData): Promi
 export async function markAskDone(form: FormData) {
   await requireSession();
   const { markAsk } = await import('@/lib/asks');
-  await markAsk(str(form, 'id'), str(form, 'outcome') === 'skipped' ? 'skipped' : 'sent');
+  const outcome = str(form, 'outcome') === 'skipped' ? 'skipped' : 'sent';
+  const a = await markAsk(str(form, 'id'), outcome);
+  if (a?.contactId && outcome === 'sent') {
+    const { after } = await import('next/server');
+    after(async () => {
+      const { addNote } = await import('@/lib/hubspot');
+      await addNote(a.contactId!, `<p>${a.kind === 'review' ? 'Review / testimonial' : 'Referral'} asked ${new Date().toISOString().slice(0, 10)} (from the dashboard).</p>`, a.dealId).catch(() => {});
+    });
+  }
   await done();
+}
+
+/** Run a HubSpot sync after the response (so the button stays instant); failures go to Telegram. */
+async function crmAfter(id: string, fn: (m: typeof import('@/lib/crmSync')) => Promise<unknown>, what: string) {
+  const { after } = await import('next/server');
+  after(async () => {
+    const m = await import('@/lib/crmSync');
+    await fn(m).catch(async (err) => {
+      const { alertError } = await import('@/lib/alert');
+      await alertError(`HubSpot sync: ${what}`, err, `Recorded in the dashboard, but not in HubSpot (firm ${id}).`);
+    });
+  });
 }

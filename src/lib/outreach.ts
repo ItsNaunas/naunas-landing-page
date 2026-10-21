@@ -46,6 +46,8 @@ export type Prospect = {
   researchAt?: string; researchError?: string; researchedBy?: 'dashboard' | 'routine';
   /** Leak report page for this firm (lib/leakReport), naunas.co.uk/r/<token>. */
   reportToken?: string;
+  /** HubSpot deal opened when the firm engaged (lib/crmSync). */
+  dealId?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 /** dailyNew = new firms per day by EMAIL (first emails); igNew / liNew = new firms per day started on Instagram / LinkedIn. */

@@ -7,13 +7,14 @@ import { getJSON, updateJSON } from '@/lib/store';
 import { crmSearch, hs, hubspotUrl, notesForContact, STAGE } from '@/lib/hubspot';
 import { aiJSON, aiReady } from '@/lib/ai';
 
-export type Ask = { id: string; dealId: string; kind: 'review' | 'referral'; who: string; email?: string; draft: string; dealUrl: string; createdAt: string; doneAt?: string; outcome?: 'sent' | 'skipped' };
+export type Ask = { id: string; dealId: string; contactId?: string; kind: 'review' | 'referral'; who: string; email?: string; draft: string; dealUrl: string; createdAt: string; doneAt?: string; outcome?: 'sent' | 'skipped' };
 const PATH = 'ops/asks.json';
 export const getAsks = () => getJSON<Ask[]>(PATH, []);
 export const openAsks = async () => (await getAsks()).filter((a) => !a.doneAt);
 
-export async function markAsk(id: string, outcome: 'sent' | 'skipped') {
-  await updateJSON<Ask[]>(PATH, [], (list) => list.map((a) => (a.id === id ? { ...a, doneAt: new Date().toISOString(), outcome } : a)));
+export async function markAsk(id: string, outcome: 'sent' | 'skipped'): Promise<Ask | undefined> {
+  const list = await updateJSON<Ask[]>(PATH, [], (all) => all.map((a) => (a.id === id ? { ...a, doneAt: new Date().toISOString(), outcome } : a)));
+  return list.find((a) => a.id === id);
 }
 
 const SYSTEM = `You draft a short, personal email from Naufal (Naunas) to a client whose project finished. Naufal's voice: warm, direct, UK spelling, no hype, no exclamation marks, never pushy. Plain text, starts "Hi <first name>," and is signed "Naufal". 50-90 words.
@@ -49,7 +50,7 @@ export async function buildAsks(): Promise<number> {
           { type: 'object', additionalProperties: false, required: ['email'], properties: { email: { type: 'string' } } }).catch(() => ({ email: '' }))).email.replace(/[[\]{}]/g, '');
       }
       fresh.push({
-        id, dealId: d.id, kind, who: [first, c?.properties.lastname].filter(Boolean).join(' ') || (d.properties.dealname ?? 'Client'), email: c?.properties.email ?? undefined,
+        id, dealId: d.id, contactId, kind, who: [first, c?.properties.lastname].filter(Boolean).join(' ') || (d.properties.dealname ?? 'Client'), email: c?.properties.email ?? undefined,
         draft: draft || (kind === 'review'
           ? `Hi${first ? ` ${first}` : ''},\n\nHow is the new system working for you so far? If it's helping, would you write 2-3 sentences about it: what was happening before, what changed, and who you'd recommend it to? And would you be happy for me to write it up as a short case study?\n\nNaufal`
           : `Hi${first ? ` ${first}` : ''},\n\nQuick one: do you know anyone else running a service business where enquiries slip through the cracks? I'd happily give them a free audit, no strings.\n\nNaufal`),

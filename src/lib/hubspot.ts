@@ -6,7 +6,8 @@ import type { Attribution } from '@/lib/attribution';
 import { priorityOf } from '@/lib/booking';
 import { FUNNEL } from '@/config/funnel';
 
-const API = 'https://api.hubapi.com';
+// LOCAL_STORE_DIR (local click-testing only) may point HubSpot at a mock server via HUBSPOT_API_BASE.
+const API = (process.env.LOCAL_STORE_DIR && process.env.HUBSPOT_API_BASE) || 'https://api.hubapi.com';
 const PIPELINE = FUNNEL.hubspot.pipeline;
 export const STAGE = FUNNEL.hubspot.stages;
 const OPEN_STAGES = [STAGE.newEnquiry, STAGE.contacted];

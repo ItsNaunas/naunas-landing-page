@@ -57,12 +57,13 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
         </div>
       </div>
 
-      {live && (
+      {(live || p.status === 'replied') && (
         <Card>
           <div className="flex flex-wrap items-center gap-3">
-            <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="stopped" /><button className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-rose-300">Stop all outreach</button></ActionForm>
-            {(p.warmedAt || p.dmSentAt || p.liEngagedAt) && <ActionForm action={markIgReplied}><input type="hidden" name="id" value={p.id} /><button className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium">They replied</button></ActionForm>}
+            {live && <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="stopped" /><button className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-rose-300">Stop all outreach</button></ActionForm>}
+            {live && !!(p.warmedAt || p.dmSentAt || p.liEngagedAt || p.liAt || p.sent?.length) && <ActionForm action={markIgReplied}><input type="hidden" name="id" value={p.id} /><button className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium">They replied</button></ActionForm>}
             <ActionForm action={addOwedAsset} className="flex items-center gap-2">
+              <input type="hidden" name="firmId" value={p.id} />
               <input type="hidden" name="who" value={`${r?.owner ?? p.firm}${r?.owner ? ` · ${p.firm}` : ''}`} />
               <input type="hidden" name="channel" value={p.channel === 'linkedin' ? 'LinkedIn' : p.channel === 'email' ? 'Email' : 'Instagram'} />
               <select name="what" className="rounded-lg bg-white/[0.05] border border-white/10 px-2 py-1.5 text-xs text-white">

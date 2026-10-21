@@ -7,6 +7,7 @@ import { notify, line, alertError } from '@/lib/alert';
 import { logEvent } from '@/lib/events';
 import { prospectIgReply } from '@/lib/outreach';
 import { updateContact } from '@/lib/hubspot';
+import { syncProspect } from '@/lib/crmSync';
 import { FUNNEL } from '@/config/funnel';
 
 // Instagram webhook (Meta app, "Instagram API with Instagram Login"; subscribed fields: comments, messages).
@@ -108,9 +109,9 @@ async function onMessage(accountId: string, m: Messaging) {
     // A cold-outreach prospect answering: stop their sequences and tell Naufal (this is the money moment).
     const prospect = await prospectIgReply(profile.username).catch(() => null);
     if (prospect) {
-      const c = await upsertInstagramContact(profile.username, { name: profile.name });
-      await updateContact(c.id, { naunas_outreach_status: 'replied' }).catch(() => {});
-      if (text) await addNote(c.id, `<p>Replied on Instagram to cold outreach (${prospect.firm.replace(/</g, '&lt;')}):</p><blockquote>${text.replace(/</g, '&lt;')}</blockquote>`);
+      // Contact + company + deal at Contacted with the research note (lib/crmSync); the reply itself as a note.
+      const ids = await syncProspect(prospect.id, { status: 'replied', quote: text });
+      if (ids && !ids.isNewDeal && text) await addNote(ids.contactId, `<p>Replied on Instagram to cold outreach (${prospect.firm.replace(/</g, '&lt;')}):</p><blockquote>${text.replace(/</g, '&lt;')}</blockquote>`, ids.dealId);
       await logEvent('lead', `Instagram reply · ${prospect.firm} (@${profile.username})`, `https://instagram.com/${profile.username}`);
       await notify({
         level: 'lead',

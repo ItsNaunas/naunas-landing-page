@@ -185,6 +185,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
                     {text && <CopyText text={text} label="Copy" />}
                     <ActionForm action={markLiStep}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="step" value={{ engage: 'engaged', connect: 'connected', dm: 'dm', fu: 'fu' }[step]} /><button className={btn}>{{ engage: 'Done', connect: 'Request sent', dm: 'Accepted · DM sent', fu: 'Sent' }[step]}</button></ActionForm>
                     {step === 'dm' && <ActionForm action={markLiStep}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="step" value="notyet" /><button className={quiet}>Not accepted yet</button></ActionForm>}
+                    {(step === 'dm' || step === 'fu') && <ActionForm action={markIgReplied}><input type="hidden" name="id" value={p.id} /><button className={quiet}>They replied</button></ActionForm>}
                   </div>
                 </Row>
               );
