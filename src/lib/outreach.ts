@@ -52,7 +52,7 @@ const S = 'outreach/searches.json';
 const SET = 'outreach/settings.json';
 export const STEP_DAYS = [0, 3, 7, 14];
 export const STEP_LABEL = ['E1 · first email', 'E2 · new angle', 'E3 · offer the teardown', 'E4 · close the loop'];
-const DEFAULT_SETTINGS: OutreachSettings = { sending: false, dailyNew: 10, dailyTotal: 25, monthlyCapUsd: 10, igNew: 10, liNew: 10 };
+const DEFAULT_SETTINGS: OutreachSettings = { sending: false, dailyNew: 6, dailyTotal: 25, monthlyCapUsd: 10, igNew: 7, liNew: 7 };
 const FOOTER = '\n\nNaunas · naunas.co.uk\n\nNot relevant? Reply "no" and I won\'t follow up.';
 
 export const getProspects = () => getJSON<Prospect[]>(P, []);

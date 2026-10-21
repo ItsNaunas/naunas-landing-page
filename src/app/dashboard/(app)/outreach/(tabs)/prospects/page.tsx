@@ -1,116 +1,178 @@
+import Link from 'next/link';
 import { outreachData } from '@/lib/ops/more';
-import { getProspects, getSettings, channelsFor, suggestChannel } from '@/lib/outreach';
+import { getProspects, getSettings, channelsFor, suggestChannel, CHANNEL_LABEL, type Prospect } from '@/lib/outreach';
 import { domainOf } from '@/lib/hubspot';
 import { WAVE1 } from '@/config/wave1';
 import { demoOn } from '@/lib/ops/demo';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
-import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
-import { Funnel } from '@/components/dashboard/charts';
-import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, importWave1, bumpRepCount, markWarmed } from '@/app/dashboard/actions';
-import { SearchForm, DraftEditor, CopyText } from '@/app/dashboard/(app)/outreach/OutreachClient';
+import { TabIntro, Errors, Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
+import { ConnectCard } from '@/components/dashboard/kit';
+import { setProspect, refreshProspectSearches, importWave1, startAllReady } from '@/app/dashboard/actions';
+import { SearchForm, DraftEditor } from '@/app/dashboard/(app)/outreach/OutreachClient';
 
 export const dynamic = 'force-dynamic';
 
 const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') as 'good' | 'accent' | 'muted';
+type Step = 'review' | 'researching' | 'ready' | 'outreach' | 'replied' | 'skipped';
+const firmLink = (p: Prospect) => <Link href={`/dashboard/outreach/firm/${encodeURIComponent(p.id)}`} className="font-medium hover:text-[#F2613F]">{p.firm}</Link>;
 
-export default async function OutreachProspects() {
+export default async function OutreachProspects({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
   const d = await outreachData();
   const q = d.queue;
-  const inFlight = [...q.scheduled, ...q.active];
-  const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
-  const all = demoOn() ? [] : await getProspects().catch(() => []);
-  const settings = demoOn() ? { igNew: 10, liNew: 10, dailyNew: 10 } : await getSettings();
+  const all = demoOn() ? (Object.values(q).flat() as Prospect[]) : await getProspects().catch(() => [] as Prospect[]);
+  const settings = demoOn() ? { igNew: 7, liNew: 7, dailyNew: 6 } : await getSettings();
   const targets = { instagram: settings.igNew, linkedin: settings.liNew, email: settings.dailyNew };
   const have = new Set(all.flatMap((p) => [p.domain, p.instagram?.toLowerCase()].filter(Boolean) as string[]));
   const wave1Left = WAVE1.filter((w) => !have.has(domainOf(w.website) ?? '') && !have.has((w.instagram ?? '').toLowerCase())).length;
+  const skipped = all.filter((p) => p.status === 'rejected').slice(-40).reverse();
+  const outreach = [...q.scheduled, ...q.active];
+
+  const steps: { key: Step; label: string; count: number; hint: string }[] = [
+    { key: 'review', label: 'Review', count: q.review.length, hint: 'Approve the ones that look right' },
+    { key: 'researching', label: 'Researching', count: q.approved.length, hint: 'The 13:00 routine checks each one' },
+    { key: 'ready', label: 'Ready to start', count: q.drafted.length, hint: 'Pick a channel, press Start' },
+    { key: 'outreach', label: 'In outreach', count: outreach.length, hint: 'Working through the cadence' },
+    { key: 'replied', label: 'Replied', count: q.replied.length, hint: 'Talking to you' },
+    { key: 'skipped', label: 'Skipped', count: skipped.length, hint: 'Didn’t fit, with the reason' },
+  ];
+  const asked = (await searchParams).step as Step | undefined;
+  const step: Step = asked && steps.some((s) => s.key === asked) ? asked : q.drafted.length ? 'ready' : 'review';
+  const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
+  const list = step === 'outreach' ? outreach : q.replied;
 
   return (
     <>
-      <TabIntro sub="Who we target: US residential, full-service interior design firms, 3 to 20 people, owner-led. Find them, approve them, and the routine checks each one before writing drafts." />
+      <TabIntro sub="Who we target: US residential, full-service interior design firms, 3 to 20 people, owner-led. Each firm moves left to right." />
       <Errors errors={d.errors} />
-      {wave1Left > 0 && (
-        <Card>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <p className="font-medium">{wave1Left} firms from your wave-1 list aren’t in here yet</p>
-              <p className="text-sm text-white/50 mt-1">Austin, Nashville and Scottsdale interior designers you shortlisted on 5 Oct and never contacted. They land in “To review”; approve them and the routine researches each one against the profile.</p>
+
+      <nav className="grid grid-cols-3 lg:grid-cols-6 gap-2" aria-label="Prospect steps">
+        {steps.map((s, i) => (
+          <Link key={s.key} href={`/dashboard/outreach/prospects?step=${s.key}`} aria-current={s.key === step ? 'page' : undefined}
+            className={`rounded-xl border px-3 py-2.5 transition-colors ${s.key === step ? 'border-[#F2613F]/60 bg-[#F2613F]/[0.08]' : 'border-white/[0.07] bg-white/[0.02] hover:border-white/20'}`}>
+            <span className="block text-[10.5px] text-white/40">{i + 1}. {s.label}</span>
+            <span className="block text-xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{s.count}</span>
+            <span className="hidden md:block text-[10.5px] text-white/35 truncate">{s.hint}</span>
+          </Link>
+        ))}
+      </nav>
+
+      {step === 'review' && (
+        <>
+          {wave1Left > 0 && (
+            <Card>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-sm"><b>{wave1Left} firms from your wave-1 list</b> <span className="text-white/50">(Austin, Nashville, Scottsdale) aren’t in here yet.</span></p>
+                <ActionForm action={importWave1}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Import {wave1Left} firms</button></ActionForm>
+              </div>
+            </Card>
+          )}
+          <details open={!q.review.length} className="rounded-2xl border border-white/[0.07] bg-[#121212]">
+            <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">Find new firms on Google Maps <span className="text-white/40 font-normal">· this month ${d.spent.toFixed(2)} of ${d.settings.monthlyCapUsd}</span></summary>
+            <div className="px-5 pb-5">
+              {!d.connected.apify ? <ConnectCard title="Connect Apify" why="Searches Google Maps for firms with a website, email and Instagram." steps={['Apify → Settings → Integrations → API token']} env="APIFY_TOKEN" /> : <>
+                <SearchForm />
+                <p className="mt-3 text-xs text-white/40">About $0.007 per firm. Skips stores, stagers, trades and anyone already in HubSpot. New firms land in this list.</p>
+                {d.searches.length > 0 && (
+                  <ul className="mt-3 flex flex-col divide-y divide-white/[0.05] border-t border-white/[0.06]">
+                    {d.searches.map((s) => (
+                      <li key={s.id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-[13px]">
+                        <span>{s.term} · {s.location}</span>
+                        <span className="text-xs text-white/45">{s.status === 'SUCCEEDED' ? `${s.added ?? 0} new of ${s.found ?? 0}` : s.status === 'RUNNING' || s.status === 'READY' ? 'Searching…' : s.status.toLowerCase()} · {ago(s.createdAt)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <ActionForm action={refreshProspectSearches}><button className="mt-2 text-xs text-white/45 hover:text-white">Check searches ↻</button></ActionForm>
+              </>}
             </div>
-            <ActionForm action={importWave1}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Import {wave1Left} firms</button></ActionForm>
-          </div>
+          </details>
+          <Card pad={false}>
+            {goodOnes.length > 0 && (
+              <div className="px-5 py-3 border-b border-white/[0.06] flex justify-end">
+                <ActionForm action={setProspect}><input type="hidden" name="ids" value={goodOnes.join(',')} /><input type="hidden" name="status" value="approved" />
+                  <button className="rounded-lg bg-white text-black text-xs font-medium px-3 py-1.5">Approve all {goodOnes.length} strong fits (5+)</button></ActionForm>
+              </div>
+            )}
+            {q.review.length ? (
+              <ul className="divide-y divide-white/[0.05]">
+                {q.review.map((p) => (
+                  <li key={p.id} data-item={`rv-${p.id}`} className="px-5 py-3 flex flex-wrap items-center gap-3">
+                    <div className="flex-1 min-w-[200px]">
+                      <p className="text-[13.5px]">{firmLink(p)} <Badge tone={FIT_TONE(p.fit)}>{p.fit}/7</Badge></p>
+                      <p className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}{p.rating ? ` · ${p.rating}★ (${p.reviews})` : ''} · {p.fitWhy.join(' · ')}</p>
+                    </div>
+                    <div className="flex gap-3 text-xs">
+                      {p.website && <a href={p.website} {...linkProps} className="text-white/60 hover:text-white">Site ↗</a>}
+                      {p.instagram && <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-white/60 hover:text-white">IG ↗</a>}
+                    </div>
+                    <div className="flex gap-2">
+                      <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="approved" /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Approve</button></ActionForm>
+                      <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="rejected" /><button className="rounded-full border border-white/15 text-xs px-3 py-1.5 text-white/60 hover:text-white">Skip</button></ActionForm>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : <Empty>Nothing to review. Find firms above or import the wave-1 list.</Empty>}
+          </Card>
+        </>
+      )}
+
+      {step === 'researching' && (
+        <Card pad={false}>
+          <p className="px-5 py-3 text-sm text-white/55 border-b border-white/[0.06]">The routine runs at 13:00 your time and researches up to 20 a day: website, Instagram and the owner’s LinkedIn, checked against the profile. Passes move to Ready to start; the rest go to Skipped with the reason.</p>
+          {q.approved.length ? (
+            <ul className="divide-y divide-white/[0.05]">
+              {q.approved.map((p) => <li key={p.id} className="px-5 py-2.5 text-[13px] flex justify-between gap-3">{firmLink(p)}<span className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}</span></li>)}
+            </ul>
+          ) : <Empty>Nothing waiting. Approve firms in Review.</Empty>}
         </Card>
       )}
 
-      {/* Find */}
-      <SectionTitle action={<ActionForm action={refreshProspectSearches}><button className="text-xs text-white/45 hover:text-white">Refresh searches ↻</button></ActionForm>}>Find prospects</SectionTitle>
-      {!d.connected.apify ? <ConnectCard title="Connect Apify" why="Searches Google Maps for firms with a website, email and Instagram." steps={['Apify → Settings → Integrations → API token']} env="APIFY_TOKEN" /> : (
-        <Card>
-          <SearchForm />
-          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/45">
-            <span>About $0.007 per firm · this month ${d.spent.toFixed(2)} of ${d.settings.monthlyCapUsd} cap</span>
-            <span>Skips stores, stagers and trades, and anyone already in HubSpot.</span>
-          </div>
-          {d.searches.length > 0 && (
-            <ul className="mt-4 flex flex-col divide-y divide-white/[0.05] border-t border-white/[0.06]">
-              {d.searches.map((s) => (
-                <li key={s.id} className="py-2.5 flex flex-wrap items-center justify-between gap-2 text-[13px]">
-                  <span>{s.term} · {s.location}</span>
-                  <span className="flex items-center gap-2 text-xs text-white/45">
-                    {s.status === 'SUCCEEDED' ? `${s.added ?? 0} new of ${s.found ?? 0} found` : s.status === 'RUNNING' || s.status === 'READY' ? 'Searching…' : s.status.toLowerCase()}
-                    {s.costUsd !== undefined && <span>· ${s.costUsd.toFixed(2)}</span>}
-                    <span>· {ago(s.createdAt)}</span>
-                  </span>
+      {step === 'ready' && (
+        <>
+          {q.drafted.length > 1 && (
+            <Card>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-sm text-white/65">Happy with these? Start them all, each on the suggested channel (the one with most room left today). Drafts with placeholder text are left for you to fix.</p>
+                <ActionForm action={startAllReady}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Start all {q.drafted.length}</button></ActionForm>
+              </div>
+            </Card>
+          )}
+          {q.drafted.length ? <div className="flex flex-col gap-3">{q.drafted.map((p) => <DraftEditor key={p.id} p={p} options={channelsFor(p)} suggested={suggestChannel(p, all, targets)} />)}</div>
+            : <Card><Empty>No drafts waiting. Approved firms arrive here after the next daily run.</Empty></Card>}
+        </>
+      )}
+
+      {(step === 'outreach' || step === 'replied') && (
+        <Card pad={false}>
+          {list.length ? (
+            <ul className="divide-y divide-white/[0.05]">
+              {list.map((p) => (
+                <li key={p.id} className="px-5 py-2.5 text-[13px] flex flex-wrap items-center justify-between gap-3">
+                  <span>{firmLink(p)} {p.channel && <Badge tone="muted">{CHANNEL_LABEL[p.channel]}</Badge>}</span>
+                  <span className="text-xs text-white/40">{step === 'replied' ? `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}` : `started ${ago(p.scheduledAt ?? p.startedAt ?? p.createdAt)}`}</span>
                 </li>
               ))}
             </ul>
-          )}
+          ) : <Empty>{step === 'outreach' ? 'No firms in outreach yet. Start some from Ready to start.' : 'No replies yet.'}</Empty>}
+          {step === 'outreach' && <p className="px-5 py-3 text-xs text-white/40 border-t border-white/[0.06]">Day-by-day progress for each firm is on the <Link href="/dashboard/outreach/sequences" className="underline hover:text-white">Sequences</Link> tab.</p>}
         </Card>
       )}
 
-      {/* Review */}
-      <SectionTitle action={goodOnes.length ? (
-        <ActionForm action={setProspect}><input type="hidden" name="ids" value={goodOnes.join(',')} /><input type="hidden" name="status" value="approved" />
-          <button className="text-xs text-[#ff8a6d] hover:text-white">Approve all {goodOnes.length} strong fits (5+)</button></ActionForm>
-      ) : undefined}>To review · {q.review.length}</SectionTitle>
-      <Card pad={false}>
-        {q.review.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px] min-w-[720px]">
-              <thead><tr className="text-left text-xs text-white/35"><th className="font-normal px-5 py-3">Firm</th><th className="font-normal px-3 py-3">Fit</th><th className="font-normal px-3 py-3">Why</th><th className="font-normal px-3 py-3">Links</th><th className="px-5 py-3" /></tr></thead>
-              <tbody>
-                {q.review.map((p) => (
-                  <tr key={p.id} className="border-t border-white/[0.05] hover:bg-white/[0.02]">
-                    <td className="px-5 py-3"><p className="font-medium">{p.firm}</p><p className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}{p.rating ? ` · ${p.rating}★ (${p.reviews})` : ''}</p></td>
-                    <td className="px-3 py-3"><Badge tone={FIT_TONE(p.fit)}>{p.fit}/7</Badge></td>
-                    <td className="px-3 py-3 text-xs text-white/55 max-w-[260px]">{p.fitWhy.join(' · ')}</td>
-                    <td className="px-3 py-3 text-xs">
-                      <div className="flex gap-3">
-                        {p.website && <a href={p.website} {...linkProps} className="text-white/60 hover:text-white">Site ↗</a>}
-                        {p.instagram && <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-white/60 hover:text-white">IG ↗</a>}
-                        {p.mapsUrl && <a href={p.mapsUrl} {...linkProps} className="text-white/60 hover:text-white">Maps ↗</a>}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex justify-end gap-2">
-                        <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="approved" /><button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5">Approve</button></ActionForm>
-                        <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="rejected" /><button className="rounded-full border border-white/15 text-xs px-3 py-1.5 text-white/60 hover:text-white">Skip</button></ActionForm>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <Empty>Nothing to review. Run a search above.</Empty>}
-      </Card>
-      {q.approved.length > 0 && <p className="text-xs text-white/40 -mt-2">{q.approved.length} approved and waiting for drafts. The 13:00 routine researches each firm and writes the emails and DM; they appear below.</p>}
-
-      {/* Drafts */}
-      <SectionTitle>Drafts to approve · {q.drafted.length}</SectionTitle>
-      {q.drafted.length ? <div className="flex flex-col gap-3">{q.drafted.map((p) => <DraftEditor key={p.id} p={p} options={channelsFor(p)} suggested={suggestChannel(p, all, targets)} />)}</div>
-        : <Card><Empty>No drafts waiting. Approve firms above and drafts arrive after the next daily run.</Empty></Card>}
-
+      {step === 'skipped' && (
+        <Card pad={false}>
+          {skipped.length ? (
+            <ul className="divide-y divide-white/[0.05]">
+              {skipped.map((p) => (
+                <li key={p.id} data-item={`sk-${p.id}`} className="px-5 py-2.5 flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-[200px]"><p className="text-[13px]">{firmLink(p)}</p><p className="text-xs text-white/45">{p.fitWhy[0]}</p></div>
+                  <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="new" /><button className="text-xs text-white/50 hover:text-white">Undo → Review</button></ActionForm>
+                </li>
+              ))}
+            </ul>
+          ) : <Empty>Nothing skipped yet.</Empty>}
+        </Card>
+      )}
     </>
   );
 }

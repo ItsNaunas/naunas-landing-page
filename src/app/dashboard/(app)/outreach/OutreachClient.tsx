@@ -31,9 +31,9 @@ export function SearchForm({ disabled }: { disabled?: boolean }) {
 const CH_LABEL = { instagram: 'Instagram', linkedin: 'LinkedIn', email: 'Email' } as const;
 type Ch = keyof typeof CH_LABEL;
 
-export function DraftEditor({ p, options = [], suggested = null }: { p: Prospect; options?: Ch[]; suggested?: Ch | null }) {
+export function DraftEditor({ p, options = [], suggested = null, defaultOpen = false }: { p: Prospect; options?: Ch[]; suggested?: Ch | null; defaultOpen?: boolean }) {
   const [state, action, pending] = useActionState<SaveState, FormData>(saveProspectDrafts, null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const d = p.drafts;
   const labels = ['E1 · day 0 · first email', 'E2 · day 3 · new angle', 'E3 · day 7 · offer the teardown', 'E4 · day 14 · close the loop'];
   return (
@@ -56,7 +56,7 @@ export function DraftEditor({ p, options = [], suggested = null }: { p: Prospect
             </span>
           )}
         </span>
-        <span className="text-xs text-white/45">{open ? 'Close' : 'Review & schedule →'}</span>
+        <span className="text-xs text-white/45">{open ? 'Close' : 'Review & start →'}</span>
       </button>
       {open && (
         <form action={action} className="px-5 pb-5 flex flex-col gap-3 border-t border-white/[0.06] pt-4">

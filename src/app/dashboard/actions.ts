@@ -768,3 +768,27 @@ export async function setChannelTargets(form: FormData) {
   await saveSettings({ ...s, igNew: n('igNew', s.igNew, 40), liNew: n('liNew', s.liNew, 20), dailyNew: n('dailyNew', s.dailyNew, 30) });
   changed();
 }
+
+/** Start every ready firm (drafted) on its suggested channel. Skips drafts with placeholder text or no reachable channel. */
+export async function startAllReady() {
+  await requireSession();
+  const { channelsFor, suggestChannel, getSettings: settingsOf } = await import('@/lib/outreach');
+  const { hasPlaceholder } = await import('@/lib/dmLint');
+  const s = await settingsOf();
+  const targets = { instagram: s.igNew, linkedin: s.liNew, email: s.dailyNew };
+  const list = await getProspects();
+  const now = new Date().toISOString();
+  let started = 0;
+  for (const p of list) {
+    if (p.status !== 'drafted' || !p.drafts) continue;
+    if (hasPlaceholder([p.drafts.subject, ...p.drafts.steps, p.drafts.dm ?? '', ...(p.drafts.dms ?? []).map((d) => d.text)].join(' '))) continue;
+    if (!channelsFor(p).length) continue;
+    const channel = suggestChannel(p, list, targets);
+    if (!channel) continue;
+    Object.assign(p, { status: 'scheduled', channel, scheduledAt: now });
+    started++;
+  }
+  await saveProspects(list);
+  await logEvent('lead', `Started outreach on ${started} firms`, '/dashboard/outreach/sequences');
+  changed();
+}
