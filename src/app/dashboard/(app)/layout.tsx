@@ -7,6 +7,7 @@ import { SearchBox, RefreshButton } from '@/components/dashboard/client';
 import { linkProps } from '@/components/dashboard/ui';
 import { logout } from '../actions';
 import { attention } from '@/lib/ops/attention';
+import { AskNaunas } from '@/components/dashboard/AskNaunas';
 
 // Naunas Ops shell: grouped sidebar + top bar (search, refresh) on desktop; top bar + bottom tabs on mobile.
 // The session is checked here as well as in the proxy, so nothing under (app) renders without it.
@@ -16,6 +17,9 @@ const Logo = () => (
     Naunas<span className="text-[#F2613F]">.</span> <span className="text-white/40 font-normal">Ops</span>
   </a>
 );
+
+// Ask Naunas answers can take a few tool calls; give dashboard server actions room.
+export const maxDuration = 120;
 
 export default async function OpsLayout({ children }: { children: React.ReactNode }) {
   if (!(await validSession((await cookies()).get(DASH_COOKIE)?.value))) redirect('/dashboard/login');
@@ -44,6 +48,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
         <main className="flex-1 max-w-[1320px] w-full px-4 md:px-8 pt-6 pb-28 md:pb-12 flex flex-col gap-6">{children}</main>
       </div>
       <BottomNav badges={badges} />
+      <AskNaunas />
     </div>
   );
 }

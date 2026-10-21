@@ -4,6 +4,7 @@ import { Card, Kpi, Delta, Badge, Empty, Errors, compactGbp, gbp, linkProps } fr
 import { Feed, EVENT_META, SectionTitle, when, untilOrAgo, OWNER_TZ, SectionError, errFor } from '@/components/dashboard/kit';
 import { Sparkline, Ring } from '@/components/dashboard/charts';
 import { MarkSeen } from '@/components/dashboard/client';
+import { StartOfDay } from './StartOfDay';
 
 export const dynamic = 'force-dynamic';
 const SEEN = 'naunas_dash_seen';
@@ -36,6 +37,7 @@ export default async function Today() {
         </p>
       </div>
       <Errors errors={d.errors} />
+      <StartOfDay />
 
       {d.since.count > 0 && (
         <div className="rounded-2xl border border-[#F2613F]/25 bg-[#F2613F]/[0.06] px-4 py-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">

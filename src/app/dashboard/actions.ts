@@ -887,3 +887,24 @@ async function crmAfter(id: string, fn: (m: typeof import('@/lib/crmSync')) => P
     });
   });
 }
+
+// ---------------------------------------------------------------- Ask Naunas (lib/assistant)
+
+export async function askNaunas(history: { role: 'user' | 'assistant'; content: string }[]): Promise<{ answer?: string; actions?: { label: string; href: string }[]; error?: string }> {
+  await requireSession();
+  const clean = history.filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim()).slice(-12);
+  if (!clean.length || clean[clean.length - 1].role !== 'user') return { error: 'Ask something first.' };
+  const { ask } = await import('@/lib/assistant');
+  try { return await ask(clean); } catch (err) { return { error: String((err as Error).message ?? err).slice(0, 200) }; }
+}
+
+/** Rewrite today's start-of-day briefing on the home page. */
+export async function refreshBriefing() {
+  await requireSession();
+  const { writeBriefing } = await import('@/lib/assistant');
+  await writeBriefing().catch(async (err) => {
+    const { alertError } = await import('@/lib/alert');
+    await alertError('Briefing', err, 'The home page briefing could not be written.');
+  });
+  changed();
+}

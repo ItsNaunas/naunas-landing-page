@@ -10,12 +10,16 @@ import { refreshInsights } from '@/lib/performance';
 import { sendTodayBrief } from '@/lib/ops/todayBrief';
 import { buildAsks } from '@/lib/asks';
 import { pullDealStages } from '@/lib/crmSync';
+import { writeBriefing } from '@/lib/assistant';
+import { aiReady } from '@/lib/ai';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
 // the MailerLite sequences are switched on. Any failure → Telegram. Mondays also get an "all green"
 // (as does any manual run with ?ping=1, to test the alert path).
 // Vercel cron calls it with `Authorization: Bearer $CRON_SECRET`.
+
+export const maxDuration = 300; // checks + newsletter + briefing (one AI call)
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -60,6 +64,8 @@ export async function GET(req: NextRequest) {
   await buildAsks().catch((err) => alertError('Health: review/referral asks', err, 'Only today’s review or referral asks are missing.'));
   // Won/Lost set in HubSpot closes the firm in the dashboard too (also refreshed when Prospects opens).
   await pullDealStages().catch((err) => console.error('[health] deal stages', err));
+  // Start-of-day plan for the home page (Ask Naunas), from the fixed flags + numbers.
+  if (aiReady()) await writeBriefing().catch((err) => console.error('[health] briefing', err));
   // Morning outreach brief (this cron runs 06:00 UTC = 09:00 Zanzibar).
   await sendTodayBrief().catch((err) => console.error('[health] today brief', err));
   // Instagram insights for recent posts (the Content leaderboard). Quiet on failure: stats only.
