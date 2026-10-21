@@ -39,7 +39,11 @@ const H = 3_600_000;
 export function igSequence(all: Prospect[], demoMode = false, caps: { ig: number; li: number } = { ig: 10, li: 10 }) {
   const now = Date.now();
   const today = repDay();
-  const live = all.filter((p) => p.instagram && !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
+  // One channel per firm: only started firms (Start outreach) assigned to that channel. Older firms with no
+  // channel keep the multi-channel flow once started.
+  const started = (p: Prospect) => ['scheduled', 'active'].includes(p.status) || (p.status === 'drafted' && !!(p.warmedAt || p.dmSentAt));
+  const on = (p: Prospect, c: 'instagram' | 'linkedin') => (p.channel ? p.channel === c : true) && started(p);
+  const live = all.filter((p) => p.instagram && !p.igRepliedAt && on(p, 'instagram'));
   const sinceDm = (p: Prospect) => (p.dmSentAt ? now - Date.parse(p.dmSentAt) : 0);
   // New firms per channel per day: only offer as many fresh starts as today's target still allows.
   const igLeft = Math.max(0, caps.ig - all.filter((p) => p.warmedAt && repDay(p.warmedAt) === today).length);
@@ -66,9 +70,9 @@ export function igSequence(all: Prospect[], demoMode = false, caps: { ig: number
   const finished = live.filter((p) => p.fu2At).length;
   // LinkedIn cold sequence (owner profile found): starts the day after the Instagram opener (or straight away
   // for firms not on Instagram) so one person isn't hit on every channel the same day.
-  const liReady = (p: Prospect) => !!p.drafts?.research?.ownerLinkedin && (!p.instagram || !!p.dmSentAt);
+  const liReady = (p: Prospect) => !!p.drafts?.research?.ownerLinkedin && (p.channel === 'linkedin' || !p.instagram || !!p.dmSentAt);
   const before = (t?: string, days = 1) => !!t && now - Date.parse(t) >= days * 24 * H;
-  const liLive = all.filter((p) => !p.igRepliedAt && ['drafted', 'scheduled', 'active'].includes(p.status));
+  const liLive = all.filter((p) => !p.igRepliedAt && on(p, 'linkedin'));
   const linkedin = liLive.flatMap((p): { p: Prospect; step: 'engage' | 'connect' | 'dm' | 'fu' }[] => {
     if (!liReady(p)) return [];
     if (!p.liEngagedAt) return [{ p, step: 'engage' as const }];

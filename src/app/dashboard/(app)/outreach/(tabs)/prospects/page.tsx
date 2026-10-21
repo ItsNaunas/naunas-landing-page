@@ -1,5 +1,5 @@
 import { outreachData } from '@/lib/ops/more';
-import { getProspects } from '@/lib/outreach';
+import { getProspects, getSettings, channelsFor, suggestChannel } from '@/lib/outreach';
 import { domainOf } from '@/lib/hubspot';
 import { WAVE1 } from '@/config/wave1';
 import { demoOn } from '@/lib/ops/demo';
@@ -21,6 +21,8 @@ export default async function OutreachProspects() {
   const inFlight = [...q.scheduled, ...q.active];
   const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
   const all = demoOn() ? [] : await getProspects().catch(() => []);
+  const settings = demoOn() ? { igNew: 10, liNew: 10, dailyNew: 10 } : await getSettings();
+  const targets = { instagram: settings.igNew, linkedin: settings.liNew, email: settings.dailyNew };
   const have = new Set(all.flatMap((p) => [p.domain, p.instagram?.toLowerCase()].filter(Boolean) as string[]));
   const wave1Left = WAVE1.filter((w) => !have.has(domainOf(w.website) ?? '') && !have.has((w.instagram ?? '').toLowerCase())).length;
 
@@ -106,7 +108,7 @@ export default async function OutreachProspects() {
 
       {/* Drafts */}
       <SectionTitle>Drafts to approve · {q.drafted.length}</SectionTitle>
-      {q.drafted.length ? <div className="flex flex-col gap-3">{q.drafted.map((p) => <DraftEditor key={p.id} p={p} />)}</div>
+      {q.drafted.length ? <div className="flex flex-col gap-3">{q.drafted.map((p) => <DraftEditor key={p.id} p={p} options={channelsFor(p)} suggested={suggestChannel(p, all, targets)} />)}</div>
         : <Card><Empty>No drafts waiting. Approve firms above and drafts arrive after the next daily run.</Empty></Card>}
 
     </>

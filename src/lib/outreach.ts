@@ -15,6 +15,7 @@ import { hasPlaceholder } from '@/lib/dmLint';
 //   (the engine's rule: never write a firm to the CRM before it has actually been emailed).
 // Nothing sends unless settings.sending is on (switched from the dashboard).
 
+export type OutreachChannel = 'instagram' | 'linkedin' | 'email';
 export type ProspectStatus = 'new' | 'rejected' | 'approved' | 'drafted' | 'scheduled' | 'active' | 'replied' | 'finished' | 'stopped' | 'bounced';
 /** dms: up to 3 opener styles from the routine (A/B/C test); dm stays the single/edited opener. */
 export type Drafts = { dossier?: string; firstName?: string; subject: string; steps: string[]; dm?: string; dms?: { style: string; text: string }[]; research?: Research };
@@ -38,6 +39,9 @@ export type Prospect = {
   liEngagedAt?: string; liAt?: string; liDmAt?: string; liFuAt?: string; liSnoozeUntil?: string;
   /** When Naufal pressed Start outreach (emails then wait for the Instagram opener, see emailHold). */
   scheduledAt?: string;
+  /** The ONE channel this firm is worked on (2026-10-21: 10 different firms per channel per day, no overlap).
+   *  Unset = older firms on the multi-channel flow. */
+  channel?: OutreachChannel;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 /** dailyNew = new firms per day by EMAIL (first emails); igNew / liNew = new firms per day started on Instagram / LinkedIn. */
@@ -194,7 +198,7 @@ export async function ingestDrafts(): Promise<number> {
  * Returns why it's waiting, or null when E1 may go.
  */
 export function emailHold(p: Prospect, now = Date.now()): string | null {
-  if (!p.instagram || p.igRepliedAt) return null;
+  if (p.channel === 'email' || !p.instagram || p.igRepliedAt) return null;
   const DAY = 86_400_000;
   if (p.dmSentAt) return now - Date.parse(p.dmSentAt) < 2 * DAY ? 'E1 waits until 2 days after the Instagram opener' : null;
   if (p.scheduledAt && now - Date.parse(p.scheduledAt) >= 5 * DAY) return null;
@@ -248,7 +252,7 @@ export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunR
   let total = sentToday.length;
   let fresh = sentToday.filter((s) => s.step === 0).length;
   const queue = list
-    .filter((p) => (p.status === 'scheduled' || p.status === 'active') && p.email && p.drafts)
+    .filter((p) => (p.status === 'scheduled' || p.status === 'active') && p.email && p.drafts && (!p.channel || p.channel === 'email'))
     .sort((a, b) => (Date.parse(a.startedAt ?? a.createdAt) - Date.parse(b.startedAt ?? b.createdAt)));
   for (const p of queue) {
     if (total >= settings.dailyTotal) { result.skipped.push('Daily total cap reached'); break; }
@@ -342,4 +346,30 @@ export async function prospectIgReply(username: string): Promise<Prospect | null
     return next;
   }));
   return hit;
+}
+
+// ---------------------------------------------------------------- One channel per firm
+
+export const CHANNEL_LABEL: Record<OutreachChannel, string> = { instagram: 'Instagram', linkedin: 'LinkedIn', email: 'Email' };
+
+/** Channels this firm can actually be reached on. */
+export function channelsFor(p: Prospect): OutreachChannel[] {
+  return [
+    ...(p.instagram ? ['instagram' as const] : []),
+    ...(p.drafts?.research?.ownerLinkedin ? ['linkedin' as const] : []),
+    ...(p.email || p.drafts?.research?.ownerEmail ? ['email' as const] : []),
+  ];
+}
+
+/**
+ * Suggested channel at Start outreach: of the channels this firm has, the one with the most room left in
+ * today's target (counting firms already started or assigned today). LinkedIn wins ties: it's the scarcest.
+ */
+export function suggestChannel(p: Prospect, all: Prospect[], targets: Record<OutreachChannel, number>): OutreachChannel | null {
+  const options = channelsFor(p);
+  if (!options.length) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const assignedToday = (c: OutreachChannel) => all.filter((x) => x.channel === c && (x.scheduledAt ?? '').slice(0, 10) === today).length;
+  const order: OutreachChannel[] = ['linkedin', 'instagram', 'email'];
+  return options.sort((a, b) => (targets[b] - assignedToday(b)) - (targets[a] - assignedToday(a)) || order.indexOf(a) - order.indexOf(b))[0];
 }

@@ -28,7 +28,10 @@ export function SearchForm({ disabled }: { disabled?: boolean }) {
 }
 
 /** Review/edit the routine's drafts for one prospect, then schedule (E1 goes in the next daily send). */
-export function DraftEditor({ p }: { p: Prospect }) {
+const CH_LABEL = { instagram: 'Instagram', linkedin: 'LinkedIn', email: 'Email' } as const;
+type Ch = keyof typeof CH_LABEL;
+
+export function DraftEditor({ p, options = [], suggested = null }: { p: Prospect; options?: Ch[]; suggested?: Ch | null }) {
   const [state, action, pending] = useActionState<SaveState, FormData>(saveProspectDrafts, null);
   const [open, setOpen] = useState(false);
   const d = p.drafts;
@@ -80,7 +83,20 @@ export function DraftEditor({ p }: { p: Prospect }) {
           <p className="text-[11px] text-white/35">The footer “Naunas · naunas.co.uk / Not relevant? Reply "no"…” is added automatically. Sequences stop the moment they reply.</p>
           {state?.error && <p className="text-sm text-rose-300" role="alert">{state.error}</p>}
           {state?.savedAt && <p className="text-sm text-emerald-300" role="status">Saved ✓</p>}
-          <p className="text-[11px] text-white/40">Start outreach: Instagram goes first (warm-up, then the opener, both in Today’s list). Emails begin 2 days after the opener, straight away if they have no Instagram, or after 5 days if no opener has gone. No email address? It runs on Instagram and LinkedIn only.</p>
+          <fieldset className="flex flex-wrap items-center gap-2">
+            <legend className="text-xs text-white/60 mb-1.5">Work this firm on ONE channel (10 different firms per channel a day)</legend>
+            {(['instagram', 'linkedin', 'email'] as Ch[]).map((c) => {
+              const ok = options.includes(c);
+              return (
+                <label key={c} className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${ok ? 'border-white/15 cursor-pointer has-[:checked]:border-[#F2613F] has-[:checked]:bg-[#F2613F]/10' : 'border-white/[0.06] text-white/25 cursor-not-allowed'}`}>
+                  <input type="radio" name="channel" value={c} defaultChecked={c === suggested} disabled={!ok} className="accent-[#F2613F]" />
+                  {CH_LABEL[c]}{c === suggested ? <span className="text-[10px] text-white/45">suggested</span> : null}
+                  {!ok && <span className="text-[10px]">{c === 'linkedin' ? 'no profile found' : c === 'email' ? 'no email' : 'no account'}</span>}
+                </label>
+              );
+            })}
+          </fieldset>
+          <p className="text-[11px] text-white/40">Start outreach puts this firm in that channel’s cadence only: Instagram (warm-up, opener, day 5, day 9), LinkedIn (engage, connect, DM, follow-up) or Email (E1 to E4, sent for you). The suggestion is the channel with the most room left today.</p>
           <div className="flex flex-wrap justify-end gap-2">
             <button name="intent" value="save" disabled={pending} className="rounded-full border border-white/15 px-4 py-2 text-sm hover:border-white/30 disabled:opacity-40">Save draft</button>
             <button name="intent" value="schedule" disabled={pending} className={btn}>Start outreach</button>

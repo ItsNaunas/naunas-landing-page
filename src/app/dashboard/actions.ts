@@ -151,8 +151,16 @@ export async function saveProspectDrafts(_prev: SaveState, form: FormData): Prom
   const { hasPlaceholder } = await import('@/lib/dmLint');
   if (schedule && hasPlaceholder([subject, ...steps].join(' '))) return { error: 'An email still has placeholder text ([like this]). Fix it before scheduling.' };
   const list = await getProspects();
+  const { channelsFor } = await import('@/lib/outreach');
+  const current = list.find((p) => p.id === id);
+  const channel = str(form, 'channel') as 'instagram' | 'linkedin' | 'email' | '';
+  if (schedule && current) {
+    const options = channelsFor({ ...current, email: email || current.email });
+    if (!channel || !options.includes(channel)) return { error: options.length ? 'Pick the channel to work this firm on.' : 'No Instagram, LinkedIn or email found for this firm, so there is no way to reach it.' };
+    if (channel === 'email' && !(email || current.email)) return { error: 'Add their email address first.' };
+  }
   await saveProspects(list.map((p) => p.id !== id ? p : {
-    ...p, email: email || p.email,
+    ...p, email: email || p.email, ...(schedule && channel ? { channel } : {}),
     drafts: { ...(p.drafts ?? {}), subject, steps, dm: str(form, 'dm') || undefined, firstName: str(form, 'firstName') || p.drafts?.firstName, dossier: p.drafts?.dossier },
     status: schedule ? 'scheduled' : p.status === 'approved' ? 'drafted' : p.status,
     ...(schedule ? { scheduledAt: new Date().toISOString() } : {}),

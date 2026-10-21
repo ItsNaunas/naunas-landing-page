@@ -1,6 +1,6 @@
 import { outreachData } from '@/lib/ops/more';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { STEP_DAYS, STEP_LABEL, emailHold, type Prospect } from '@/lib/outreach';
+import { STEP_DAYS, STEP_LABEL, emailHold, CHANNEL_LABEL, type Prospect } from '@/lib/outreach';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
 import { Funnel } from '@/components/dashboard/charts';
@@ -15,16 +15,17 @@ const DAY = 86_400_000;
 const short = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 /** Instagram + LinkedIn steps for one firm: done (✓ date), due (date), or not applicable. */
 function Timeline({ p }: { p: Prospect }) {
+  if (p.channel === 'email') return <span className="text-[11px] text-white/40">Email only: E1 to E4</span>;
   if (!p.instagram && !p.drafts?.research?.ownerLinkedin) return <span className="text-[11px] text-white/30">No Instagram or LinkedIn: email only</span>;
   const dm = p.dmSentAt ? Date.parse(p.dmSentAt) : null;
   const steps: { label: string; done?: string; due?: number }[] = [
-    ...(p.instagram ? [
+    ...(p.instagram && p.channel !== 'linkedin' ? [
       { label: 'Warm-up', done: p.warmedAt },
       { label: 'Opener', done: p.dmSentAt, due: p.warmedAt ? Date.parse(p.warmedAt) + DAY : undefined },
       { label: 'Day 5', done: p.fu1At, due: dm ? dm + 3 * DAY : undefined },
       { label: 'Day 9', done: p.fu2At, due: dm ? dm + 7 * DAY : undefined },
     ] : []),
-    ...(p.drafts?.research?.ownerLinkedin ? [
+    ...(p.drafts?.research?.ownerLinkedin && p.channel !== 'instagram' ? [
       { label: 'LI engage', done: p.liEngagedAt, due: dm ? dm + DAY : undefined },
       { label: 'LI connect', done: p.liAt, due: p.liEngagedAt ? Date.parse(p.liEngagedAt) + DAY : undefined },
       { label: 'LI DM', done: p.liDmAt, due: p.liAt ? Date.parse(p.liAt) + 2 * DAY : undefined },
@@ -63,9 +64,9 @@ export default async function OutreachSequences() {
                 const due = p.startedAt && step < 4 ? new Date(Date.parse(p.startedAt) + STEP_DAYS[step] * 86_400_000).toISOString() : null;
                 return (
                   <tr key={p.id} className="border-t border-white/[0.04] first:border-t-0">
-                    <td className="px-5 py-3"><p className="font-medium">{p.firm}</p><p className="text-xs text-white/40">{p.email ?? (p.instagram ? `@${p.instagram}` : '')}</p><div className="mt-1.5"><Timeline p={p} /></div></td>
-                    <td className="px-3 py-3"><div className="flex gap-1" aria-label={`${step} of 4 sent`}>{[0, 1, 2, 3].map((i) => <span key={i} className={`h-1.5 w-6 rounded-full ${i < step ? 'bg-[#F2613F]' : 'bg-white/10'}`} />)}</div></td>
-                    <td className="px-3 py-3 text-xs text-white/55">{p.status === 'scheduled' ? (!p.email ? 'Instagram and LinkedIn only (no email)' : emailHold(p) ?? 'E1 in the next daily send') : due ? `${STEP_LABEL[step].split(' · ')[0]} ${untilOrAgo(due)}` : ''}</td>
+                    <td className="px-5 py-3"><p className="font-medium">{p.firm}{p.channel && <span className="ml-2 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10.5px] font-normal text-white/55">{CHANNEL_LABEL[p.channel]}</span>}</p><p className="text-xs text-white/40">{p.email ?? (p.instagram ? `@${p.instagram}` : '')}</p><div className="mt-1.5"><Timeline p={p} /></div></td>
+                    <td className="px-3 py-3">{(!p.channel || p.channel === 'email') && <div className="flex gap-1" aria-label={`${step} of 4 sent`}>{[0, 1, 2, 3].map((i) => <span key={i} className={`h-1.5 w-6 rounded-full ${i < step ? 'bg-[#F2613F]' : 'bg-white/10'}`} />)}</div>}</td>
+                    <td className="px-3 py-3 text-xs text-white/55">{p.channel && p.channel !== 'email' ? `${CHANNEL_LABEL[p.channel]} only` : p.status === 'scheduled' ? (!p.email ? 'Instagram and LinkedIn only (no email)' : emailHold(p) ?? 'E1 in the next daily send') : due ? `${STEP_LABEL[step].split(' · ')[0]} ${untilOrAgo(due)}` : ''}</td>
                     <td className="px-5 py-3 text-right">
                       <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="stopped" /><button className="text-xs text-white/40 hover:text-rose-300">Stop</button></ActionForm>
                     </td>
