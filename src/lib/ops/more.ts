@@ -60,7 +60,9 @@ function igSequence(all: Prospect[], demoMode = false) {
     return acc;
   }, {})).map(([style, v]) => ({ style, ...v, rate: v.sent ? Math.round((v.replied / v.sent) * 100) : 0 })).sort((a, b) => b.sent - a.sent);
   const finished = live.filter((p) => p.fu2At).length;
-  return { warm, openers, followups, waiting: Math.max(0, waiting), finished, styles };
+  // Day 10 (outreach plan): LinkedIn connect with a note, only where the routine found the owner's profile.
+  const linkedin = live.filter((p) => p.drafts?.research?.ownerLinkedin && !p.liAt && p.dmSentAt && sinceDm(p) >= 9 * 24 * H).slice(0, 5);
+  return { warm, openers, followups, linkedin, waiting: Math.max(0, waiting), finished, styles };
 }
 
 const demoReps = () => repsView({ [repDay()]: { warmups: 3, followups: 2, linkedin: 1, list: 5 } }, [], [], []);

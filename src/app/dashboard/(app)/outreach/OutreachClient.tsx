@@ -40,6 +40,18 @@ export function DraftEditor({ p }: { p: Prospect }) {
           <span className="block font-medium">{p.firm} <span className="text-white/35 text-xs font-normal">· {[p.city, p.state].filter(Boolean).join(', ')}</span></span>
           {d?.dossier && <span className="block text-xs text-white/50 mt-1">{d.dossier}</span>}
           {d?.subject && <span className="block text-xs text-[#ff8a6d] mt-1">Subject: {d.subject}</span>}
+          {d?.research && (
+            <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/45">
+              {d.research.owner && <span>Owner: <b className="text-white/70 font-normal">{d.research.owner}</b></span>}
+              {d.research.team && <span>Team: {d.research.team}</span>}
+              {d.research.segment && <span>{d.research.segment}</span>}
+              {d.research.fullService !== undefined && <span>{d.research.fullService ? 'Full-service' : 'Not full-service'}</span>}
+              {d.research.igLastPost && <span>IG last post: {d.research.igLastPost}</span>}
+              {d.research.minimum && <span>Minimum: {d.research.minimum}</span>}
+              {d.research.ownerLinkedin && <span>LinkedIn found</span>}
+              {d.research.gap && <span className="basis-full text-white/60">Gap: {d.research.gap}</span>}
+            </span>
+          )}
         </span>
         <span className="text-xs text-white/45">{open ? 'Close' : 'Review & schedule →'}</span>
       </button>

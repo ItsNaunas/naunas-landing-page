@@ -714,3 +714,25 @@ export async function markCheckin(form: FormData) {
   await recordCheckin({ id, channel: str(form, 'channel') || 'Instagram' }, outcome as 'sent' | 'snoozed' | 'dropped');
   changed();
 }
+
+// ---------------------------------------------------------------- Prospects: wave-1 import + LinkedIn step
+
+export async function importWave1() {
+  await requireSession();
+  const [{ importSeeds }, { WAVE1 }] = await Promise.all([import('@/lib/outreach'), import('@/config/wave1')]);
+  const n = await importSeeds(WAVE1, 'w1');
+  await logEvent('lead', `Imported ${n} wave-1 firms from the vault list`, '/dashboard/outreach/prospects');
+  changed();
+}
+
+/** Day-10 LinkedIn connect (with a note) sent by hand. Counts as a LinkedIn rep. */
+export async function markLiConnected(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const list = await getProspects();
+  if (!list.some((x) => x.id === id)) return;
+  await saveProspects(list.map((x) => (x.id === id ? { ...x, liAt: new Date().toISOString() } : x)));
+  const { bumpRep } = await import('@/lib/reps');
+  await bumpRep('linkedin', 1);
+  changed();
+}

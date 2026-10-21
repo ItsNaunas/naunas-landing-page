@@ -17,7 +17,13 @@ import { hasPlaceholder } from '@/lib/dmLint';
 
 export type ProspectStatus = 'new' | 'rejected' | 'approved' | 'drafted' | 'scheduled' | 'active' | 'replied' | 'finished' | 'stopped' | 'bounced';
 /** dms: up to 3 opener styles from the routine (A/B/C test); dm stays the single/edited opener. */
-export type Drafts = { dossier?: string; firstName?: string; subject: string; steps: string[]; dm?: string; dms?: { style: string; text: string }[] };
+export type Drafts = { dossier?: string; firstName?: string; subject: string; steps: string[]; dm?: string; dms?: { style: string; text: string }[]; research?: Research };
+/** What the routine found on each channel (ICP check, 2026-10-21). Only facts it actually saw; missing = unknown. */
+export type Research = {
+  owner?: string; ownerLinkedin?: string; companyLinkedin?: string; ownerEmail?: string;
+  igLastPost?: string; igFollowers?: number; team?: string; segment?: 'residential' | 'commercial' | 'both';
+  fullService?: boolean; portfolio?: string; enquiryPath?: string; gap?: string; minimum?: string; detail?: string;
+};
 export type Prospect = {
   id: string; firm: string; website?: string; domain?: string; email?: string; instagram?: string; phone?: string;
   city?: string; state?: string; country?: string; tz: string; rating?: number; reviews?: number; category?: string; mapsUrl?: string;
@@ -27,6 +33,8 @@ export type Prospect = {
   startedAt?: string; repliedAt?: string; dmSentAt?: string; warmedAt?: string; contactId?: string;
   /** Instagram sequence: opener style used, the two follow-ups, and a reply on Instagram (stops everything). */
   dmStyle?: string; fu1At?: string; fu2At?: string; igRepliedAt?: string;
+  /** LinkedIn connect request sent (day 10, only when the owner's profile was found). */
+  liAt?: string;
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 export type OutreachSettings = { sending: boolean; dailyNew: number; dailyTotal: number; monthlyCapUsd: number };
@@ -153,19 +161,23 @@ export async function syncSearches(): Promise<Search[]> {
 
 // ---------------------------------------------------------------- Drafts (written by the Claude routine)
 
-type DraftNote = { runAt: string; drafts: (Drafts & { id: string })[] };
+type DraftNote = { runAt: string; drafts?: (Drafts & { id: string })[]; skips?: { id: string; reason: string }[] };
 
 /** Pull new drafts the routine logged (NAUNAS_OUTREACH_DRAFTS notes) onto approved prospects. */
 export async function ingestDrafts(): Promise<number> {
   const notes = await opsNotes<DraftNote>(FUNNEL.routine.logEmail, 'NAUNAS_OUTREACH_DRAFTS', 10).catch(() => [] as DraftNote[]);
   const byId = new Map(notes.flatMap((n) => n.drafts ?? []).map((d) => [d.id, d]));
-  if (!byId.size) return 0;
+  // Firms the routine checked against the profile and skipped: out of the queue, with the reason kept.
+  const skipped = new Map(notes.flatMap((n) => n.skips ?? []).map((k) => [k.id, k.reason]));
+  if (!byId.size && !skipped.size) return 0;
   let n = 0;
   await updateJSON<Prospect[]>(P, [], (list) => list.map((p) => {
+    const why = skipped.get(p.id);
+    if (p.status === 'approved' && why && !byId.has(p.id)) { n++; return { ...p, status: 'rejected', fitWhy: [`Skipped after research: ${why.slice(0, 160)}`, ...p.fitWhy] }; }
     const d = byId.get(p.id);
     if (p.status !== 'approved' || !d || !d.subject || !d.steps?.length) return p;
     n++;
-    return { ...p, status: 'drafted', drafts: { dossier: d.dossier, firstName: d.firstName, subject: d.subject, steps: d.steps.slice(0, 4), dm: d.dm ?? d.dms?.[0]?.text, dms: d.dms?.slice(0, 3) } };
+    return { ...p, status: 'drafted', drafts: { dossier: d.dossier, firstName: d.firstName, subject: d.subject, steps: d.steps.slice(0, 4), dm: d.dm ?? d.dms?.[0]?.text, dms: d.dms?.slice(0, 3), research: d.research } };
   }));
   return n;
 }
@@ -261,4 +273,36 @@ export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunR
   await saveProspects(list);
 
   return result;
+}
+
+// ---------------------------------------------------------------- Import (vault wave-1 list)
+
+export type Seed = { firm: string; website: string; instagram?: string; email?: string; city: string; state: string; rating?: number; reviews?: number; note?: string };
+
+/** Add firms from a curated list as 'new' prospects (deduped by domain, Instagram and email). Returns how many were added. */
+export async function importSeeds(seeds: Seed[], source: string): Promise<number> {
+  let added = 0;
+  await updateJSON<Prospect[]>(P, [], (list) => {
+    const known = new Set(list.flatMap((p) => [p.domain, p.email, p.instagram?.toLowerCase()].filter(Boolean) as string[]));
+    const fresh: Prospect[] = [];
+    for (const s of seeds) {
+      const domain = domainOf(s.website);
+      const keys = [domain, s.email?.toLowerCase(), s.instagram?.toLowerCase()].filter(Boolean) as string[];
+      if (keys.some((k) => known.has(k))) continue;
+      keys.forEach((k) => known.add(k));
+      const fitWhy = ['Design practice (vault wave-1 list)', s.email ? 'Direct email' : 'No email found', s.instagram ? 'On Instagram' : 'No Instagram found'];
+      let fit = 1 + (s.email ? 2 : 0) + (s.instagram ? 2 : 0);
+      if ((s.reviews ?? 0) >= 10) { fit += 1; fitWhy.push(`${s.reviews} reviews`); }
+      if ((s.rating ?? 0) >= 4.5) { fit += 1; fitWhy.push(`${s.rating}★`); }
+      if (s.note) fitWhy.push(s.note);
+      fresh.push({
+        id: `${source}-${slug(s.firm)}`, firm: s.firm, website: s.website, domain, email: s.email?.toLowerCase(), instagram: s.instagram,
+        city: s.city, state: s.state, country: 'US', tz: US_TZ[s.state] ?? 'America/Chicago', rating: s.rating, reviews: s.reviews, category: 'Interior designer',
+        fit, fitWhy, searchId: source, createdAt: new Date().toISOString(), status: 'new',
+      });
+    }
+    added = fresh.length;
+    return [...list, ...fresh];
+  });
+  return added;
 }

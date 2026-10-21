@@ -5,7 +5,7 @@ import { lintMessage } from '@/lib/dmLint';
 import { dueAt, type Owed } from '@/lib/owed';
 import type { Prospect } from '@/lib/outreach';
 import type { WarmLead } from '@/lib/checkins';
-import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin } from '@/app/dashboard/actions';
+import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiConnected } from '@/app/dashboard/actions';
 import { CopyText } from './OutreachClient';
 import { CheckinMessage } from './CheckinMessage';
 
@@ -18,7 +18,7 @@ type Props = {
   owed: { toSend: Owed[]; toNudge: Owed[] };
   replies: Reply[];
   checkins: WarmLead[]; drafts: Record<string, { text: string }>;
-  ig: { warm: Prospect[]; openers: Prospect[]; followups: { p: Prospect; n: 1 | 2 }[] };
+  ig: { warm: Prospect[]; openers: Prospect[]; followups: { p: Prospect; n: 1 | 2 }[]; linkedin: Prospect[] };
   doneToday: number;
 };
 
@@ -57,7 +57,7 @@ const igChat = (h?: string) => (h ? `https://ig.me/m/${h}` : undefined);
 const igProfile = (h?: string) => (h ? `https://instagram.com/${h}` : undefined);
 
 export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Props) {
-  const left = owed.toSend.length + replies.length + owed.toNudge.length + checkins.length + ig.followups.length + ig.openers.length + ig.warm.length;
+  const left = owed.toSend.length + replies.length + owed.toNudge.length + checkins.length + ig.followups.length + ig.linkedin.length + ig.openers.length + ig.warm.length;
   const total = left + doneToday;
   return (
     <Card pad={false}>
@@ -138,11 +138,28 @@ export function TodayList({ owed, replies, checkins, drafts, ig, doneToday }: Pr
             })}
           </Group>
 
+          <Group n={5} title="LinkedIn connects" count={ig.linkedin.length}>
+            {ig.linkedin.map((p) => {
+              const r = p.drafts!.research!;
+              const first = (r.owner ?? p.drafts?.firstName ?? '').split(' ')[0];
+              const text = `Hi${first ? ` ${first}` : ''}, I’ve been following ${p.firm}’s work on Instagram for a while. Would be good to connect here too.`;
+              return (
+                <Row key={p.id} who={`${r.owner ?? p.firm}${r.owner ? ` · ${p.firm}` : ''}`} channel="LinkedIn" href={r.ownerLinkedin} hrefLabel="Open profile" task="Day 10: they’ve seen you on Instagram and email. Connect with this note (no pitch).">
+                  <Msg text={text} />
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <CopyText text={text} label="Copy note" />
+                    <ActionForm action={markLiConnected}><input type="hidden" name="id" value={p.id} /><button className={btn}>Connected</button></ActionForm>
+                  </div>
+                </Row>
+              );
+            })}
+          </Group>
+
           <Group n={6} title="Instagram openers" count={ig.openers.length}>
             {ig.openers.map((p) => {
               const options = p.drafts?.dms?.length ? p.drafts.dms : [{ style: 'default', text: p.drafts?.dm ?? '' }];
               return (
-                <Row key={p.id} who={`@${p.instagram}`} channel="Instagram" href={igChat(p.instagram)} task={`${p.firm}: you warmed them up yesterday. Pick one opener, send it, tick it.`}>
+                <Row key={p.id} who={`@${p.instagram}`} channel="Instagram" href={igChat(p.instagram)} task={`${p.firm}: you warmed them up yesterday. Pick one opener, send it, tick it.${p.drafts?.research?.gap ? ` Their gap: ${p.drafts.research.gap}` : ''}`}>
                   {options.map((o) => {
                     const lint = lintMessage(o.text, { dm: true });
                     return (

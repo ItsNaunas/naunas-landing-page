@@ -1,10 +1,14 @@
 import { outreachData } from '@/lib/ops/more';
+import { getProspects } from '@/lib/outreach';
+import { domainOf } from '@/lib/hubspot';
+import { WAVE1 } from '@/config/wave1';
+import { demoOn } from '@/lib/ops/demo';
 import { ActionForm } from '@/components/dashboard/ActionForm';
 import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
 import { Funnel } from '@/components/dashboard/charts';
-import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, bumpRepCount, markWarmed } from '@/app/dashboard/actions';
+import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, importWave1, bumpRepCount, markWarmed } from '@/app/dashboard/actions';
 import { SearchForm, DraftEditor, CopyText } from '@/app/dashboard/(app)/outreach/OutreachClient';
 
 export const dynamic = 'force-dynamic';
@@ -16,11 +20,26 @@ export default async function OutreachProspects() {
   const q = d.queue;
   const inFlight = [...q.scheduled, ...q.active];
   const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
+  const all = demoOn() ? [] : await getProspects().catch(() => []);
+  const have = new Set(all.flatMap((p) => [p.domain, p.instagram?.toLowerCase()].filter(Boolean) as string[]));
+  const wave1Left = WAVE1.filter((w) => !have.has(domainOf(w.website) ?? '') && !have.has((w.instagram ?? '').toLowerCase())).length;
 
   return (
     <>
-      <TabIntro sub="Find firms, approve the good ones, and review Claude’s drafts before anything is scheduled." />
+      <TabIntro sub="Who we target: US residential, full-service interior design firms, 3 to 20 people, owner-led. Find them, approve them, and the routine checks each one before writing drafts." />
       <Errors errors={d.errors} />
+      {wave1Left > 0 && (
+        <Card>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="font-medium">{wave1Left} firms from your wave-1 list aren’t in here yet</p>
+              <p className="text-sm text-white/50 mt-1">Austin, Nashville and Scottsdale interior designers you shortlisted on 5 Oct and never contacted. They land in “To review”; approve them and the routine researches each one against the profile.</p>
+            </div>
+            <ActionForm action={importWave1}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Import {wave1Left} firms</button></ActionForm>
+          </div>
+        </Card>
+      )}
+
       {/* Find */}
       <SectionTitle action={<ActionForm action={refreshProspectSearches}><button className="text-xs text-white/45 hover:text-white">Refresh searches ↻</button></ActionForm>}>Find prospects</SectionTitle>
       {!d.connected.apify ? <ConnectCard title="Connect Apify" why="Searches Google Maps for firms with a website, email and Instagram." steps={['Apify → Settings → Integrations → API token']} env="APIFY_TOKEN" /> : (
