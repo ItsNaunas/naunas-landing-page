@@ -29,7 +29,7 @@ export default async function System() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="font-medium text-sm">Store moved to Postgres</p>
-              <p className="text-xs text-white/50 mt-1">{last ? `Last copy ${ago(last.at)}: ${last.copied} copied, ${last.skipped} already there${last.failed.length ? `, ${last.failed.length} failed` : ''}.` : 'Copy every file still in Vercel Blob into Postgres once. Safe to run again: it only copies what isn’t there yet.'}</p>
+              <p className="text-xs text-white/65 mt-1">{last ? `Last copy ${ago(last.at)}: ${last.copied} copied, ${last.skipped} already there${last.failed.length ? `, ${last.failed.length} failed` : ''}.` : 'Copy every file still in Vercel Blob into Postgres once. Safe to run again: it only copies what isn’t there yet.'}</p>
               {!!last?.failed.length && <p className="text-xs text-rose-300 mt-1">{last.failed.slice(0, 3).join(' · ')}</p>}
             </div>
             <ActionForm action={migrateStore}><button className="rounded-lg bg-white text-black text-sm font-medium px-4 py-2">{last ? 'Copy again' : 'Copy from Blob'}</button></ActionForm>
@@ -45,7 +45,7 @@ export default async function System() {
               <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${c.ok ? 'bg-emerald-400' : 'bg-rose-400'}`} />
               <div className="min-w-0">
                 <p className="text-sm font-medium">{c.name}</p>
-                <p className={`text-xs mt-1 break-words ${c.ok ? 'text-white/40' : 'text-rose-300/85'}`}>{c.detail ?? (c.ok ? 'Working' : 'Failed')}</p>
+                <p className={`text-xs mt-1 break-words ${c.ok ? 'text-white/60' : 'text-rose-300/85'}`}>{c.detail ?? (c.ok ? 'Working' : 'Failed')}</p>
               </div>
             </div>
           </Card>

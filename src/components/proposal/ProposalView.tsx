@@ -12,7 +12,7 @@ export function ProposalView({ p, preview = false }: { p: Proposal; preview?: bo
       {preview && <p className="bg-[#F2613F] text-black text-center text-xs font-medium py-2 px-4">{p.published ? 'Preview. This is what the client sees; opens from here are not counted.' : 'Draft preview. Only you can see this until you press Publish.'}</p>}
       <header className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="text-lg font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Naunas<span className="text-[#F2613F]">.</span></Link>
-        <span className="text-xs text-white/40">Proposal{p.publishedAt ? ` · ${day(p.publishedAt)}` : ''}</span>
+        <span className="text-xs text-white/60">Proposal{p.publishedAt ? ` · ${day(p.publishedAt)}` : ''}</span>
       </header>
       <main className="max-w-3xl mx-auto px-6 pb-24">
         <p className="text-[11px] font-medium text-[#F2613F] uppercase tracking-widest mt-8">For {p.client}</p>
@@ -23,9 +23,9 @@ export function ProposalView({ p, preview = false }: { p: Proposal; preview?: bo
           <ol className="mt-10 flex flex-col gap-4">
             {p.blocks.map((b, i) => (
               <li key={i} className="p-5 md:p-6" style={{ border: '1px solid rgba(255,255,255,0.08)', background: '#111' }}>
-                <p className="text-[11px] uppercase tracking-widest text-white/40">{String(i + 1).padStart(2, '0')}</p>
+                <p className="text-[11px] uppercase tracking-widest text-white/60">{String(i + 1).padStart(2, '0')}</p>
                 <h2 className="text-xl font-semibold mt-2">{b.title}</h2>
-                <p className="text-[15px] leading-relaxed text-white/75 mt-3 whitespace-pre-line">{b.text}</p>
+                <p className="text-base leading-relaxed text-white/75 mt-3 whitespace-pre-line">{b.text}</p>
               </li>
             ))}
           </ol>
@@ -33,9 +33,9 @@ export function ProposalView({ p, preview = false }: { p: Proposal; preview?: bo
 
         {(p.timeline || p.price || p.deposit) && (
           <section className="mt-10 grid sm:grid-cols-3 gap-4">
-            {p.timeline && <div className="sm:col-span-3 p-5" style={{ borderLeft: '3px solid #F2613F', background: '#141110' }}><p className="text-xs uppercase tracking-wider text-[#F2613F]">Timeline</p><p className="text-[15px] leading-relaxed text-white/80 mt-2 whitespace-pre-line">{p.timeline}</p></div>}
-            {p.price && <div className="sm:col-span-2 p-5" style={{ border: '1px solid rgba(255,255,255,0.08)' }}><p className="text-xs uppercase tracking-wider text-white/40">Price</p><p className="text-2xl font-bold mt-2">{p.price}</p></div>}
-            {p.deposit && <div className="p-5" style={{ border: '1px solid rgba(255,255,255,0.08)' }}><p className="text-xs uppercase tracking-wider text-white/40">To start</p><p className="text-2xl font-bold mt-2">{p.deposit}</p></div>}
+            {p.timeline && <div className="sm:col-span-3 p-5" style={{ borderLeft: '3px solid #F2613F', background: '#141110' }}><p className="text-xs uppercase tracking-wider text-[#F2613F]">Timeline</p><p className="text-base leading-relaxed text-white/80 mt-2 whitespace-pre-line">{p.timeline}</p></div>}
+            {p.price && <div className="sm:col-span-2 p-5" style={{ border: '1px solid rgba(255,255,255,0.08)' }}><p className="text-xs uppercase tracking-wider text-white/60">Price</p><p className="text-2xl font-bold mt-2">{p.price}</p></div>}
+            {p.deposit && <div className="p-5" style={{ border: '1px solid rgba(255,255,255,0.08)' }}><p className="text-xs uppercase tracking-wider text-white/60">To start</p><p className="text-2xl font-bold mt-2">{p.deposit}</p></div>}
           </section>
         )}
 
@@ -51,18 +51,18 @@ export function ProposalView({ p, preview = false }: { p: Proposal; preview?: bo
               <p className="text-sm text-white/55 mt-2">{p.nextSteps}</p>
               {pay ? <a href={pay} className="mt-5 inline-flex items-center justify-center text-sm font-semibold text-[#0C0C0C] px-6 py-3 rounded-full" style={{ background: '#F2613F' }}>Pay the deposit{p.deposit ? ` · ${p.deposit}` : ''} →</a>
                 : <p className="text-sm text-white/55 mt-4">Naufal will send the deposit link to {p.email ?? 'you'} shortly.</p>}
-              <p className="text-xs text-white/35 mt-4">Payments are handled by Stripe. Nothing is built until the deposit is in.</p>
+              <p className="text-xs text-white/55 mt-4">Payments are handled by Stripe. Nothing is built until the deposit is in.</p>
             </>
           ) : (
             <>
               <h2 className="text-xl font-bold">Ready to go?</h2>
               <p className="text-sm text-white/55 mt-2">{p.nextSteps}{p.validUntil ? ` This proposal is open until ${p.validUntil}.` : ''}</p>
-              {preview ? <p className="text-xs text-white/40 mt-4 border border-dashed border-white/15 rounded-lg p-3">The accept form (name + agreement) and the deposit button appear here for the client.</p>
+              {preview ? <p className="text-xs text-white/60 mt-4 border border-dashed border-white/15 rounded-lg p-3">The accept form (name + agreement) and the deposit button appear here for the client.</p>
                 : <AcceptForm token={p.token} firstName={p.firstName} />}
             </>
           )}
         </section>
-        <p className="text-xs text-white/30 mt-8">Questions? Reply to the email this came with, or write to contact@naunas.co.uk. Everything is built in your own accounts and documented at handover.</p>
+        <p className="text-xs text-white/55 mt-8">Questions? Reply to the email this came with, or write to contact@naunas.co.uk. Everything is built in your own accounts and documented at handover.</p>
       </main>
     </div>
   );

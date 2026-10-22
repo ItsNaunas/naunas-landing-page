@@ -4,8 +4,8 @@ import { useActionState, useState } from 'react';
 import { startProspectSearch, saveProspectDrafts, type SaveState } from '../../actions';
 import type { Prospect } from '@/lib/outreach';
 
-const input = 'w-full rounded-lg bg-[#0C0C0C] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F2613F] placeholder:text-white/25';
-const btn = 'rounded-full bg-[#F2613F] hover:bg-[#ff7656] text-[#0C0C0C] text-sm font-semibold px-4 py-2 disabled:opacity-40';
+const input = 'w-full rounded-lg bg-[#0C0C0C] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F2613F] placeholder:text-white/50';
+const btn = 'rounded-full bg-[#F2613F] hover:bg-[#ff7553] text-[#0C0C0C] text-sm font-semibold px-4 py-2 disabled:opacity-40';
 
 export function SearchForm({ disabled }: { disabled?: boolean }) {
   const [state, action, pending] = useActionState<SaveState, FormData>(startProspectSearch, null);
@@ -40,11 +40,11 @@ export function DraftEditor({ p, options = [], suggested = null, defaultOpen = f
     <div className="rounded-2xl border border-white/[0.08] bg-[#141414]">
       <button type="button" onClick={() => setOpen((o) => !o)} className="w-full text-left px-5 py-4 flex flex-wrap items-center justify-between gap-3" aria-expanded={open}>
         <span className="min-w-0">
-          <span className="block font-medium">{p.firm} <span className="text-white/35 text-xs font-normal">· {[p.city, p.state].filter(Boolean).join(', ')}</span></span>
-          {d?.dossier && <span className="block text-xs text-white/50 mt-1">{d.dossier}</span>}
+          <span className="block font-medium">{p.firm} <span className="text-white/55 text-xs font-normal">· {[p.city, p.state].filter(Boolean).join(', ')}</span></span>
+          {d?.dossier && <span className="block text-xs text-white/65 mt-1">{d.dossier}</span>}
           {d?.subject && <span className="block text-xs text-[#ff8a6d] mt-1">Subject: {d.subject}</span>}
           {d?.research && (
-            <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/45">
+            <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/60">
               {d.research.owner && <span>Owner: <b className="text-white/70 font-normal">{d.research.owner}</b></span>}
               {d.research.team && <span>Team: {d.research.team}</span>}
               {d.research.segment && <span>{d.research.segment}</span>}
@@ -56,7 +56,7 @@ export function DraftEditor({ p, options = [], suggested = null, defaultOpen = f
             </span>
           )}
         </span>
-        <span className="text-xs text-white/45">{open ? 'Close' : 'Review & start →'}</span>
+        <span className="text-xs text-white/60">{open ? 'Close' : 'Review & start →'}</span>
       </button>
       {open && (
         <form action={action} className="px-5 pb-5 flex flex-col gap-3 border-t border-white/[0.06] pt-4">
@@ -80,7 +80,7 @@ export function DraftEditor({ p, options = [], suggested = null, defaultOpen = f
           <label className="flex flex-col gap-1.5 text-xs text-white/60">Instagram DM opener (you send this by hand)
             <textarea name="dm" rows={3} defaultValue={d?.dm} className={`${input} resize-y`} />
           </label>
-          <p className="text-[11px] text-white/35">The footer “Naunas · naunas.co.uk / Not relevant? Reply "no"…” is added automatically. Sequences stop the moment they reply.</p>
+          <p className="text-[11px] text-white/55">The footer “Naunas · naunas.co.uk / Not relevant? Reply "no"…” is added automatically. Sequences stop the moment they reply.</p>
           {state?.error && <p className="text-sm text-rose-300" role="alert">{state.error}</p>}
           {state?.savedAt && <p className="text-sm text-emerald-300" role="status">Saved ✓</p>}
           <fieldset className="flex flex-wrap items-center gap-2">
@@ -88,15 +88,15 @@ export function DraftEditor({ p, options = [], suggested = null, defaultOpen = f
             {(['instagram', 'linkedin', 'email'] as Ch[]).map((c) => {
               const ok = options.includes(c);
               return (
-                <label key={c} className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${ok ? 'border-white/15 cursor-pointer has-[:checked]:border-[#F2613F] has-[:checked]:bg-[#F2613F]/10' : 'border-white/[0.06] text-white/25 cursor-not-allowed'}`}>
+                <label key={c} className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${ok ? 'border-white/15 cursor-pointer has-[:checked]:border-[#F2613F] has-[:checked]:bg-[#F2613F]/10' : 'border-white/[0.06] text-white/55 cursor-not-allowed'}`}>
                   <input type="radio" name="channel" value={c} defaultChecked={c === suggested} disabled={!ok} className="accent-[#F2613F]" />
-                  {CH_LABEL[c]}{c === suggested ? <span className="text-[10px] text-white/45">suggested</span> : null}
-                  {!ok && <span className="text-[10px]">{c === 'linkedin' ? 'no profile found' : c === 'email' ? 'no email' : 'no account'}</span>}
+                  {CH_LABEL[c]}{c === suggested ? <span className="text-[11px] text-white/60">suggested</span> : null}
+                  {!ok && <span className="text-[11px]">{c === 'linkedin' ? 'no profile found' : c === 'email' ? 'no email' : 'no account'}</span>}
                 </label>
               );
             })}
           </fieldset>
-          <p className="text-[11px] text-white/40">Start outreach puts this firm in that channel’s cadence only: Instagram (warm-up, opener, day 5, day 9), LinkedIn (engage, connect, DM, follow-up) or Email (E1 to E4, sent for you). The suggestion is the channel with the most room left today.</p>
+          <p className="text-[11px] text-white/60">Start outreach puts this firm in that channel’s cadence only: Instagram (warm-up, opener, day 5, day 9), LinkedIn (engage, connect, DM, follow-up) or Email (E1 to E4, sent for you). The suggestion is the channel with the most room left today.</p>
           <div className="flex flex-wrap justify-end gap-2">
             <button name="intent" value="save" disabled={pending} className="rounded-full border border-white/15 px-4 py-2 text-sm hover:border-white/30 disabled:opacity-40">Save draft</button>
             <button name="intent" value="schedule" disabled={pending} className={btn}>Start outreach</button>

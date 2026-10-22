@@ -49,7 +49,7 @@ export default async function Connections() {
                 <p className="font-medium">{a.name}</p>
                 <Badge tone={a.tone}>{a.state}</Badge>
               </div>
-              <p className="text-xs text-white/45 mt-2">{a.note}</p>
+              <p className="text-xs text-white/60 mt-2">{a.note}</p>
               <p className="text-xs text-[#ff8a6d] mt-3 group-hover:underline">{a.name === 'Instagram' ? 'See the checks →' : 'Manage connection →'}</p>
             </Card>
           </Link>
@@ -64,8 +64,8 @@ export default async function Connections() {
             {integrations().map((i) => (
               <tr key={i.name} className="border-t border-white/[0.04] first:border-t-0">
                 <td className="px-5 py-3 font-medium whitespace-nowrap">{i.name}</td>
-                <td className="px-3 py-3 text-white/50 min-w-[160px]">{i.role}</td>
-                <td className="px-3 py-3 hidden md:table-cell"><code className="text-[11px] text-white/40">{i.env}</code></td>
+                <td className="px-3 py-3 text-white/65 min-w-[160px]">{i.role}</td>
+                <td className="px-3 py-3 hidden md:table-cell"><code className="text-[11px] text-white/60">{i.env}</code></td>
                 <td className="px-5 py-3 text-right"><Badge tone={i.ok ? 'good' : 'muted'}>{i.ok ? 'Connected' : 'Not connected'}</Badge></td>
               </tr>
             ))}
@@ -73,7 +73,7 @@ export default async function Connections() {
         </table>
         </div>
       </Card>
-      <p className="text-xs text-white/30 -mt-2">Setup steps for anything not connected are in docs/client-system/RUNBOOK.md. Keys live in Vercel and Bitwarden.</p>
+      <p className="text-xs text-white/55 -mt-2">Setup steps for anything not connected are in docs/client-system/RUNBOOK.md. Keys live in Vercel and Bitwarden.</p>
     </>
   );
 }

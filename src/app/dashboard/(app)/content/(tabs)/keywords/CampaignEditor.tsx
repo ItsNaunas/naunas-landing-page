@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState } from 'react';
 import { saveCampaign, type SaveState } from '@/app/dashboard/actions';
 import type { Campaign } from '@/lib/campaigns';
 
-const input = 'w-full rounded-lg bg-[#0C0C0C] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F2613F] placeholder:text-white/25';
+const input = 'w-full rounded-lg bg-[#0C0C0C] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F2613F] placeholder:text-white/50';
 const NEW_MESSAGE = 'Here you go 👇\n\n{link}\n\nAny questions, just reply here.';
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
@@ -12,7 +12,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <label className="flex flex-col gap-1.5">
       <span className="text-xs font-medium text-white/70">{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-white/35">{hint}</span>}
+      {hint && <span className="text-[11px] text-white/55">{hint}</span>}
     </label>
   );
 }
@@ -40,7 +40,7 @@ export function CampaignEditor({ campaign, site, disabled }: { campaign?: Campai
       <button type="button" disabled={disabled} onClick={() => setOpen(true)}
         className={campaign
           ? 'text-xs text-white/55 hover:text-white disabled:opacity-30'
-          : 'rounded-full bg-[#F2613F] hover:bg-[#ff7656] text-[#0C0C0C] text-sm font-semibold px-4 py-2 disabled:opacity-40'}>
+          : 'rounded-full bg-[#F2613F] hover:bg-[#ff7553] text-[#0C0C0C] text-sm font-semibold px-4 py-2 disabled:opacity-40'}>
         {campaign ? 'Edit' : '+ New campaign'}
       </button>
 
@@ -50,7 +50,7 @@ export function CampaignEditor({ campaign, site, disabled }: { campaign?: Campai
           <form action={action} className="relative w-full max-w-[560px] h-full overflow-y-auto bg-[#111] border-l border-white/10 flex flex-col">
             <div className="sticky top-0 z-10 bg-[#111]/95 backdrop-blur px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <p className="font-semibold">{campaign ? `Edit “${campaign.name}”` : 'New keyword campaign'}</p>
-              <button type="button" onClick={() => setOpen(false)} className="text-white/40 hover:text-white text-xl leading-none" aria-label="Close">×</button>
+              <button type="button" onClick={() => setOpen(false)} className="text-white/60 hover:text-white text-xl leading-none" aria-label="Close">×</button>
             </div>
 
             <div className="px-6 py-5 flex flex-col gap-5">
@@ -81,7 +81,7 @@ export function CampaignEditor({ campaign, site, disabled }: { campaign?: Campai
               </Field>
 
               <div className="rounded-2xl bg-black border border-white/[0.08] p-4 flex flex-col gap-3">
-                <p className="text-[11px] uppercase tracking-wider text-white/35">Preview</p>
+                <p className="text-[11px] uppercase tracking-wider text-white/55">Preview</p>
                 <div className="self-end max-w-[85%] rounded-2xl rounded-br-md bg-[#3797F0] px-3.5 py-2 text-sm">{firstKeyword}</div>
                 <div className="self-start max-w-[85%] rounded-2xl rounded-bl-md bg-[#262626] px-3.5 py-2.5 text-sm whitespace-pre-wrap break-words">
                   {message.split('{link}').map((part, i, arr) => (
@@ -103,7 +103,7 @@ export function CampaignEditor({ campaign, site, disabled }: { campaign?: Campai
 
             <div className="sticky bottom-0 mt-auto bg-[#111]/95 backdrop-blur px-6 py-4 border-t border-white/[0.06] flex justify-end gap-3">
               <button type="button" onClick={() => setOpen(false)} className="rounded-full px-4 py-2 text-sm text-white/60 hover:text-white">Cancel</button>
-              <button disabled={pending} className="rounded-full bg-[#F2613F] hover:bg-[#ff7656] text-[#0C0C0C] text-sm font-semibold px-5 py-2 disabled:opacity-50">
+              <button disabled={pending} className="rounded-full bg-[#F2613F] hover:bg-[#ff7553] text-[#0C0C0C] text-sm font-semibold px-5 py-2 disabled:opacity-50">
                 {pending ? 'Saving…' : campaign ? 'Save changes' : 'Create campaign'}
               </button>
             </div>

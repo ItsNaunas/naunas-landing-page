@@ -48,9 +48,9 @@ export function FocusShell({ children }: { children: React.ReactNode }) {
           {focus ? 'Focus mode on' : 'Focus mode: one at a time'}
         </button>
         {focus && pos.total > 1 && <button type="button" onClick={skip} className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:border-white/30">Skip for now ›</button>}
-        {focus && pos.total > 0 && <span className="text-xs text-white/40">{pos.total} left today</span>}
+        {focus && pos.total > 0 && <span className="text-xs text-white/60">{pos.total} left today</span>}
       </div>
-      <div ref={ref} className={focus ? '[&_[data-item]]:py-5 [&_[data-item]_p]:text-[15px]' : ''}>{children}</div>
+      <div ref={ref} className={focus ? '[&_[data-item]]:py-5 [&_[data-item]_p]:text-base' : ''}>{children}</div>
     </div>
   );
 }

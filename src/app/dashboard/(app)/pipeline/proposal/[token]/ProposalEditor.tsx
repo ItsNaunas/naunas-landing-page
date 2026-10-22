@@ -6,7 +6,7 @@ import type { Proposal } from '@/lib/proposal';
 import { CopyText } from '@/app/dashboard/(app)/outreach/OutreachClient';
 
 const field = 'w-full rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-[13px] text-white';
-const label = 'flex flex-col gap-1 text-[11px] text-white/45';
+const label = 'flex flex-col gap-1 text-[11px] text-white/60';
 
 /** Reload after a successful action so the server-rendered page shows the saved proposal (see ActionForm). */
 function useReloadOn(state: ReportState) {
@@ -26,10 +26,10 @@ export function ProposalEditor({ p, url, ai, autoLink = false }: { p: Proposal; 
       <form action={save} className="flex flex-col gap-4 rounded-2xl border border-white/[0.07] bg-[#121212] p-5">
         <input type="hidden" name="token" value={p.token} />
         {locked && <p className="rounded-lg border border-emerald-400/25 bg-emerald-400/[0.06] px-3 py-2 text-xs text-emerald-200">Accepted, so the scope and price are locked. You can still add or change the deposit link.</p>}
-        <label className={label}>Title<input name="title" defaultValue={p.title} className={`${field} text-[15px] font-medium`} disabled={locked} /></label>
+        <label className={label}>Title<input name="title" defaultValue={p.title} className={`${field} text-base font-medium`} disabled={locked} /></label>
         <label className={label}>Intro (2-3 sentences, their problem in their words)<textarea name="intro" defaultValue={p.intro} rows={3} className={field} disabled={locked} /></label>
         <div className="flex flex-col gap-3">
-          <p className="text-[11px] text-white/45">Building blocks (what gets built and what changes for them). Empty rows are dropped.</p>
+          <p className="text-[11px] text-white/60">Building blocks (what gets built and what changes for them). Empty rows are dropped.</p>
           {blocks.map((b, i) => (
             <fieldset key={i} className="rounded-xl border border-white/[0.08] p-3 flex flex-col gap-2">
               <input name={`b${i}_title`} defaultValue={b.title} placeholder={i === p.blocks.length ? 'Add another block…' : 'Block title'} className={`${field} font-medium`} disabled={locked} aria-label={`Block ${i + 1} title`} />
@@ -52,7 +52,7 @@ export function ProposalEditor({ p, url, ai, autoLink = false }: { p: Proposal; 
           {p.published
             ? <button name="intent" value="unpublish" disabled={saving || locked} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/60 hover:text-white disabled:opacity-50">Take down</button>
             : <button name="intent" value="publish" disabled={saving} className="rounded-lg bg-white text-black px-4 py-2 text-sm font-medium disabled:opacity-50">Save and publish link</button>}
-          {saving && <span className="text-xs text-white/45">Saving…</span>}
+          {saving && <span className="text-xs text-white/60">Saving…</span>}
           {saved.error && <span className="text-xs text-rose-300">{saved.error}</span>}
         </div>
       </form>
@@ -63,7 +63,7 @@ export function ProposalEditor({ p, url, ai, autoLink = false }: { p: Proposal; 
           return (
             <div className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.05] p-4 flex flex-col gap-2">
               <p className="font-medium text-sm">Opened, not accepted: follow up</p>
-              <p className="text-[12.5px] text-white/75 whitespace-pre-wrap">{text}</p>
+              <p className="text-[13px] text-white/75 whitespace-pre-wrap">{text}</p>
               <CopyText text={text} label="Copy follow-up" />
             </div>
           );
@@ -71,24 +71,24 @@ export function ProposalEditor({ p, url, ai, autoLink = false }: { p: Proposal; 
         {p.recap && (
           <div className="rounded-2xl border border-[#F2613F]/25 bg-[#F2613F]/[0.05] p-4 flex flex-col gap-2">
             <p className="font-medium text-sm">Same-day recap email (draft)</p>
-            <p className="text-[12.5px] text-white/75 whitespace-pre-wrap">{p.recap}</p>
+            <p className="text-[13px] text-white/75 whitespace-pre-wrap">{p.recap}</p>
             <CopyText text={p.recap} label="Copy recap" />
           </div>
         )}
         <div className="rounded-2xl border border-white/[0.07] bg-[#121212] p-4 flex flex-col gap-2">
           <p className="font-medium text-sm">{p.published ? 'Live link' : 'Not published yet'}</p>
-          {p.published ? <><p className="text-xs text-white/50 break-all">{url}</p><CopyText text={url} label="Copy link" /></> : <p className="text-xs text-white/50">Publishing notes the link on the HubSpot deal and moves it to Scope sent. Nothing is emailed; you send the link.</p>}
+          {p.published ? <><p className="text-xs text-white/65 break-all">{url}</p><CopyText text={url} label="Copy link" /></> : <p className="text-xs text-white/65">Publishing notes the link on the HubSpot deal and moves it to Scope sent. Nothing is emailed; you send the link.</p>}
         </div>
         <div className="rounded-2xl border border-white/[0.07] bg-[#121212] p-4 flex flex-col gap-2">
           <p className="font-medium text-sm">Draft with AI</p>
-          <p className="text-xs text-white/50">Writes the title, intro, blocks and timeline from this lead’s research brief, booking answers and call notes. Never the price. Replaces what’s in the form.</p>
+          <p className="text-xs text-white/65">Writes the title, intro, blocks and timeline from this lead’s research brief, booking answers and call notes. Never the price. Replaces what’s in the form.</p>
           <form action={draft}>
             <input type="hidden" name="token" value={p.token} />
             <button disabled={drafting || !ai || locked} className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553] disabled:opacity-50">{drafting ? 'Writing… (about 20 seconds)' : ai ? 'Draft the scope' : 'Needs OPENAI_API_KEY'}</button>
           </form>
           {drafted.error && <p className="text-xs text-rose-300">{drafted.error}</p>}
         </div>
-        <div className="rounded-2xl border border-white/[0.07] bg-[#121212] p-4 text-xs text-white/50 flex flex-col gap-1.5">
+        <div className="rounded-2xl border border-white/[0.07] bg-[#121212] p-4 text-xs text-white/65 flex flex-col gap-1.5">
           <p className="font-medium text-sm text-white">How it flows</p>
           <p>1. They open the link: counted, noted on the deal, Telegram the first time.</p>
           <p>2. They type their name and accept: noted on the deal, Telegram.</p>

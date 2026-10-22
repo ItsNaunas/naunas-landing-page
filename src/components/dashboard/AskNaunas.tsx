@@ -36,7 +36,7 @@ export function Markdown({ text }: { text: string }) {
     if (t) blocks.push(<p key={`p${blocks.length}`}>{inline(t.replace(/^#+\s*/, ''), `p${blocks.length}`)}</p>);
   }
   flush();
-  return <div className="flex flex-col gap-2 text-[13.5px] leading-relaxed text-white/80">{blocks}</div>;
+  return <div className="flex flex-col gap-2 text-sm leading-relaxed text-white/80">{blocks}</div>;
 }
 
 export function AskNaunas() {
@@ -77,9 +77,9 @@ export function AskNaunas() {
           <button className="absolute inset-0 bg-black/50" aria-label="Close" onClick={() => setOpen(false)} />
           <div className="relative flex h-full w-full sm:w-[440px] flex-col border-l border-white/10 bg-[#121212]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] px-4 py-3">
-              <p className="font-medium">Ask Naunas <span className="hidden sm:inline text-xs font-normal text-white/40">· reads everything, changes nothing</span></p>
+              <p className="font-medium">Ask Naunas <span className="hidden sm:inline text-xs font-normal text-white/60">· reads everything, changes nothing</span></p>
               <div className="flex items-center gap-3">
-                {msgs.length > 0 && <button onClick={() => { setMsgs([]); setError(''); }} className="text-xs text-white/45 hover:text-white whitespace-nowrap">New chat</button>}
+                {msgs.length > 0 && <button onClick={() => { setMsgs([]); setError(''); }} className="text-xs text-white/60 hover:text-white whitespace-nowrap">New chat</button>}
                 <button onClick={() => setOpen(false)} className="text-white/60 hover:text-white text-lg leading-none" aria-label="Close panel">×</button>
               </div>
             </div>
@@ -93,7 +93,7 @@ export function AskNaunas() {
                 </div>
               )}
               {msgs.map((m, i) => m.role === 'user' ? (
-                <p key={i} className="self-end max-w-[85%] rounded-2xl rounded-br-md bg-white/[0.08] px-3.5 py-2 text-[13.5px]">{m.content}</p>
+                <p key={i} className="self-end max-w-[85%] rounded-2xl rounded-br-md bg-white/[0.08] px-3.5 py-2 text-sm">{m.content}</p>
               ) : (
                 <div key={i} className="flex flex-col gap-2.5">
                   <Markdown text={m.content} />
@@ -106,13 +106,13 @@ export function AskNaunas() {
                   )}
                 </div>
               ))}
-              {busy && <p className="text-xs text-white/45">Looking through your dashboard…</p>}
+              {busy && <p className="text-xs text-white/60">Looking through your dashboard…</p>}
               {error && <p className="text-xs text-rose-300">{error}</p>}
               <div ref={end} />
             </div>
             <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="border-t border-white/[0.07] p-3 flex gap-2">
               <input value={text} onChange={(e) => setText(e.target.value)} placeholder="What am I missing this week?" aria-label="Your question" maxLength={1000}
-                className="flex-1 min-w-0 rounded-xl bg-white/[0.05] border border-white/10 px-3 py-2.5 text-[16px] sm:text-sm text-white placeholder:text-white/30" />
+                className="flex-1 min-w-0 rounded-xl bg-white/[0.05] border border-white/10 px-3 py-2.5 text-[16px] sm:text-sm text-white placeholder:text-white/50" />
               <button disabled={busy || !text.trim()} className="rounded-xl bg-[#F2613F] px-4 text-sm font-medium text-white disabled:opacity-40">Ask</button>
             </form>
           </div>

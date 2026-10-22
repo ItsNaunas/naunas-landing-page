@@ -54,7 +54,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
           <div className="overflow-x-auto">
             <table className="w-full text-[13px] min-w-[820px]">
               <thead>
-                <tr className="text-left text-xs text-white/35 border-b border-white/[0.05]">
+                <tr className="text-left text-xs text-white/55 border-b border-white/[0.05]">
                   <th className="font-normal px-5 py-3">Person</th><th className="font-normal px-3 py-3">Source</th><th className="font-normal px-3 py-3">Priority</th>
                   <th className="font-normal px-3 py-3">Stage</th><th className="font-normal px-3 py-3">Client value</th>
                   <th className="font-normal px-3 py-3 text-right">Came in</th><th className="font-normal px-5 py-3 text-right">Last activity</th>
@@ -66,22 +66,22 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
                     <td className="px-5 py-3">
                       <a href={`/dashboard/leads/${r.id}`} className="block group">
                         <span className="font-medium group-hover:text-[#F2613F]">{r.name}</span>
-                        <span className="block text-xs text-white/40 truncate max-w-[260px]">{r.business || r.email || (r.ig ? `@${r.ig}` : '')}</span>
+                        <span className="block text-xs text-white/60 truncate max-w-[260px]">{r.business || r.email || (r.ig ? `@${r.ig}` : '')}</span>
                       </a>
                     </td>
                     <td className="px-3 py-3"><Badge>{SOURCE_LABEL[r.source] ?? r.source}</Badge></td>
-                    <td className="px-3 py-3">{PRIORITY[r.priority] ? <Badge tone={PRIORITY[r.priority].tone}>{PRIORITY[r.priority].label}</Badge> : <span className="text-white/25">—</span>}</td>
-                    <td className="px-3 py-3">{r.stage ? <span className={r.stage === '6213348572' ? 'text-emerald-300' : 'text-white/80'}>{STAGE_LABEL[r.stage] ?? '—'}{r.amount ? <span className="text-white/40"> · {gbp(r.amount)}</span> : null}</span> : <span className="text-white/30">No deal</span>}</td>
-                    <td className="px-3 py-3 text-white/70">{r.clientValue || <span className="text-white/25">—</span>}</td>
-                    <td className="px-3 py-3 text-right text-white/50 tabular-nums whitespace-nowrap">{ago(r.createdAt)}</td>
-                    <td className="px-5 py-3 text-right text-white/50 tabular-nums whitespace-nowrap">{ago(r.lastActivity)}</td>
+                    <td className="px-3 py-3">{PRIORITY[r.priority] ? <Badge tone={PRIORITY[r.priority].tone}>{PRIORITY[r.priority].label}</Badge> : <span className="text-white/55">—</span>}</td>
+                    <td className="px-3 py-3">{r.stage ? <span className={r.stage === '6213348572' ? 'text-emerald-300' : 'text-white/80'}>{STAGE_LABEL[r.stage] ?? '—'}{r.amount ? <span className="text-white/60"> · {gbp(r.amount)}</span> : null}</span> : <span className="text-white/55">No deal</span>}</td>
+                    <td className="px-3 py-3 text-white/70">{r.clientValue || <span className="text-white/55">—</span>}</td>
+                    <td className="px-3 py-3 text-right text-white/65 tabular-nums whitespace-nowrap">{ago(r.createdAt)}</td>
+                    <td className="px-5 py-3 text-right text-white/65 tabular-nums whitespace-nowrap">{ago(r.lastActivity)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : <Empty>{sp.q ? 'Nobody matches that search.' : 'No leads in this range yet. Try a longer range.'}</Empty>}
-        <p className="px-5 py-3 text-xs text-white/30 border-t border-white/[0.04]">Showing {list.rows.length} of {list.total}. Test sign-ups (its.naunas+…) are hidden unless you search for them.</p>
+        <p className="px-5 py-3 text-xs text-white/55 border-t border-white/[0.04]">Showing {list.rows.length} of {list.total}. Test sign-ups (its.naunas+…) are hidden unless you search for them.</p>
       </Card>
 
       {p && (
@@ -90,7 +90,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
           title={
             <div>
               <p className="text-lg font-semibold truncate">{p.name}</p>
-              <p className="text-xs text-white/45 truncate">{[p.business, p.email, p.ig && `@${p.ig}`].filter(Boolean).join(' · ')}</p>
+              <p className="text-xs text-white/60 truncate">{[p.business, p.email, p.ig && `@${p.ig}`].filter(Boolean).join(' · ')}</p>
             </div>
           }
           footer={
@@ -113,7 +113,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
 
           {p.notWorking && (
             <blockquote className="rounded-xl bg-white/[0.03] border-l-2 border-[#F2613F] px-4 py-3 text-sm text-white/80 whitespace-pre-wrap">
-              <span className="block text-[11px] text-white/40 mb-1">In their words</span>{p.notWorking}
+              <span className="block text-[11px] text-white/60 mb-1">In their words</span>{p.notWorking}
             </blockquote>
           )}
 
@@ -129,24 +129,24 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
           </dl>
 
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/40 mb-3">Timeline</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/60 mb-3">Timeline</p>
             {p.timeline.length ? (
               <ol className="relative border-l border-white/10 ml-3.5 flex flex-col gap-5">
                 {p.timeline.map((t, i) => (
                   <li key={i} className="pl-6 relative">
                     <span className="absolute -left-3.5 top-0 size-7 rounded-lg bg-[#1b1b1b] border border-white/10 grid place-items-center text-[12px] text-white/60" aria-hidden>{TL_ICON[t.kind] ?? '•'}</span>
                     <p className="text-[13px] text-white/90">{t.title}</p>
-                    <p className="text-[11px] text-white/35">{when(t.at)}</p>
+                    <p className="text-[11px] text-white/55">{when(t.at)}</p>
                     {t.body && t.body !== t.title && (
                       <details className="mt-1.5">
-                        <summary className="cursor-pointer text-xs text-white/45 hover:text-white">Show note</summary>
+                        <summary className="cursor-pointer text-xs text-white/60 hover:text-white">Show note</summary>
                         <p className="mt-2 text-[13px] text-white/70 whitespace-pre-wrap rounded-lg bg-white/[0.03] p-3">{t.body}</p>
                       </details>
                     )}
                   </li>
                 ))}
               </ol>
-            ) : <p className="text-sm text-white/40">No history yet.</p>}
+            ) : <p className="text-sm text-white/60">No history yet.</p>}
           </div>
         </Drawer>
       )}

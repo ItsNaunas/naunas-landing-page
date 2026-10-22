@@ -38,11 +38,11 @@ function PostRow({ r }: { r: IndexRow }) {
   return (
     <li>
       <Link href={`/dashboard/content/${r.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02]">
-        <span className="text-xs text-white/40 w-[92px] shrink-0 tabular-nums">{new Date(r.when).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+        <span className="text-xs text-white/60 w-[92px] shrink-0 tabular-nums">{new Date(r.when).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
         <span className="flex-1 min-w-0 truncate text-[13px] text-white/85">{r.idea || 'Untitled'}</span>
         <span className="hidden sm:flex gap-2 shrink-0">
           {CHANNELS.filter((c) => r.channels[c] && r.channels[c] !== 'off').map((c) => (
-            <span key={c} className="flex items-center gap-1 text-[10.5px] text-white/55" title={`${CHANNEL_LABEL[c]}: ${r.channels[c]}`}>
+            <span key={c} className="flex items-center gap-1 text-[11px] text-white/55" title={`${CHANNEL_LABEL[c]}: ${r.channels[c]}`}>
               <span className={`size-1.5 rounded-full ${DOT[r.channels[c]!]}`} />{CHANNEL_CODE[c].toUpperCase()}
             </span>
           ))}
@@ -81,12 +81,12 @@ export default async function Content() {
           <div className="grid grid-cols-[repeat(7,minmax(112px,1fr))] min-w-0 overflow-x-auto">
             {x.plan.map((p, i) => (
               <div key={p.day} className={`px-3 py-3 border-r border-white/[0.05] last:border-r-0 ${i === todayIdx ? 'bg-[#F2613F]/[0.08]' : ''}`}>
-                <p className={`text-xs font-semibold ${i === todayIdx ? 'text-[#ff8a6d]' : 'text-white/45'}`}>{p.day}{i === todayIdx ? ' · today' : ''}</p>
+                <p className={`text-xs font-semibold ${i === todayIdx ? 'text-[#ff8a6d]' : 'text-white/60'}`}>{p.day}{i === todayIdx ? ' · today' : ''}</p>
                 <p className="text-[13px] mt-2 text-white/90">{p.a}</p>
-                <p className="text-[11px] text-white/40 mt-1">{p.b}</p>
+                <p className="text-[11px] text-white/60 mt-1">{p.b}</p>
                 <div className="mt-2 flex flex-col gap-1">
                   {byDay(weekDays[i]).map((r, j) => (
-                    <Link key={r.id + j} href={`/dashboard/content/${r.id}`} className="rounded-md bg-white/[0.05] hover:bg-white/[0.09] px-1.5 py-1 text-[10.5px] leading-tight text-white/75 flex items-start gap-1">
+                    <Link key={r.id + j} href={`/dashboard/content/${r.id}`} className="rounded-md bg-white/[0.05] hover:bg-white/[0.09] px-1.5 py-1 text-[11px] leading-tight text-white/75 flex items-start gap-1">
                       <span className="flex gap-0.5 mt-[3px] shrink-0">{CHANNELS.map((c) => <span key={c} className={`size-1.5 rounded-full ${DOT[r.channels[c] ?? 'off']}`} />)}</span>
                       <span className="line-clamp-2">{r.status === 'scheduled' ? `${new Date(r.when).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' })} · ` : ''}{r.idea || 'Untitled'}</span>
                     </Link>
@@ -97,10 +97,10 @@ export default async function Content() {
           </div>
         </Card>
         <Card title="Posts this week">
-          <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{postedThisWeek}<span className="text-base text-white/35">/{x.weeklyTarget}</span></p>
+          <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{postedThisWeek}<span className="text-base text-white/55">/{x.weeklyTarget}</span></p>
           <div className="mt-3"><Meter value={postedThisWeek} max={x.weeklyTarget} /></div>
-          <p className="text-[11px] text-white/40 mt-2">Published from here (about 1 a day). {x.postsThisWeek} Instagram post{x.postsThisWeek === 1 ? '' : 's'} in total this week.</p>
-          <p className="text-[11px] text-white/35 mt-2 flex flex-wrap gap-x-2">
+          <p className="text-[11px] text-white/60 mt-2">Published from here (about 1 a day). {x.postsThisWeek} Instagram post{x.postsThisWeek === 1 ? '' : 's'} in total this week.</p>
+          <p className="text-[11px] text-white/55 mt-2 flex flex-wrap gap-x-2">
             {(['posted', 'scheduled', 'held', 'failed'] as ChannelStatus[]).map((s) => <span key={s} className="flex items-center gap-1"><span className={`size-1.5 rounded-full ${DOT[s]}`} />{s}</span>)}
           </p>
         </Card>
@@ -111,7 +111,7 @@ export default async function Content() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <p className="font-medium">⏳ {held.length} post{held.length > 1 ? 's' : ''} waiting for TikTok</p>
-              <p className="text-sm text-white/50 mt-1">LinkedIn and Instagram already went out. TikTok only allows public posts once it approves the app. Then send these in one go, or open one and drop it if it’s stale.</p>
+              <p className="text-sm text-white/65 mt-1">LinkedIn and Instagram already went out. TikTok only allows public posts once it approves the app. Then send these in one go, or open one and drop it if it’s stale.</p>
             </div>
             <SendHeldButton approved={tiktokApproved()} count={held.length} />
           </div>
@@ -134,7 +134,7 @@ export default async function Content() {
           <SectionTitle>Drafts from the routine</SectionTitle>
           {Object.keys(byRun).length ? Object.entries(byRun).map(([runAt, drafts]) => (
             <div key={runAt} className="flex flex-col gap-3">
-              <p className="text-xs text-white/40">Written {ago(runAt)}</p>
+              <p className="text-xs text-white/60">Written {ago(runAt)}</p>
               {drafts.map((dr, i) => (
                 <Card key={i}>
                   <div className="flex items-start justify-between gap-3">
@@ -143,7 +143,7 @@ export default async function Content() {
                         <Badge tone="accent">{KIND(dr.title)}</Badge>
                         {dr.detail?.match(/Layer:\s*(\d\s*\w[\w-]*)/)?.[1] && <Badge>Layer {dr.detail.match(/Layer:\s*(\d\s*\w[\w-]*)/)![1]}</Badge>}
                       </div>
-                      <p className="text-[15px] font-medium mt-2">{dr.title.replace(/^(leak post|hot take|build)[:\s]*/i, '')}</p>
+                      <p className="text-base font-medium mt-2">{dr.title.replace(/^(leak post|hot take|build)[:\s]*/i, '')}</p>
                     </div>
                     {dr.detail && <CopyButton text={dr.detail} />}
                   </div>
@@ -161,8 +161,8 @@ export default async function Content() {
                   <li key={n} className="px-5 py-3.5 flex items-start gap-3">
                     <span className="text-[#F2613F] text-lg leading-none mt-0.5" aria-hidden>“</span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13.5px] text-white/85">{i.text}</p>
-                      <p className="text-[11px] text-white/35 mt-1">{i.who} · {ago(i.at)}</p>
+                      <p className="text-sm text-white/85">{i.text}</p>
+                      <p className="text-[11px] text-white/55 mt-1">{i.who} · {ago(i.at)}</p>
                     </div>
                     <CopyButton text={i.text} label="Copy" />
                   </li>
@@ -178,12 +178,12 @@ export default async function Content() {
             <ul className="flex flex-col gap-2">
               {x.coverage.map((c) => (
                 <li key={c.n} className="flex items-center justify-between text-[13px]">
-                  <span className={c.drafts ? 'text-white/80' : 'text-white/40'}>{c.n} · {c.name}</span>
+                  <span className={c.drafts ? 'text-white/80' : 'text-white/60'}>{c.n} · {c.name}</span>
                   {c.drafts ? <Badge tone="good">{c.drafts} draft{c.drafts > 1 ? 's' : ''}</Badge> : <Badge tone="muted">gap</Badge>}
                 </li>
               ))}
             </ul>
-            {gaps.length > 0 && <p className="text-[11px] text-white/40 mt-3">Nothing yet on {gaps.map((g) => g.name).join(', ')}. Worth a post.</p>}
+            {gaps.length > 0 && <p className="text-[11px] text-white/60 mt-3">Nothing yet on {gaps.map((g) => g.name).join(', ')}. Worth a post.</p>}
           </Card>
 
           <SectionTitle>Hook bank</SectionTitle>
@@ -191,7 +191,7 @@ export default async function Content() {
             <ul className="divide-y divide-white/[0.05]">
               {x.hooks.map((h) => (
                 <li key={h.hook} className="px-5 py-3 flex items-start justify-between gap-3">
-                  <div><p className="text-[13px] text-white/85">{h.hook}</p><p className="text-[11px] text-white/35 mt-0.5">{h.note}</p></div>
+                  <div><p className="text-[13px] text-white/85">{h.hook}</p><p className="text-[11px] text-white/55 mt-0.5">{h.note}</p></div>
                   <CopyButton text={h.hook} label="Copy" />
                 </li>
               ))}

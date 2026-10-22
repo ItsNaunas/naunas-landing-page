@@ -72,10 +72,10 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
         <label className="relative aspect-[9/16] rounded-xl border border-dashed border-white/15 bg-white/[0.03] overflow-hidden grid place-items-center cursor-pointer hover:border-white/30">
           {preview
             ? <video src={preview} controls muted playsInline className="absolute inset-0 size-full object-cover" onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)} />
-            : <span className="text-xs text-white/45 text-center px-4">Choose a video<br /><span className="text-white/30">MP4 or MOV, vertical</span></span>}
+            : <span className="text-xs text-white/60 text-center px-4">Choose a video<br /><span className="text-white/55">MP4 or MOV, vertical</span></span>}
           <input type="file" accept="video/mp4,video/quicktime,video/webm" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
         </label>
-        {progress !== null && <p className="text-xs text-white/50">Uploading… {progress}%</p>}
+        {progress !== null && <p className="text-xs text-white/65">Uploading… {progress}%</p>}
         {blobPath && <p className="text-xs text-emerald-300/90">Ready: {file?.name}</p>}
         {uploadError && <p className="text-xs text-rose-300">{uploadError}</p>}
         {tooLong && <p className="text-xs text-rose-300">This video is {Math.round(duration!)}s. This account can post up to {creator.max_video_post_duration_sec}s.</p>}
@@ -85,17 +85,17 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
         <div className="flex items-center gap-2.5">
           {creator.creator_avatar_url && <img src={creator.creator_avatar_url} alt="" className="size-8 rounded-full" />}
           <p className="text-sm">Posting to <span className="font-medium">{creator.creator_nickname ?? creator.creator_username ?? 'your TikTok'}</span>
-            {creator.creator_username && <span className="text-white/40"> @{creator.creator_username}</span>}</p>
+            {creator.creator_username && <span className="text-white/60"> @{creator.creator_username}</span>}</p>
         </div>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-white/50">Caption</span>
+          <span className="text-xs text-white/65">Caption</span>
           <textarea name="caption" rows={4} maxLength={2200} placeholder="What’s this video about? #hashtags"
             className="rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/30" />
         </label>
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs text-white/50">Who can see this video</span>
+          <span className="text-xs text-white/65">Who can see this video</span>
           <select name="privacy" value={privacy} onChange={(e) => setPrivacy(e.target.value)} required
             className="rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/30 [&>option]:bg-[#161616]">
             <option value="" disabled>Choose…</option>
@@ -108,10 +108,10 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
         </label>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs text-white/50 mb-1.5">Allow users to</legend>
+          <legend className="text-xs text-white/65 mb-1.5">Allow users to</legend>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
             {([['allowComment', 'Comment', creator.comment_disabled], ['allowDuet', 'Duet', creator.duet_disabled], ['allowStitch', 'Stitch', creator.stitch_disabled]] as const).map(([name, l, off]) => (
-              <label key={name} className={`flex items-center gap-2 ${off ? 'text-white/30' : ''}`}>
+              <label key={name} className={`flex items-center gap-2 ${off ? 'text-white/55' : ''}`}>
                 <input type="checkbox" name={name} disabled={off} className={box} />{l}{off && <span className="text-[11px]">(off in your TikTok settings)</span>}
               </label>
             ))}
@@ -120,15 +120,15 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
 
         <fieldset className="rounded-xl border border-white/[0.08] p-3.5 flex flex-col gap-2.5">
           <label className="flex items-center justify-between gap-3 text-sm">
-            <span>Disclose video content <span className="block text-xs text-white/40">Turn on if this promotes a brand, product or service.</span></span>
+            <span>Disclose video content <span className="block text-xs text-white/60">Turn on if this promotes a brand, product or service.</span></span>
             <input type="checkbox" checked={disclose} onChange={(e) => { setDisclose(e.target.checked); if (!e.target.checked) { setYourBrand(false); setBranded(false); } }} className={box} />
           </label>
           {disclose && (
             <div className="flex flex-col gap-2 pl-1 text-sm">
               <label className="flex items-start gap-2"><input type="checkbox" name="yourBrand" checked={yourBrand} onChange={(e) => setYourBrand(e.target.checked)} className={`${box} mt-0.5`} />
-                <span>Your brand <span className="block text-xs text-white/40">You’re promoting yourself or your own business.</span></span></label>
+                <span>Your brand <span className="block text-xs text-white/60">You’re promoting yourself or your own business.</span></span></label>
               <label className="flex items-start gap-2"><input type="checkbox" name="brandedContent" checked={branded} onChange={(e) => { setBranded(e.target.checked); if (e.target.checked && privacy === 'SELF_ONLY') setPrivacy(''); }} className={`${box} mt-0.5`} />
-                <span>Branded content <span className="block text-xs text-white/40">You’re promoting another brand or a third party.</span></span></label>
+                <span>Branded content <span className="block text-xs text-white/60">You’re promoting another brand or a third party.</span></span></label>
               {label
                 ? <p className="text-xs text-amber-200/90">Your video will be labeled “{label}”.</p>
                 : <p className="text-xs text-rose-300/90">Choose at least one option, or turn disclosure off.</p>}
@@ -136,7 +136,7 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
           )}
         </fieldset>
 
-        <p className="text-xs text-white/45">
+        <p className="text-xs text-white/60">
           By posting, you agree to TikTok’s{' '}
           {branded && <><a href={BC_POLICY} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Branded Content Policy</a> and{' '}</>}
           <a href={MUSIC} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Music Usage Confirmation</a>.

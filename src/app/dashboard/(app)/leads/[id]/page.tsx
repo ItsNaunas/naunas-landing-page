@@ -32,14 +32,14 @@ const PRIORITY: Record<string, { label: string; tone: 'accent' | 'neutral' | 'mu
 
 function Prose({ text }: { text: string }) {
   return (
-    <div className="flex flex-col gap-2 text-[13.5px] leading-relaxed text-white/80">
+    <div className="flex flex-col gap-2 text-sm leading-relaxed text-white/80">
       {text.split(/\n{2,}/).map((para, i) => {
         const lines = para.split('\n');
         const isItem = (l: string) => /^\s*([-•*]|\d+[.)])\s+/.test(l);
         if (lines.length > 1 && /:\s*$/.test(lines[0]) && lines.slice(1).every(isItem)) {
           return (
             <div key={i}>
-              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-white/45 pt-1 mb-1.5">{lines[0].replace(/:\s*$/, '')}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.06em] text-white/60 pt-1 mb-1.5">{lines[0].replace(/:\s*$/, '')}</p>
               <ul className="list-disc pl-5 flex flex-col gap-1">{lines.slice(1).map((l, j) => <li key={j}>{l.replace(/^\s*([-•*]|\d+[.)])\s+/, '').replace(/\*\*/g, '')}</li>)}</ul>
             </div>
           );
@@ -48,7 +48,7 @@ function Prose({ text }: { text: string }) {
           return <ul key={i} className="list-disc pl-5 flex flex-col gap-1">{lines.map((l, j) => <li key={j}>{l.replace(/^\s*([-•*]|\d+[.)])\s+/, '').replace(/\*\*/g, '')}</li>)}</ul>;
         }
         if (/^#+\s/.test(para) || (lines.length === 1 && para.length < 60 && !/[.?!]$/.test(para))) {
-          return <p key={i} className="text-xs font-semibold uppercase tracking-[0.06em] text-white/45 pt-1">{para.replace(/^#+\s*/, '').replace(/\*\*/g, '')}</p>;
+          return <p key={i} className="text-xs font-semibold uppercase tracking-[0.06em] text-white/60 pt-1">{para.replace(/^#+\s*/, '').replace(/\*\*/g, '')}</p>;
         }
         return <p key={i} className="whitespace-pre-wrap">{para.replace(/\*\*/g, '')}</p>;
       })}
@@ -70,7 +70,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
 
   return (
     <>
-      <a href="/dashboard/leads" className="text-sm text-white/45 hover:text-white -mb-2">← All leads</a>
+      <a href="/dashboard/leads" className="text-sm text-white/60 hover:text-white -mb-2">← All leads</a>
       <Errors errors={errors} />
 
       {/* Header */}
@@ -81,7 +81,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight truncate" style={{ fontFamily: 'var(--font-display)' }}>{p.name}</h1>
-            <p className="text-sm text-white/50 truncate">{[p.business, p.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')].filter(Boolean).join(' · ') || p.email}</p>
+            <p className="text-sm text-white/65 truncate">{[p.business, p.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')].filter(Boolean).join(' · ') || p.email}</p>
             <div className="flex flex-wrap gap-1.5 mt-2">
               <Badge tone={p.deal?.stage === '6213348572' ? 'good' : p.deal ? 'accent' : 'muted'}>{p.stageLabel}{p.deal?.amount ? ` · ${gbp(p.deal.amount)}` : ''}</Badge>
               {p.priority && PRIORITY[p.priority] && <Badge tone={PRIORITY[p.priority].tone}>{PRIORITY[p.priority].label}</Badge>}
@@ -102,9 +102,9 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
       <ol className="grid grid-cols-3 sm:grid-cols-6 gap-2" aria-label="Journey">
         {p.journey.map((j, i) => (
           <li key={j.label} className={`rounded-xl border px-3 py-2.5 ${j.done ? 'border-[#F2613F]/30 bg-[#F2613F]/[0.07]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
-            <p className={`text-[11px] ${j.done ? 'text-[#ff8a6d]' : 'text-white/30'}`}>{j.done ? '✓' : i + 1} · {j.done ? 'Done' : 'Not yet'}</p>
-            <p className={`text-[13px] font-medium ${j.done ? 'text-white' : 'text-white/40'}`}>{j.label}</p>
-            {j.at && <p className="text-[10px] text-white/35">{when(j.at).split(',')[0]}</p>}
+            <p className={`text-[11px] ${j.done ? 'text-[#ff8a6d]' : 'text-white/55'}`}>{j.done ? '✓' : i + 1} · {j.done ? 'Done' : 'Not yet'}</p>
+            <p className={`text-[13px] font-medium ${j.done ? 'text-white' : 'text-white/60'}`}>{j.label}</p>
+            {j.at && <p className="text-[11px] text-white/55">{when(j.at).split(',')[0]}</p>}
           </li>
         ))}
       </ol>
@@ -112,7 +112,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
       {p.next && (
         <div className={`rounded-2xl border px-5 py-4 flex flex-wrap items-center justify-between gap-3 ${TONE[p.next.tone]}`}>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.1em] text-white/45">Next step</p>
+            <p className="text-[11px] uppercase tracking-[0.1em] text-white/60">Next step</p>
             <p className="font-semibold mt-0.5">{p.next.title}</p>
             <p className="text-sm text-white/60">{p.next.why}</p>
           </div>
@@ -125,8 +125,8 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
           <nav className="flex gap-1 border-b border-white/[0.07]" aria-label="Lead sections">
             {TABS.map(([t, label]) => (
               <a key={t} href={href(t)} aria-current={tab === t ? 'page' : undefined}
-                className={`px-4 py-2.5 text-sm -mb-px border-b-2 transition-colors ${tab === t ? 'border-[#F2613F] text-white' : 'border-transparent text-white/50 hover:text-white'}`}>
-                {label}{t === 'emails' && p.thread.length ? <span className="text-white/35"> {p.thread.length}</span> : null}{t === 'calls' && p.meetings.length ? <span className="text-white/35"> {p.meetings.length}</span> : null}
+                className={`px-4 py-2.5 text-sm -mb-px border-b-2 transition-colors ${tab === t ? 'border-[#F2613F] text-white' : 'border-transparent text-white/65 hover:text-white'}`}>
+                {label}{t === 'emails' && p.thread.length ? <span className="text-white/55"> {p.thread.length}</span> : null}{t === 'calls' && p.meetings.length ? <span className="text-white/55"> {p.meetings.length}</span> : null}
               </a>
             ))}
           </nav>
@@ -134,10 +134,10 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
           {tab === 'overview' && (
             <>
               {firm && (
-                <Card title="From cold outreach" action={<a href={`/dashboard/outreach/firm/${encodeURIComponent(firm.id)}`} className="text-xs text-white/50 hover:text-white">Firm page ›</a>}>
+                <Card title="From cold outreach" action={<a href={`/dashboard/outreach/firm/${encodeURIComponent(firm.id)}`} className="text-xs text-white/65 hover:text-white">Firm page ›</a>}>
                   <dl className="grid grid-cols-[110px_1fr] gap-x-3 gap-y-1.5 text-[13px]">
                     {([['Firm', firm.firm], ['Channel', firm.channel ? CHANNEL_LABEL[firm.channel] : undefined], ['Opener', firm.dmStyle], ['The gap', firm.drafts?.research?.gap], ['Detail', firm.drafts?.research?.detail]] as const).filter(([, v]) => v).map(([k, v]) => (
-                      <div key={k} className="contents"><dt className="text-white/40">{k}</dt><dd className="text-white/80">{v}</dd></div>
+                      <div key={k} className="contents"><dt className="text-white/60">{k}</dt><dd className="text-white/80">{v}</dd></div>
                     ))}
                   </dl>
                   <div className="mt-3 pt-3 border-t border-white/[0.06]"><Timeline p={firm} /></div>
@@ -151,15 +151,15 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               )}
               {p.notWorking && (
                 <Card title="In their words">
-                  <blockquote className="border-l-2 border-[#F2613F] pl-4 text-[15px] leading-relaxed text-white/85 whitespace-pre-wrap">{p.notWorking}</blockquote>
+                  <blockquote className="border-l-2 border-[#F2613F] pl-4 text-base leading-relaxed text-white/85 whitespace-pre-wrap">{p.notWorking}</blockquote>
                 </Card>
               )}
               <Card title="Research brief" action={!p.brief ? <Badge tone="muted">Written the minute they book</Badge> : undefined}>
                 {p.brief ? <Prose text={p.brief} /> : <Empty>When they book, their website is researched and the brief (leaks, questions, quick win) lands here and on the deal.</Empty>}
               </Card>
               {p.meetings[0] && (
-                <Card title={`Last call · ${when(p.meetings[0].at)}`} action={<a href={p.meetings[0].url} {...linkProps} className="text-xs text-white/50 hover:text-white">Watch ↗</a>}>
-                  {p.meetings[0].summary ? <Prose text={p.meetings[0].summary} /> : <p className="text-sm text-white/40">No summary yet.</p>}
+                <Card title={`Last call · ${when(p.meetings[0].at)}`} action={<a href={p.meetings[0].url} {...linkProps} className="text-xs text-white/65 hover:text-white">Watch ↗</a>}>
+                  {p.meetings[0].summary ? <Prose text={p.meetings[0].summary} /> : <p className="text-sm text-white/60">No summary yet.</p>}
                 </Card>
               )}
               <Card title="Details">
@@ -191,16 +191,16 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                     return (
                       <li key={`${m.folder}-${m.uid}`} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${mine ? 'bg-[#F2613F]/12 border border-[#F2613F]/25 rounded-br-md' : 'bg-[#181818] border border-white/[0.07] rounded-bl-md'}`}>
-                          <p className="text-[11px] text-white/45 mb-1">{mine ? 'You' : (m.fromName || m.from)} · {when(m.date)}</p>
-                          <p className="text-[11px] text-white/35 mb-2 truncate">{m.subject}</p>
-                          <p className="text-[13.5px] leading-relaxed text-white/85 whitespace-pre-wrap break-words">{m.text || '(no text)'}</p>
+                          <p className="text-[11px] text-white/60 mb-1">{mine ? 'You' : (m.fromName || m.from)} · {when(m.date)}</p>
+                          <p className="text-[11px] text-white/55 mb-2 truncate">{m.subject}</p>
+                          <p className="text-sm leading-relaxed text-white/85 whitespace-pre-wrap break-words">{m.text || '(no text)'}</p>
                         </div>
                       </li>
                     );
                   })}
                 </ol>
               )}
-              {p.connected.inbox && !p.thread.length && <p className="text-sm text-white/40">No emails with {p.email || 'them'} in the last 6 months.</p>}
+              {p.connected.inbox && !p.thread.length && <p className="text-sm text-white/60">No emails with {p.email || 'them'} in the last 6 months.</p>}
               <ReplyBox to={p.email} name={p.name} contactId={p.id} dealId={p.deal?.id}
                 subject={p.lastInbound ? (/^re:/i.test(p.lastInbound.subject) ? p.lastInbound.subject : `Re: ${p.lastInbound.subject}`) : ''}
                 inReplyTo={p.lastInbound?.messageId} references={p.lastInbound?.references} />
@@ -215,7 +215,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                   {m.summary && <Prose text={m.summary} />}
                   {m.actions.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-white/[0.06]">
-                      <p className="text-xs font-semibold uppercase tracking-[0.06em] text-white/45 mb-2">Action items</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.06em] text-white/60 mb-2">Action items</p>
                       <ul className="flex flex-col gap-1.5 text-[13px] text-white/80">{m.actions.map((a, j) => <li key={j} className="flex gap-2"><span className="text-[#F2613F]">☐</span>{a}</li>)}</ul>
                     </div>
                   )}
@@ -223,7 +223,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               )) : <Card><Empty>{p.connected.fathom ? 'No recorded calls with them yet. Recordings appear here (and on Telegram) when Fathom finishes processing.' : 'Connect Fathom to see call recordings here.'}</Empty></Card>}
               {p.timeline.filter((t) => t.kind === 'booking').length > 0 && (
                 <Card title="Bookings">
-                  <ul className="flex flex-col gap-2 text-[13px]">{p.timeline.filter((t) => t.kind === 'booking').map((b, i) => <li key={i} className="flex justify-between gap-3"><span>{b.title}</span><span className="text-white/45">{when(b.at)}</span></li>)}</ul>
+                  <ul className="flex flex-col gap-2 text-[13px]">{p.timeline.filter((t) => t.kind === 'booking').map((b, i) => <li key={i} className="flex justify-between gap-3"><span>{b.title}</span><span className="text-white/60">{when(b.at)}</span></li>)}</ul>
                 </Card>
               )}
             </>
@@ -237,10 +237,10 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                     <li key={i} className="pl-6 relative">
                       <span className="absolute -left-3.5 top-0 size-7 rounded-lg bg-[#1b1b1b] border border-white/10 grid place-items-center text-[12px] text-white/60" aria-hidden>{TL_ICON[t.kind] ?? '•'}</span>
                       <p className="text-[13px] text-white/90">{t.title}</p>
-                      <p className="text-[11px] text-white/35">{when(t.at)} · {ago(t.at)}</p>
+                      <p className="text-[11px] text-white/55">{when(t.at)} · {ago(t.at)}</p>
                       {t.body && t.body !== t.title && (
                         <details className="mt-1.5">
-                          <summary className="cursor-pointer text-xs text-white/45 hover:text-white">Show</summary>
+                          <summary className="cursor-pointer text-xs text-white/60 hover:text-white">Show</summary>
                           <div className="mt-2 rounded-lg bg-white/[0.03] p-3"><Prose text={t.body} /></div>
                         </details>
                       )}
@@ -255,10 +255,10 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
         {/* Side panel: work the lead */}
         <aside className="flex flex-col gap-4 lg:sticky lg:top-20">
           {p.deal ? (
-            <Card title="Deal stage" action={<a href={hubspotUrl.deal(p.deal.id)} {...linkProps} className="text-xs text-white/40 hover:text-white">Deal ↗</a>}>
+            <Card title="Deal stage" action={<a href={hubspotUrl.deal(p.deal.id)} {...linkProps} className="text-xs text-white/60 hover:text-white">Deal ↗</a>}>
               <StageControl dealId={p.deal.id} stage={p.deal.stage} />
             </Card>
-          ) : <Card title="Deal stage"><p className="text-sm text-white/45">No deal yet. One is created when they qualify, book, or reply with interest.</p></Card>}
+          ) : <Card title="Deal stage"><p className="text-sm text-white/60">No deal yet. One is created when they qualify, book, or reply with interest.</p></Card>}
 
           {p.source === 'cold_email' && (
             <Card title="Outreach status">
@@ -277,14 +277,14 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
             <Card title="Email sequences">
               {p.email_status ? (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs text-white/45">{p.email_status.opens} opens · {p.email_status.clicks} clicks · {p.email_status.status}</p>
+                  <p className="text-xs text-white/60">{p.email_status.opens} opens · {p.email_status.clicks} clicks · {p.email_status.status}</p>
                   {groups.length ? groups.map((g) => (
                     <form key={g} action={leadSequence} className="flex items-center justify-between gap-2 text-[13px]">
                       <input type="hidden" name="email" value={p.email} /><input type="hidden" name="group" value={g} /><input type="hidden" name="op" value="remove" />
                       <span className="text-white/80">{g}</span>
-                      <button className="text-xs text-white/40 hover:text-rose-300">Take out</button>
+                      <button className="text-xs text-white/60 hover:text-rose-300">Take out</button>
                     </form>
-                  )) : <p className="text-[13px] text-white/40">Not in any sequence.</p>}
+                  )) : <p className="text-[13px] text-white/60">Not in any sequence.</p>}
                   {!groups.includes(FUNNEL.mailerlite.groups.newsletter) && (
                     <form action={leadSequence}>
                       <input type="hidden" name="email" value={p.email} /><input type="hidden" name="name" value={p.name} />
@@ -293,14 +293,14 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                     </form>
                   )}
                 </div>
-              ) : <p className="text-[13px] text-white/40">Not in MailerLite.</p>}
+              ) : <p className="text-[13px] text-white/60">Not in MailerLite.</p>}
             </Card>
           )}
 
           <Card title="Proposal" action={proposals.length ? <Badge tone={proposals[0].status === 'paid' || proposals[0].status === 'accepted' ? 'good' : proposals[0].status === 'draft' ? 'muted' : 'accent'}>{STATUS_LABEL[proposals[0].status]}</Badge> : undefined}>
             {proposals.length > 0 && (
               <ul className="flex flex-col gap-1.5 text-[13px] mb-3">
-                {proposals.map((r) => <li key={r.token} className="flex items-center justify-between gap-2"><a href={`/dashboard/pipeline/proposal/${r.token}`} className="truncate hover:text-[#F2613F]">{r.title}</a><span className="text-xs text-white/40 shrink-0">{STATUS_LABEL[r.status]}</span></li>)}
+                {proposals.map((r) => <li key={r.token} className="flex items-center justify-between gap-2"><a href={`/dashboard/pipeline/proposal/${r.token}`} className="truncate hover:text-[#F2613F]">{r.title}</a><span className="text-xs text-white/60 shrink-0">{STATUS_LABEL[r.status]}</span></li>)}
               </ul>
             )}
             <form action={newProposal} className="flex flex-col gap-2">
@@ -308,7 +308,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               <input type="hidden" name="client" value={p.business || p.name} /><input type="hidden" name="firstName" value={p.name.replace(/^@/, '').split(' ')[0]} />
               <input type="hidden" name="business" value={p.business} /><input type="hidden" name="email" value={p.email} />
               <button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5 self-start">{proposals.length ? '+ Another proposal' : 'New proposal'}</button>
-              <p className="text-[11px] text-white/40">One link: scope, price, accept by name, deposit via Stripe. Drafted from the brief and call notes.</p>
+              <p className="text-[11px] text-white/60">One link: scope, price, accept by name, deposit via Stripe. Drafted from the brief and call notes.</p>
             </form>
           </Card>
 
@@ -316,7 +316,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
 
           {p.email && (
             <Card title="Booking link">
-              <p className="text-xs text-white/45 break-all">{`cal.com/${FUNNEL.cal.link}?email=${p.email}`}</p>
+              <p className="text-xs text-white/60 break-all">{`cal.com/${FUNNEL.cal.link}?email=${p.email}`}</p>
               <a href={`https://cal.com/${FUNNEL.cal.link}?email=${encodeURIComponent(p.email)}&name=${encodeURIComponent(p.name)}`} {...linkProps} className="text-xs text-[#ff8a6d] hover:text-white">Open pre-filled ↗</a>
             </Card>
           )}

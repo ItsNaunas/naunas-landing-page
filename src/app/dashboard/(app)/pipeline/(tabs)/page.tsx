@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 function Idle({ days }: { days: number }) {
   if (days >= 14) return <Badge tone="bad">{days}d quiet</Badge>;
   if (days >= 7) return <Badge tone="accent">{days}d quiet</Badge>;
-  return <span className="text-[11px] text-white/35">{days ? `${days}d ago` : 'today'}</span>;
+  return <span className="text-[11px] text-white/55">{days ? `${days}d ago` : 'today'}</span>;
 }
 
 const RANGES = [['30', '30 days'], ['90', '90 days'], ['180', '6 months'], ['365', '12 months']] as const;
@@ -35,28 +35,28 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
       <RangeChips path="/dashboard/pipeline" param="range" value={range} options={RANGES} />
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Open deals" value={d.totals.open} foot={<span className="text-xs text-white/40">{compactGbp(d.totals.value)} in play</span>} />
-        <Kpi label="Gone quiet (7d+)" value={d.totals.stale} foot={<span className="text-xs text-white/40">need a nudge</span>} />
-        <Kpi label={`Win rate · ${span}`} value={d.winRate === null ? '—' : `${d.winRate}%`} foot={<span className="text-xs text-white/40">won ÷ (won + lost)</span>} />
+        <Kpi label="Open deals" value={d.totals.open} foot={<span className="text-xs text-white/60">{compactGbp(d.totals.value)} in play</span>} />
+        <Kpi label="Gone quiet (7d+)" value={d.totals.stale} foot={<span className="text-xs text-white/60">need a nudge</span>} />
+        <Kpi label={`Win rate · ${span}`} value={d.winRate === null ? '—' : `${d.winRate}%`} foot={<span className="text-xs text-white/60">won ÷ (won + lost)</span>} />
         <Kpi label={`Won · ${span}`} value={compactGbp(d.wonValue)} />
       </div>
 
-      <SectionTitle action={<span className="text-xs text-white/45">Scope, price, accept by name, deposit via Stripe: one link</span>}>Proposals</SectionTitle>
+      <SectionTitle action={<span className="text-xs text-white/60">Scope, price, accept by name, deposit via Stripe: one link</span>}>Proposals</SectionTitle>
       <Card pad={false}>
         {proposals.length ? (
           <ul className="divide-y divide-white/[0.05]">
             {proposals.slice(0, 12).map((r) => (
               <li key={r.token}><a href={`/dashboard/pipeline/proposal/${r.token}`} className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02]">
-                <span className="min-w-0 flex-1"><span className="block text-[13px] text-white/90 truncate">{r.client}</span><span className="block text-xs text-white/40 truncate">{r.title}</span></span>
-                <span className="text-xs text-white/40">{ago(r.updatedAt)}</span>
+                <span className="min-w-0 flex-1"><span className="block text-[13px] text-white/90 truncate">{r.client}</span><span className="block text-xs text-white/60 truncate">{r.title}</span></span>
+                <span className="text-xs text-white/60">{ago(r.updatedAt)}</span>
                 <Badge tone={r.status === 'paid' || r.status === 'accepted' ? 'good' : r.status === 'opened' ? 'accent' : r.status === 'sent' ? 'neutral' : 'muted'}>{STATUS_LABEL[r.status]}</Badge>
               </a></li>
             ))}
           </ul>
         ) : <Empty>No proposals yet. Start one from a lead page (it pulls in their brief and call notes), or from scratch below.</Empty>}
         <form action={newProposal} className="px-5 py-3 border-t border-white/[0.06] flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1 text-[11px] text-white/45 flex-1 min-w-[160px]">Client or firm<input name="client" required placeholder="e.g. Oakline Interiors" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30" /></label>
-          <label className="flex flex-col gap-1 text-[11px] text-white/45 flex-1 min-w-[160px]">Their email (for the deposit link)<input name="email" type="email" placeholder="optional" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30" /></label>
+          <label className="flex flex-col gap-1 text-[11px] text-white/60 flex-1 min-w-[160px]">Client or firm<input name="client" required placeholder="e.g. Oakline Interiors" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" /></label>
+          <label className="flex flex-col gap-1 text-[11px] text-white/60 flex-1 min-w-[160px]">Their email (for the deposit link)<input name="email" type="email" placeholder="optional" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" /></label>
           <button className="rounded-lg bg-white text-black text-sm font-medium px-4 py-2">New proposal</button>
         </form>
       </Card>
@@ -67,8 +67,8 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         {d.stages.map((st) => (
           <div key={st.id} className="snap-start shrink-0 w-[78vw] sm:w-[260px] md:flex-1 md:w-auto md:min-w-[200px] rounded-2xl bg-[#101010] border border-white/[0.06] flex flex-col">
             <div className="px-4 pt-4 pb-3 flex items-center justify-between gap-2 border-b border-white/[0.05]">
-              <p className="text-[13px] font-medium">{st.label} <span className="text-white/35 tabular-nums ml-1">{st.deals.length}</span></p>
-              {st.value > 0 && <span className="text-xs text-white/40 tabular-nums">{compactGbp(st.value)}</span>}
+              <p className="text-[13px] font-medium">{st.label} <span className="text-white/55 tabular-nums ml-1">{st.deals.length}</span></p>
+              {st.value > 0 && <span className="text-xs text-white/60 tabular-nums">{compactGbp(st.value)}</span>}
             </div>
             <div className="p-2.5 flex flex-col gap-2 min-h-[140px]">
               {st.deals.length ? st.deals.map((dl) => (
@@ -82,7 +82,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
                   </div>
                   <Idle days={dl.idle} />
                 </a>
-              )) : <p className="text-xs text-white/25 text-center py-8">Empty</p>}
+              )) : <p className="text-xs text-white/55 text-center py-8">Empty</p>}
             </div>
           </div>
         ))}
@@ -92,19 +92,19 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         <Card title={`Conversion · deals created in the last ${span}`}>
           <SectionError errors={errFor(d.errors, 'New deals')} />
           <Funnel steps={d.conversion} />
-          <p className="text-[11px] text-white/30 mt-4">How far deals got, step by step. The % is versus the step before.</p>
+          <p className="text-[11px] text-white/55 mt-4">How far deals got, step by step. The % is versus the step before.</p>
         </Card>
         <Card title={`Win rate by source · ${span}`} pad={false}>
           <div className="px-5"><SectionError errors={errFor(d.errors, 'Closed deals')} /></div>
           {d.bySource.length ? (
             <table className="w-full text-[13px]">
-              <thead><tr className="text-left text-xs text-white/35"><th className="font-normal px-5 py-2">Source</th><th className="font-normal px-3 py-2 text-right">Closed</th><th className="font-normal px-3 py-2 text-right">Won</th><th className="font-normal px-5 py-2 text-right">£</th></tr></thead>
+              <thead><tr className="text-left text-xs text-white/55"><th className="font-normal px-5 py-2">Source</th><th className="font-normal px-3 py-2 text-right">Closed</th><th className="font-normal px-3 py-2 text-right">Won</th><th className="font-normal px-5 py-2 text-right">£</th></tr></thead>
               <tbody>
                 {d.bySource.map((s) => (
                   <tr key={s.source} className="border-t border-white/[0.04]">
                     <td className="px-5 py-2.5">{SOURCE_LABEL[s.source] ?? s.source}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-white/60">{s.closed}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums">{s.won} <span className="text-white/35 text-xs">{Math.round((s.won / s.closed) * 100)}%</span></td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{s.won} <span className="text-white/55 text-xs">{Math.round((s.won / s.closed) * 100)}%</span></td>
                     <td className="px-5 py-2.5 text-right tabular-nums">{compactGbp(s.value)}</td>
                   </tr>
                 ))}

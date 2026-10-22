@@ -29,15 +29,15 @@ type Props = {
 
 const CH: Record<string, string> = { Instagram: 'IG', LinkedIn: 'LI', Email: 'Email' };
 const btn = 'rounded-full bg-white text-black text-xs font-medium px-3 py-1.5';
-const quiet = 'text-xs text-white/45 hover:text-white';
+const quiet = 'text-xs text-white/60 hover:text-white';
 
 function Row({ itemId, who, channel, task, href, hrefLabel = 'Open chat', copy, firmId, children }: { itemId: string; who: string; channel: string; task: string; href?: string; hrefLabel?: string; copy?: string; firmId?: string; children?: React.ReactNode }) {
   return (
     <li data-item={itemId} className="px-5 py-3.5 flex flex-col gap-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[13.5px]"><b className="font-medium">{who}</b> <Badge tone="muted">{CH[channel] ?? channel}</Badge>{firmId && <a href={`/dashboard/outreach/firm/${encodeURIComponent(firmId)}`} className="ml-2 text-[11px] text-white/40 hover:text-white">firm ›</a>}</p>
-          <p className="text-[12.5px] text-white/55 mt-0.5">{task}</p>
+          <p className="text-sm"><b className="font-medium">{who}</b> <Badge tone="muted">{CH[channel] ?? channel}</Badge>{firmId && <a href={`/dashboard/outreach/firm/${encodeURIComponent(firmId)}`} className="ml-2 text-[11px] text-white/60 hover:text-white">firm ›</a>}</p>
+          <p className="text-[13px] text-white/55 mt-0.5">{task}</p>
         </div>
         {href && (copy ? <OpenCopy href={href} text={copy} label={`${hrefLabel} & copy`} /> : <a href={href} {...linkProps} className="shrink-0 text-xs text-[#ff8a6d] hover:underline">{hrefLabel} ↗</a>)}
       </div>
@@ -50,7 +50,7 @@ function Group({ n, title, count, children }: { n: number; title: string; count:
   if (!count) return null;
   return (
     <div data-group>
-      <p className="px-5 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/40">{title} <span className="text-white/25">({count})</span></p>
+      <p className="px-5 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-white/60">{title} <span className="text-white/55">({count})</span></p>
       <ul className="divide-y divide-white/[0.05]">{children}</ul>
     </div>
   );
@@ -68,7 +68,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
     <Card pad={false}>
       <div className="px-5 pt-4 pb-3 flex flex-wrap items-center gap-3 border-b border-white/[0.06]">
         <p className="font-medium">Today’s list</p>
-        <span className="text-sm text-white/50 tabular-nums">{doneToday} done · {left} to go</span>
+        <span className="text-sm text-white/65 tabular-nums">{doneToday} done · {left} to go</span>
         <div className="w-40 ml-auto"><Meter value={doneToday} max={Math.max(1, total)} /></div>
       </div>
       {!left ? <Empty>{doneToday ? 'All done for today. Nice.' : 'Nothing queued. Approve firms on the Prospects tab and the Instagram sequence fills up from tomorrow.'}</Empty> : (
@@ -90,7 +90,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
           <Group n={2} title="They replied" count={replies.length}>
             {replies.map((m) => (
               <Row key={m.messageId || String(m.uid)} itemId={String(m.messageId || String(m.uid))} who={m.who} channel="Email" href={m.href} hrefLabel={m.draft ? 'Open lead to send' : 'Open lead (draft reply there)'} task={`Replied ${ago(m.date)}: ${m.subject}${m.needsYou ? ' · needs your judgement' : ''}`}>
-                <p className="text-[12.5px] text-white/65 line-clamp-2">“{m.text}”</p>
+                <p className="text-[13px] text-white/65 line-clamp-2">“{m.text}”</p>
                 {m.draft && <><Msg text={m.draft} /><div className="flex flex-wrap gap-3 items-center"><CopyText text={m.draft} label="Copy draft" />{m.messageId && <ActionForm action={markReplyHandled}><input type="hidden" name="id" value={m.messageId} /><button className={btn}>Answered</button></ActionForm>}</div></>}
               </Row>
             ))}
@@ -103,7 +103,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
                 <p className="text-[13px] text-white/80 rounded-lg bg-white/[0.03] border border-white/[0.06] p-2.5 whitespace-pre-wrap">{a.draft}</p>
                 <div className="flex flex-wrap gap-3 items-center">
                   <CopyText text={a.draft} label="Copy email" />
-                  {a.email && <span className="text-xs text-white/40">{a.email}</span>}
+                  {a.email && <span className="text-xs text-white/60">{a.email}</span>}
                   <ActionForm action={markAskDone}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="outcome" value="sent" /><button className={btn}>Sent</button></ActionForm>
                   <ActionForm action={markAskDone}><input type="hidden" name="id" value={a.id} /><input type="hidden" name="outcome" value="skipped" /><button className={quiet}>Skip</button></ActionForm>
                 </div>
@@ -135,7 +135,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
                 <div className="flex gap-3 items-center">
                   <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="channel" value={l.channel} /><input type="hidden" name="outcome" value="sent" /><button className={btn}>Sent</button></ActionForm>
                   <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="snoozed" /><button className={quiet}>Not now (30 days)</button></ActionForm>
-                  <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="dropped" /><button className="text-xs text-white/30 hover:text-rose-300">Drop</button></ActionForm>
+                  <ActionForm action={markCheckin}><input type="hidden" name="id" value={l.id} /><input type="hidden" name="outcome" value="dropped" /><button className="text-xs text-white/55 hover:text-rose-300">Drop</button></ActionForm>
                 </div>
               </Row>
             ))}
@@ -202,7 +202,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
                     const lint = lintMessage(o.text, { dm: true });
                     return (
                       <div key={o.style} className="flex flex-col gap-1.5">
-                        {options.length > 1 && <span className="text-[10px] uppercase tracking-wider text-white/35">Style {o.style}</span>}
+                        {options.length > 1 && <span className="text-[11px] uppercase tracking-wider text-white/55">Style {o.style}</span>}
                         <Msg text={o.text} />
                         {(lint.block.length > 0 || lint.warn.length > 0) && <p className="text-[11px]">{lint.block.map((b) => <span key={b} className="text-rose-300 mr-2">✕ {b}</span>)}{lint.warn.map((w) => <span key={w} className="text-amber-300/90 mr-2">⚠ {w}</span>)}</p>}
                         {lint.ok ? (
@@ -210,7 +210,7 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
                             <CopyText text={o.text} label="Copy" />
                             <ActionForm action={markDmSent}><input type="hidden" name="id" value={p.id} /><input type="hidden" name="style" value={o.style} /><button className={btn}>Sent this one</button></ActionForm>
                           </div>
-                        ) : <span className="text-[11px] text-white/40">Fix it on Prospects → Drafts first</span>}
+                        ) : <span className="text-[11px] text-white/60">Fix it on Prospects → Drafts first</span>}
                       </div>
                     );
                   })}
@@ -229,12 +229,12 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
                       {found.map((post) => (
                         <div key={post.url} className="rounded-lg border border-white/[0.07] bg-white/[0.02] p-2 flex flex-col gap-1.5 min-w-0">
                           <a href={post.url} {...linkProps} className="text-[11px] text-[#ff8a6d] hover:underline">Open post ↗{post.at ? ` · ${ago(post.at)}` : ''}</a>
-                          {post.caption && <p className="text-[11px] text-white/45 line-clamp-2">{post.caption}</p>}
-                          {post.comment && <><p className="text-[12.5px] text-white/85">“{post.comment}”</p><CopyText text={post.comment} label="Copy comment" /></>}
+                          {post.caption && <p className="text-[11px] text-white/60 line-clamp-2">{post.caption}</p>}
+                          {post.comment && <><p className="text-[13px] text-white/85">“{post.comment}”</p><CopyText text={post.comment} label="Copy comment" /></>}
                         </div>
                       ))}
                     </div>
-                  ) : <p className="text-[11px] text-white/35">Fetching their latest posts and comment ideas (a minute or two after the drafts arrive). Meanwhile, open the profile and pick 2 recent project posts.</p>}
+                  ) : <p className="text-[11px] text-white/55">Fetching their latest posts and comment ideas (a minute or two after the drafts arrive). Meanwhile, open the profile and pick 2 recent project posts.</p>}
                   <ActionForm action={markWarmed}><input type="hidden" name="id" value={p.id} /><button className={btn}>Done</button></ActionForm>
                 </Row>
               );

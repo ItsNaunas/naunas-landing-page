@@ -15,7 +15,7 @@ import { AskNaunas } from '@/components/dashboard/AskNaunas';
 
 const Logo = () => (
   <a href="/dashboard" className="text-lg font-semibold tracking-tight whitespace-nowrap" style={{ fontFamily: 'var(--font-display)' }}>
-    Naunas<span className="text-[#F2613F]">.</span> <span className="text-white/40 font-normal">Ops</span>
+    Naunas<span className="text-[#F2613F]">.</span> <span className="text-white/60 font-normal">Ops</span>
   </a>
 );
 
@@ -34,9 +34,9 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
         <div className="px-3"><Logo /></div>
         <SideNav badges={badges} hide={hide} />
         <div className="mt-auto flex flex-col gap-0.5 text-[13px]">
-          <a href={FUNNEL.cockpitUrl} {...linkProps} className="rounded-lg px-3 py-2 text-white/45 hover:text-white hover:bg-white/[0.04]">Vault cockpit ↗</a>
-          <a href="/" {...linkProps} className="rounded-lg px-3 py-2 text-white/45 hover:text-white hover:bg-white/[0.04]">naunas.co.uk ↗</a>
-          <form action={logout}><button className="w-full text-left rounded-lg px-3 py-2 text-white/30 hover:text-white hover:bg-white/[0.04]">Sign out</button></form>
+          <a href={FUNNEL.cockpitUrl} {...linkProps} className="rounded-lg px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.04]">Vault cockpit ↗</a>
+          <a href="/" {...linkProps} className="rounded-lg px-3 py-2 text-white/60 hover:text-white hover:bg-white/[0.04]">naunas.co.uk ↗</a>
+          <form action={logout}><button className="w-full text-left rounded-lg px-3 py-2 text-white/55 hover:text-white hover:bg-white/[0.04]">Sign out</button></form>
         </div>
       </aside>
 

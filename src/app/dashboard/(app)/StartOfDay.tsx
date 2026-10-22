@@ -16,7 +16,7 @@ export async function Plan() {
         <p className="font-medium">Today’s plan</p>
         {aiReady() && (
           <ActionForm action={refreshBriefing}>
-            <button className="text-xs text-white/50 hover:text-white">{brief ? `Written ${untilOrAgo(brief.at)} · Refresh ↻` : 'Write today’s plan'}</button>
+            <button className="text-xs text-white/65 hover:text-white">{brief ? `Written ${untilOrAgo(brief.at)} · Refresh ↻` : 'Write today’s plan'}</button>
           </ActionForm>
         )}
       </div>

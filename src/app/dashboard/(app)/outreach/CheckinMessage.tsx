@@ -20,7 +20,7 @@ export function CheckinMessage({ lead, initial }: { lead: Lead; initial?: string
         {text ? <CopyText text={text} label="Copy message" /> : (
           <button type="button" disabled={busy} onClick={write} className="rounded-full border border-white/15 px-3 py-1.5 text-xs hover:border-white/30 disabled:opacity-40">{busy ? 'Writing…' : 'Write the message'}</button>
         )}
-        {text && <button type="button" disabled={busy} onClick={write} className="text-[11px] text-white/40 hover:text-white disabled:opacity-40">{busy ? 'Rewriting…' : 'Rewrite'}</button>}
+        {text && <button type="button" disabled={busy} onClick={write} className="text-[11px] text-white/60 hover:text-white disabled:opacity-40">{busy ? 'Rewriting…' : 'Rewrite'}</button>}
       </div>
     </div>
   );

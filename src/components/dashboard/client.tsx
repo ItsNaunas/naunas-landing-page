@@ -22,10 +22,10 @@ export function SearchBox({ defaultValue = '' }: { defaultValue?: string }) {
   return (
     <form role="search" className="relative w-full"
       onSubmit={(e) => { e.preventDefault(); const q = ref.current?.value.trim(); router.push(q ? `/dashboard/leads?q=${encodeURIComponent(q)}` : '/dashboard/leads'); }}>
-      <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-white/55" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
       <input ref={ref} name="q" defaultValue={defaultValue} placeholder="Search people…" aria-label="Search people by name, email or Instagram"
-        className="w-full rounded-xl bg-white/[0.05] border border-white/[0.06] pl-9 pr-12 py-2 text-sm text-white placeholder:text-white/35 outline-none focus:border-[#F2613F]/60 focus:bg-white/[0.07]" />
-      <kbd className="hidden md:block absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-white/35 border border-white/10 rounded px-1.5 py-0.5">Ctrl K</kbd>
+        className="w-full rounded-xl bg-white/[0.05] border border-white/[0.06] pl-9 pr-12 py-2 text-sm text-white placeholder:text-white/50 outline-none focus:border-[#F2613F]/60 focus:bg-white/[0.07]" />
+      <kbd className="hidden md:block absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] text-white/55 border border-white/10 rounded px-1.5 py-0.5">Ctrl K</kbd>
     </form>
   );
 }

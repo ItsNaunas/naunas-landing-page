@@ -9,12 +9,12 @@ export function ChannelBoard({ channels }: { channels: ChannelCount[] }) {
         const hit = c.target > 0 && c.newToday >= c.target;
         return (
           <div key={c.key} className="px-3 sm:px-5 py-3 min-w-0" title={`${c.followupsToday} follow-ups today · ${c.inSequence} in sequence · ${c.newThisWeek} new this week`}>
-            <p className="text-[11px] sm:text-xs text-white/50 truncate">{c.label}{hit ? ' ✓' : ''}</p>
+            <p className="text-[11px] sm:text-xs text-white/65 truncate">{c.label}{hit ? ' ✓' : ''}</p>
             <p className="text-lg sm:text-2xl font-semibold tabular-nums leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-              {c.newToday}<span className="text-xs sm:text-sm text-white/35">/{c.target} new</span>
+              {c.newToday}<span className="text-xs sm:text-sm text-white/55">/{c.target} new</span>
             </p>
             <div className="mt-1.5"><Meter value={c.newToday} max={Math.max(1, c.target)} /></div>
-            <p className="hidden sm:block text-[11px] text-white/40 mt-1.5 truncate">{c.followupsToday} follow-ups today · {c.inSequence} in sequence</p>
+            <p className="hidden sm:block text-[11px] text-white/60 mt-1.5 truncate">{c.followupsToday} follow-ups today · {c.inSequence} in sequence</p>
           </div>
         );
       })}

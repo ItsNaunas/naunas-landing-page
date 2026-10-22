@@ -56,9 +56,9 @@ export default async function OutreachProspects({ searchParams }: { searchParams
         {steps.map((s, i) => (
           <Link key={s.key} href={`/dashboard/outreach/prospects?step=${s.key}`} aria-current={s.key === step ? 'page' : undefined}
             className={`rounded-xl border px-3 py-2.5 transition-colors ${s.key === step ? 'border-[#F2613F]/60 bg-[#F2613F]/[0.08]' : 'border-white/[0.07] bg-white/[0.02] hover:border-white/20'}`}>
-            <span className="block text-[10.5px] text-white/40">{i + 1}. {s.label}</span>
+            <span className="block text-[11px] text-white/60">{i + 1}. {s.label}</span>
             <span className="block text-xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{s.count}</span>
-            <span className="hidden md:block text-[10.5px] text-white/35 truncate">{s.hint}</span>
+            <span className="hidden md:block text-[11px] text-white/55 truncate">{s.hint}</span>
           </Link>
         ))}
       </nav>
@@ -68,28 +68,28 @@ export default async function OutreachProspects({ searchParams }: { searchParams
           {wave1Left > 0 && (
             <Card>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p className="text-sm"><b>{wave1Left} firms from your wave-1 list</b> <span className="text-white/50">(Austin, Nashville, Scottsdale) aren’t in here yet.</span></p>
+                <p className="text-sm"><b>{wave1Left} firms from your wave-1 list</b> <span className="text-white/65">(Austin, Nashville, Scottsdale) aren’t in here yet.</span></p>
                 <ActionForm action={importWave1}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Import {wave1Left} firms</button></ActionForm>
               </div>
             </Card>
           )}
           <details open={!q.review.length} className="rounded-2xl border border-white/[0.07] bg-[#121212]">
-            <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">Find new firms on Google Maps <span className="text-white/40 font-normal">· this month ${d.spent.toFixed(2)} of ${d.settings.monthlyCapUsd}</span></summary>
+            <summary className="cursor-pointer px-5 py-3.5 text-sm font-medium">Find new firms on Google Maps <span className="text-white/60 font-normal">· this month ${d.spent.toFixed(2)} of ${d.settings.monthlyCapUsd}</span></summary>
             <div className="px-5 pb-5">
               {!d.connected.apify ? <ConnectCard title="Connect Apify" why="Searches Google Maps for firms with a website, email and Instagram." steps={['Apify → Settings → Integrations → API token']} env="APIFY_TOKEN" /> : <>
                 <SearchForm />
-                <p className="mt-3 text-xs text-white/40">About $0.007 per firm. Skips stores, stagers, trades and anyone already in HubSpot. Firms scoring 5+ are approved and researched straight away; weaker fits land here for you to decide.</p>
+                <p className="mt-3 text-xs text-white/60">About $0.007 per firm. Skips stores, stagers, trades and anyone already in HubSpot. Firms scoring 5+ are approved and researched straight away; weaker fits land here for you to decide.</p>
                 {d.searches.length > 0 && (
                   <ul className="mt-3 flex flex-col divide-y divide-white/[0.05] border-t border-white/[0.06]">
                     {d.searches.map((s) => (
                       <li key={s.id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-[13px]">
                         <span>{s.term} · {s.location}</span>
-                        <span className="text-xs text-white/45">{s.status === 'SUCCEEDED' ? `${s.added ?? 0} new of ${s.found ?? 0}` : s.status === 'RUNNING' || s.status === 'READY' ? 'Searching…' : s.status.toLowerCase()} · {ago(s.createdAt)}</span>
+                        <span className="text-xs text-white/60">{s.status === 'SUCCEEDED' ? `${s.added ?? 0} new of ${s.found ?? 0}` : s.status === 'RUNNING' || s.status === 'READY' ? 'Searching…' : s.status.toLowerCase()} · {ago(s.createdAt)}</span>
                       </li>
                     ))}
                   </ul>
                 )}
-                <ActionForm action={refreshProspectSearches}><button className="mt-2 text-xs text-white/45 hover:text-white">Check searches ↻</button></ActionForm>
+                <ActionForm action={refreshProspectSearches}><button className="mt-2 text-xs text-white/60 hover:text-white">Check searches ↻</button></ActionForm>
               </>}
             </div>
           </details>
@@ -105,8 +105,8 @@ export default async function OutreachProspects({ searchParams }: { searchParams
                 {q.review.map((p) => (
                   <li key={p.id} data-item={`rv-${p.id}`} className="px-5 py-3 flex flex-wrap items-center gap-3">
                     <div className="flex-1 min-w-[200px]">
-                      <p className="text-[13.5px]">{firmLink(p)} <Badge tone={FIT_TONE(p.fit)}>{p.fit}/7</Badge></p>
-                      <p className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}{p.rating ? ` · ${p.rating}★ (${p.reviews})` : ''} · {p.fitWhy.join(' · ')}</p>
+                      <p className="text-sm">{firmLink(p)} <Badge tone={FIT_TONE(p.fit)}>{p.fit}/7</Badge></p>
+                      <p className="text-xs text-white/60">{[p.city, p.state].filter(Boolean).join(', ')}{p.rating ? ` · ${p.rating}★ (${p.reviews})` : ''} · {p.fitWhy.join(' · ')}</p>
                     </div>
                     <div className="flex gap-3 text-xs">
                       {p.website && <a href={p.website} {...linkProps} className="text-white/60 hover:text-white">Site ↗</a>}
@@ -134,7 +134,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
             <ul className="divide-y divide-white/[0.05]">
               {q.approved.map((p) => (
                 <li key={p.id} data-item={`rs-${p.id}`} className="px-5 py-2.5 text-[13px] flex flex-wrap items-center justify-between gap-3">
-                  <span className="min-w-0">{firmLink(p)} <span className="text-xs text-white/40">{[p.city, p.state].filter(Boolean).join(', ')}</span>
+                  <span className="min-w-0">{firmLink(p)} <span className="text-xs text-white/60">{[p.city, p.state].filter(Boolean).join(', ')}</span>
                     {p.researchError && <span className="block text-xs text-rose-300/80">Research failed: {p.researchError}</span>}</span>
                   {working(p) ? <span className="text-xs text-[#ff8a6d]">Researching now…</span> : (
                     <ActionForm action={researchNow}><input type="hidden" name="id" value={p.id} /><button className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white">{p.researchError ? 'Try again' : 'Research now'}</button></ActionForm>
@@ -168,12 +168,12 @@ export default async function OutreachProspects({ searchParams }: { searchParams
               {list.map((p) => (
                 <li key={p.id} className="px-5 py-2.5 text-[13px] flex flex-wrap items-center justify-between gap-3">
                   <span>{firmLink(p)} {p.channel && <Badge tone="muted">{CHANNEL_LABEL[p.channel]}</Badge>} {outcomeOf(p) && step !== 'outreach' && <Badge tone={p.wonAt ? 'good' : p.lostAt ? 'muted' : 'accent'}>{outcomeOf(p)}</Badge>}</span>
-                  <span className="text-xs text-white/40">{step === 'booked' ? `booked ${ago(p.bookedAt!)}` : step === 'replied' ? `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}` : `started ${ago(p.scheduledAt ?? p.startedAt ?? p.createdAt)}`}</span>
+                  <span className="text-xs text-white/60">{step === 'booked' ? `booked ${ago(p.bookedAt!)}` : step === 'replied' ? `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}` : `started ${ago(p.scheduledAt ?? p.startedAt ?? p.createdAt)}`}</span>
                 </li>
               ))}
             </ul>
           ) : <Empty>{step === 'outreach' ? 'No firms in outreach yet. Start some from Ready to start.' : step === 'booked' ? 'No audit calls booked from cold outreach yet.' : 'No replies yet.'}</Empty>}
-          {step === 'outreach' && <p className="px-5 py-3 text-xs text-white/40 border-t border-white/[0.06]">Day-by-day progress for each firm is on the <Link href="/dashboard/outreach/sequences" className="underline hover:text-white">Sequences</Link> tab.</p>}
+          {step === 'outreach' && <p className="px-5 py-3 text-xs text-white/60 border-t border-white/[0.06]">Day-by-day progress for each firm is on the <Link href="/dashboard/outreach/sequences" className="underline hover:text-white">Sequences</Link> tab.</p>}
         </Card>
       )}
 
@@ -183,8 +183,8 @@ export default async function OutreachProspects({ searchParams }: { searchParams
             <ul className="divide-y divide-white/[0.05]">
               {skipped.map((p) => (
                 <li key={p.id} data-item={`sk-${p.id}`} className="px-5 py-2.5 flex flex-wrap items-center gap-3">
-                  <div className="flex-1 min-w-[200px]"><p className="text-[13px]">{firmLink(p)}</p><p className="text-xs text-white/45">{p.fitWhy[0]}</p></div>
-                  <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="new" /><button className="text-xs text-white/50 hover:text-white">Undo → Review</button></ActionForm>
+                  <div className="flex-1 min-w-[200px]"><p className="text-[13px]">{firmLink(p)}</p><p className="text-xs text-white/60">{p.fitWhy[0]}</p></div>
+                  <ActionForm action={setProspect}><input type="hidden" name="ids" value={p.id} /><input type="hidden" name="status" value="new" /><button className="text-xs text-white/65 hover:text-white">Undo → Review</button></ActionForm>
                 </li>
               ))}
             </ul>

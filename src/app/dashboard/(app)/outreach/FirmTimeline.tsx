@@ -4,8 +4,8 @@ const DAY = 86_400_000;
 const short = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 /** Instagram + LinkedIn steps for one firm: done (✓ date), due (date), or not applicable. */
 export function Timeline({ p }: { p: Prospect }) {
-  if (p.channel === 'email') return <span className="text-[11px] text-white/40">Email only: E1 to E4</span>;
-  if (!p.instagram && !p.drafts?.research?.ownerLinkedin) return <span className="text-[11px] text-white/30">No Instagram or LinkedIn: email only</span>;
+  if (p.channel === 'email') return <span className="text-[11px] text-white/60">Email only: E1 to E4</span>;
+  if (!p.instagram && !p.drafts?.research?.ownerLinkedin) return <span className="text-[11px] text-white/55">No Instagram or LinkedIn: email only</span>;
   const dm = p.dmSentAt ? Date.parse(p.dmSentAt) : null;
   const steps: { label: string; done?: string; due?: number }[] = [
     ...(p.instagram && p.channel !== 'linkedin' ? [
@@ -25,7 +25,7 @@ export function Timeline({ p }: { p: Prospect }) {
   return (
     <div className="flex flex-wrap gap-1">
       {steps.map((st) => (
-        <span key={st.label} title={st.label} className={`rounded-full px-2 py-0.5 text-[10.5px] whitespace-nowrap ${st.done ? 'bg-emerald-500/15 text-emerald-300' : st.due && st.due <= Date.now() ? 'bg-[#F2613F]/15 text-[#ff8a6d]' : 'bg-white/[0.05] text-white/40'}`}>
+        <span key={st.label} title={st.label} className={`rounded-full px-2 py-0.5 text-[11px] whitespace-nowrap ${st.done ? 'bg-emerald-500/15 text-emerald-300' : st.due && st.due <= Date.now() ? 'bg-[#F2613F]/15 text-[#ff8a6d]' : 'bg-white/[0.05] text-white/60'}`}>
           {st.label} {st.done ? `✓ ${short(Date.parse(st.done))}` : st.due ? short(st.due) : ''}
         </span>
       ))}

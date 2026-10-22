@@ -44,11 +44,11 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
 
   return (
     <>
-      <Link href="/dashboard/outreach/prospects" className="text-xs text-white/45 hover:text-white -mb-3">← Prospects</Link>
+      <Link href="/dashboard/outreach/prospects" className="text-xs text-white/60 hover:text-white -mb-3">← Prospects</Link>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>{p.firm}</h1>
-          <p className="text-sm text-white/50 mt-1 flex flex-wrap items-center gap-2">
+          <p className="text-sm text-white/65 mt-1 flex flex-wrap items-center gap-2">
             {[p.city, p.state].filter(Boolean).join(', ')}
             <Badge tone={p.status === 'replied' ? 'good' : live ? 'accent' : 'muted'}>{STATUS[p.status]}</Badge>
             {p.channel && <Badge tone="neutral">{CHANNEL_LABEL[p.channel]} only</Badge>}
@@ -61,7 +61,7 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
           {p.website && <a href={p.website} {...linkProps} className="text-white/60 hover:text-white">Website ↗</a>}
           {p.instagram && <a href={`https://instagram.com/${p.instagram}`} {...linkProps} className="text-white/60 hover:text-white">@{p.instagram} ↗</a>}
           {r?.ownerLinkedin && <a href={r.ownerLinkedin} {...linkProps} className="text-white/60 hover:text-white">LinkedIn ↗</a>}
-          {(p.email || r?.ownerEmail) && <span className="text-white/45">{r?.ownerEmail ?? p.email}</span>}
+          {(p.email || r?.ownerEmail) && <span className="text-white/60">{r?.ownerEmail ?? p.email}</span>}
         </div>
       </div>
 
@@ -83,16 +83,16 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
               </select>
               <button className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:text-white">They said yes → owed</button>
             </ActionForm>
-            {hold && <span className="text-xs text-white/45">{hold}</span>}
+            {hold && <span className="text-xs text-white/60">{hold}</span>}
           </div>
           {!p.bookedAt && (
             <details className="mt-3 border-t border-white/[0.06] pt-3">
-              <summary className="cursor-pointer text-xs text-white/50 hover:text-white">They booked the audit, but it didn’t match here (personal email)? Link it by hand</summary>
+              <summary className="cursor-pointer text-xs text-white/65 hover:text-white">They booked the audit, but it didn’t match here (personal email)? Link it by hand</summary>
               <ActionForm action={markBooked} className="mt-2 flex flex-wrap items-center gap-2">
                 <input type="hidden" name="id" value={p.id} />
-                <input name="deal" placeholder="HubSpot deal link (optional)" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-1.5 text-xs text-white placeholder:text-white/30 min-w-[260px]" />
+                <input name="deal" placeholder="HubSpot deal link (optional)" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-1.5 text-xs text-white placeholder:text-white/50 min-w-[260px]" />
                 <button className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium">They booked</button>
-                <span className="text-[11px] text-white/40">Stops the sequence, marks Booked, notes the research on the deal.</span>
+                <span className="text-[11px] text-white/60">Stops the sequence, marks Booked, notes the research on the deal.</span>
               </ActionForm>
             </details>
           )}
@@ -114,7 +114,7 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
               <Card>
                 <Timeline p={p} />
                 {(!p.channel || p.channel === 'email') && p.drafts && (
-                  <p className="text-xs text-white/50 mt-3">Email: {(p.sent?.length ?? 0)} of {p.drafts.steps.length} sent{p.sent?.length ? ` · last ${ago(p.sent[p.sent.length - 1].at)}` : ''}{(p.sent?.length ?? 0) < 4 ? ` · next: ${STEP_LABEL[p.sent?.length ?? 0]}` : ''}</p>
+                  <p className="text-xs text-white/65 mt-3">Email: {(p.sent?.length ?? 0)} of {p.drafts.steps.length} sent{p.sent?.length ? ` · last ${ago(p.sent[p.sent.length - 1].at)}` : ''}{(p.sent?.length ?? 0) < 4 ? ` · next: ${STEP_LABEL[p.sent?.length ?? 0]}` : ''}</p>
                 )}
               </Card>
             </>
@@ -126,7 +126,7 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
               <Card>
                 {(p.drafts.dms?.length ? p.drafts.dms : p.drafts.dm ? [{ style: 'A', text: p.drafts.dm }] : []).map((o) => (
                   <div key={o.style} className="mb-3">
-                    <p className="text-[10.5px] uppercase tracking-wider text-white/35">Instagram opener {o.style}{p.dmStyle === o.style ? ' · sent' : ''}</p>
+                    <p className="text-[11px] uppercase tracking-wider text-white/55">Instagram opener {o.style}{p.dmStyle === o.style ? ' · sent' : ''}</p>
                     <p className="text-[13px] text-white/80 mt-1">{o.text}</p>
                   </div>
                 ))}
@@ -166,11 +166,11 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
                   ['Instagram', [r.igFollowers ? `${r.igFollowers.toLocaleString('en-GB')} followers` : '', r.igLastPost ? `last post ${r.igLastPost}` : ''].filter(Boolean).join(' · ')],
                   ['Detail', r.detail],
                 ] as const).filter(([, v]) => v).map(([k, v]) => (
-                  <Fragment key={k}><dt className="text-white/40">{k}</dt><dd className="text-white/80">{v}</dd></Fragment>
+                  <Fragment key={k}><dt className="text-white/60">{k}</dt><dd className="text-white/80">{v}</dd></Fragment>
                 ))}
               </dl>
-            ) : <><p className="text-sm text-white/45">{p.fitWhy.join(' · ')}</p><p className="text-xs text-white/35 mt-2">{p.status === 'new' ? 'Research starts when you approve the firm.' : p.status === 'approved' ? (researching ? 'Research is running now.' : p.researchError ? 'Research failed; try again above.' : 'Waiting for research.') : p.status === 'rejected' ? 'Skipped, so no research was done.' : 'No research on file for this firm.'}</p></>}
-            {p.drafts?.dossier && <p className="text-xs text-white/45 mt-3 border-t border-white/[0.05] pt-3">{p.drafts.dossier}</p>}
+            ) : <><p className="text-sm text-white/60">{p.fitWhy.join(' · ')}</p><p className="text-xs text-white/55 mt-2">{p.status === 'new' ? 'Research starts when you approve the firm.' : p.status === 'approved' ? (researching ? 'Research is running now.' : p.researchError ? 'Research failed; try again above.' : 'Waiting for research.') : p.status === 'rejected' ? 'Skipped, so no research was done.' : 'No research on file for this firm.'}</p></>}
+            {p.drafts?.dossier && <p className="text-xs text-white/60 mt-3 border-t border-white/[0.05] pt-3">{p.drafts.dossier}</p>}
           </Card>
 
           {posts.length > 0 && (
@@ -181,8 +181,8 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
                   {posts.map((post) => (
                     <li key={post.url} className="flex flex-col gap-1">
                       <a href={post.url} {...linkProps} className="text-xs text-[#ff8a6d] hover:underline">Open post ↗{post.at ? ` · ${ago(post.at)}` : ''}</a>
-                      {post.caption && <p className="text-[11px] text-white/45 line-clamp-2">{post.caption}</p>}
-                      {post.comment && <div className="flex flex-wrap items-center gap-2"><p className="text-[12.5px] text-white/80">“{post.comment}”</p><CopyText text={post.comment} label="Copy comment" /></div>}
+                      {post.caption && <p className="text-[11px] text-white/60 line-clamp-2">{post.caption}</p>}
+                      {post.comment && <div className="flex flex-wrap items-center gap-2"><p className="text-[13px] text-white/80">“{post.comment}”</p><CopyText text={post.comment} label="Copy comment" /></div>}
                     </li>
                   ))}
                 </ul>

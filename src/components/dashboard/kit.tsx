@@ -24,7 +24,7 @@ export const pct = (f: number) => `${Math.round(f * 100)}%`;
 export function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 -mb-1 mt-2">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-white/40" style={{ fontFamily: 'var(--font-body)' }}>{children}</h2>
+      <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-white/60" style={{ fontFamily: 'var(--font-body)' }}>{children}</h2>
       {action}
     </div>
   );
@@ -38,7 +38,7 @@ export function Chips({ items, active }: { items: { label: string; href: string;
         return (
           <a key={it.href} href={it.href} aria-current={on ? 'true' : undefined}
             className={`rounded-full px-3 py-1.5 text-xs transition-colors ${on ? 'bg-white text-black font-medium' : 'bg-white/[0.05] text-white/65 hover:bg-white/[0.09] hover:text-white'}`}>
-            {it.label}{it.count !== undefined && <span className={on ? 'text-black/50' : 'text-white/35'}> {it.count}</span>}
+            {it.label}{it.count !== undefined && <span className={on ? 'text-black/50' : 'text-white/55'}> {it.count}</span>}
           </a>
         );
       })}
@@ -53,11 +53,11 @@ export function ConnectCard({ title, why, steps, env }: { title: string; why: st
         <span className="size-9 shrink-0 rounded-xl bg-[#F2613F]/15 text-[#ff8a6d] grid place-items-center text-lg" aria-hidden>+</span>
         <div>
           <p className="font-semibold">{title}</p>
-          <p className="text-sm text-white/50">{why}</p>
+          <p className="text-sm text-white/65">{why}</p>
         </div>
       </div>
       <ol className="flex flex-col gap-2 text-sm text-white/70 list-decimal pl-5">{steps.map((s) => <li key={s}>{s}</li>)}</ol>
-      <p className="text-xs text-white/40">
+      <p className="text-xs text-white/60">
         Add it in Vercel → Settings → Environment Variables as{' '}
         <code className="text-white/75 bg-white/[0.06] px-1.5 py-0.5 rounded">{env}</code> (and Bitwarden), then redeploy.
       </p>
@@ -102,9 +102,9 @@ export function Feed({ events }: { events: { at: string; kind: string; title: st
             <span className={`size-7 shrink-0 rounded-lg grid place-items-center text-[13px] ${TONE[m.tone]}`} aria-hidden>{m.icon}</span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] text-white/85 truncate">{e.title}</span>
-              <span className="block text-[11px] text-white/35">{m.label} · {when(e.at)}</span>
+              <span className="block text-[11px] text-white/55">{m.label} · {when(e.at)}</span>
             </span>
-            <span className="text-[11px] text-white/35 whitespace-nowrap tabular-nums">{ago(e.at)}</span>
+            <span className="text-[11px] text-white/55 whitespace-nowrap tabular-nums">{ago(e.at)}</span>
           </>
         );
         return (
@@ -127,7 +127,7 @@ export function Drawer({ title, closeHref, children, footer }: { title: React.Re
       <div className="relative w-full max-w-[640px] h-full overflow-y-auto bg-[#111] border-l border-white/10 flex flex-col">
         <div className="sticky top-0 z-10 bg-[#111]/95 backdrop-blur px-6 py-4 border-b border-white/[0.06] flex items-start justify-between gap-3">
           <div className="min-w-0">{title}</div>
-          <a href={closeHref} className="text-white/40 hover:text-white text-2xl leading-none -mt-1" aria-label="Close panel">×</a>
+          <a href={closeHref} className="text-white/60 hover:text-white text-2xl leading-none -mt-1" aria-label="Close panel">×</a>
         </div>
         <div className="px-6 py-5 flex flex-col gap-6 flex-1">{children}</div>
         {footer && <div className="sticky bottom-0 bg-[#111]/95 backdrop-blur px-6 py-4 border-t border-white/[0.06]">{footer}</div>}
@@ -140,7 +140,7 @@ export function Field({ label, children }: { label: string; children?: React.Rea
   if (children === '' || children === null || children === undefined) return null;
   return (
     <div className="min-w-0">
-      <dt className="text-[11px] text-white/40">{label}</dt>
+      <dt className="text-[11px] text-white/60">{label}</dt>
       <dd className="text-[13px] text-white/85 break-words mt-0.5">{children}</dd>
     </div>
   );
@@ -149,9 +149,9 @@ export function Field({ label, children }: { label: string; children?: React.Rea
 export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] text-white/40">{label}</p>
+      <p className="text-[11px] text-white/60">{label}</p>
       <p className="text-xl font-semibold tabular-nums mt-0.5" style={{ fontFamily: 'var(--font-display)' }}>{value}</p>
-      {sub && <div className="text-[11px] text-white/40 mt-0.5">{sub}</div>}
+      {sub && <div className="text-[11px] text-white/60 mt-0.5">{sub}</div>}
     </div>
   );
 }

@@ -42,7 +42,7 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
 
   return (
     <>
-      <div className="flex items-center gap-2 text-xs text-white/40"><Link href="/dashboard/content" className="hover:text-white">← Content</Link><span>/</span><span>{post.id}</span></div>
+      <div className="flex items-center gap-2 text-xs text-white/60"><Link href="/dashboard/content" className="hover:text-white">← Content</Link><span>/</span><span>{post.id}</span></div>
       <PageHeader title={post.master.idea ? post.master.idea.slice(0, 60) + (post.master.idea.length > 60 ? '…' : '') : 'New post'}
         sub="Write it once, tune it for each channel, then publish now or at an exact time. Each channel goes out on its own." />
       <PostEditor initial={post} ctx={{

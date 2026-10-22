@@ -18,7 +18,7 @@ const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:
 const page = await (await b.newContext({ viewport: { width: 1366, height: 900 } })).newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(`${BASE}/dashboard/login`); await page.fill('input[name=password]', 'localtest'); await page.click('button'); await page.waitForURL(/\/dashboard(?!\/login)(\/|\?|$)/);
-check('Login lands on Outreach → Today', page.url().endsWith('/dashboard/outreach'));
+check('Login lands on Today (/dashboard)', new URL(page.url()).pathname === '/dashboard');
 await page.waitForLoadState('networkidle').catch(() => {});
 const t = await page.locator('main').innerText();
 check('Reply with a drafted answer on Today', t.includes('Mia · Oakline Interiors') && t.includes('Happy to show you on a quick call'), t.slice(0, 100));

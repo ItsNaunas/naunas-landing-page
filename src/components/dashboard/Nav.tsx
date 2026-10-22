@@ -39,7 +39,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
 const ALL = NAV_GROUPS.flatMap((g) => g.items);
 const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach', '/dashboard/content'];
 export type Badges = Partial<Record<string, number>>;
-const Dot = ({ n }: { n?: number }) => (n ? <span className="ml-auto rounded-full bg-[#F2613F] px-1.5 py-px text-[10px] font-semibold text-white tabular-nums">{n}</span> : null);
+const Dot = ({ n }: { n?: number }) => (n ? <span className="ml-auto rounded-full bg-[#F2613F] px-1.5 py-px text-[11px] font-semibold text-white tabular-nums">{n}</span> : null);
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   return (
@@ -58,7 +58,7 @@ export function SideNav({ badges = {}, hide = [] }: { badges?: Badges; hide?: st
     <nav className="flex flex-col gap-5" aria-label="Dashboard">
       {NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((n) => !hide.includes(n.href)) })).filter((g) => g.items.length).map((g) => (
         <div key={g.label} className="flex flex-col gap-0.5">
-          <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">{g.label}</p>
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/55">{g.label}</p>
           {g.items.map((n) => {
             const active = isActive(path, n.href);
             return (
@@ -101,13 +101,13 @@ export function BottomNav({ badges = {}, hide = [] }: { badges?: Badges; hide?: 
           const n = ALL.find((x) => x.href === href)!;
           const active = isActive(path, href);
           return (
-            <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`relative flex flex-col items-center gap-1 py-2.5 text-[10px] ${active ? 'text-white' : 'text-white/45'}`}>
+            <Link key={href} href={href} aria-current={active ? 'page' : undefined} className={`relative flex flex-col items-center gap-1 py-2.5 text-[11px] ${active ? 'text-white' : 'text-white/60'}`}>
               <span className={active ? 'text-[#F2613F]' : ''}><Icon name={n.icon} size={20} /></span>{n.label}
               {!!badges[href] && <span className="absolute top-1.5 left-1/2 ml-2 size-2 rounded-full bg-[#F2613F]" />}
             </Link>
           );
         })}
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex flex-col items-center gap-1 py-2.5 text-[10px] ${moreActive || open ? 'text-white' : 'text-white/45'}`}>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className={`flex flex-col items-center gap-1 py-2.5 text-[11px] ${moreActive || open ? 'text-white' : 'text-white/60'}`}>
           <span className={moreActive ? 'text-[#F2613F]' : ''}><Icon name="more" size={20} /></span>More
         </button>
       </nav>

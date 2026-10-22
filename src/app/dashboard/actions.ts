@@ -20,7 +20,7 @@ export async function login(_prev: string | null, form: FormData): Promise<strin
   (await cookies()).set(DASH_COOKIE, (await sessionToken())!, {
     httpOnly: true, secure: true, sameSite: 'lax', path: '/dashboard', maxAge: DASH_MAX_AGE,
   });
-  redirect('/dashboard/outreach');
+  redirect('/dashboard');
 }
 
 export async function logout() {
@@ -1055,7 +1055,8 @@ export async function migrateStore() {
   let r: { copied: number; skipped: number; failed: string[] };
   try { r = await copyBlobToPostgres(); } catch (err) { r = { copied: 0, skipped: 0, failed: [String((err as Error).message ?? err)] }; }
   await putJSON('meta/store-migration.json', { at: new Date().toISOString(), ...r }).catch(() => {});
-  await logEvent('alert', `Store copy: ${r.copied} copied, ${r.skipped} skipped${r.failed.length ? `, ${r.failed.length} failed` : ''}`, '/dashboard/system');
+  // Only a failed copy is something to fix; a clean one is recorded in meta/store-migration.json.
+  if (r.failed.length) await logEvent('alert', `Store copy: ${r.copied} copied, ${r.skipped} skipped, ${r.failed.length} failed`, '/dashboard/system');
   await done();
 }
 
@@ -1064,6 +1065,16 @@ export async function markReplyHandled(form: FormData) {
   await requireSession();
   const { markTriaged } = await import('@/lib/triage');
   await markTriaged(str(form, 'id'));
+  changed();
+}
+
+/** Money: stop chasing an invoice (dashboard only, Stripe untouched), or undo that. */
+export async function writeOffInvoice(form: FormData) {
+  await requireSession();
+  const { setWrittenOff } = await import('@/lib/invoices');
+  const undo = str(form, 'undo') === '1';
+  await setWrittenOff(str(form, 'id'), undo ? null : { number: str(form, 'number'), who: str(form, 'who'), amount: Number(str(form, 'amount')) || 0, currency: str(form, 'currency') || 'gbp' });
+  await logEvent('payment_issue', `${undo ? 'Chasing again' : 'Written off'} · invoice ${str(form, 'number')} · ${str(form, 'who')}`, '/dashboard/money');
   changed();
 }
 

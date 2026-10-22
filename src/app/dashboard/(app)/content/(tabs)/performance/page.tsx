@@ -56,12 +56,12 @@ export default async function Performance({ searchParams }: { searchParams: Prom
       <Errors errors={[...perf.errors, ...d.errors]} />
 
       {/* What's working */}
-      <SectionTitle action={<form action={refreshPostStats}><button className="text-xs text-white/45 hover:text-white">Refresh Instagram stats ↻</button></form>}>Post leaderboard · last 120 days</SectionTitle>
+      <SectionTitle action={<form action={refreshPostStats}><button className="text-xs text-white/60 hover:text-white">Refresh Instagram stats ↻</button></form>}>Post leaderboard · last 120 days</SectionTitle>
       <Card pad={false}>
         {board.length ? (
           <div className="overflow-x-auto">
             <table className="w-full text-[13px] min-w-[640px]">
-              <thead><tr className="text-left text-[11px] text-white/40 border-b border-white/[0.06]">
+              <thead><tr className="text-left text-[11px] text-white/60 border-b border-white/[0.06]">
                 <th className="px-5 py-2.5 font-normal">Post</th>
                 <th className="px-2 py-2.5 font-normal text-right" title="Tracked-link clicks per channel">Clicks LI · IG · TT</th>
                 <th className="px-2 py-2.5 font-normal text-right" title="Instagram reach / views">IG reach</th>
@@ -73,12 +73,12 @@ export default async function Performance({ searchParams }: { searchParams: Prom
                   <tr key={r.id + j} className="hover:bg-white/[0.02]">
                     <td className="px-5 py-2.5 max-w-0 w-1/2">
                       <Link href={`/dashboard/content/${r.id}`} className="block truncate text-white/85 hover:text-[#F2613F]">{r.idea || 'Untitled'}</Link>
-                      <span className="text-[11px] text-white/35">{ago(r.when)}{CHANNELS.filter((c) => r.urls?.[c]).map((c) => <a key={c} href={r.urls![c]} {...linkProps} className="ml-2 hover:text-white">{CHANNEL_CODE[c].toUpperCase()} ↗</a>)}</span>
+                      <span className="text-[11px] text-white/55">{ago(r.when)}{CHANNELS.filter((c) => r.urls?.[c]).map((c) => <a key={c} href={r.urls![c]} {...linkProps} className="ml-2 hover:text-white">{CHANNEL_CODE[c].toUpperCase()} ↗</a>)}</span>
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.clicks.linkedin ?? 0} · {r.clicks.instagram ?? 0} · {r.clicks.tiktok ?? 0}</td>
                     <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.insights ? (r.insights.reach ?? r.insights.views ?? 0).toLocaleString() : '—'}</td>
-                    <td className="px-2 py-2.5 text-right tabular-nums font-medium">{r.leads || <span className="text-white/30">0</span>}</td>
-                    <td className="px-5 py-2.5 text-right tabular-nums">{r.deals ? <span className="text-emerald-300">{r.deals}</span> : <span className="text-white/30">0</span>}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums font-medium">{r.leads || <span className="text-white/55">0</span>}</td>
+                    <td className="px-5 py-2.5 text-right tabular-nums">{r.deals ? <span className="text-emerald-300">{r.deals}</span> : <span className="text-white/55">0</span>}</td>
                   </tr>
                 ))}
               </tbody>
@@ -93,7 +93,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
             <ul className="flex flex-col divide-y divide-white/[0.05] -my-2">
               {again.map((r) => (
                 <li key={r.id} className="py-2.5 flex items-center gap-3">
-                  <span className="flex-1 min-w-0"><span className="block truncate text-[13px] text-white/85">{r.idea || 'Untitled'}</span><span className="text-[11px] text-white/40">{r.leads} lead{r.leads > 1 ? 's' : ''} · {ago(r.when)}</span></span>
+                  <span className="flex-1 min-w-0"><span className="block truncate text-[13px] text-white/85">{r.idea || 'Untitled'}</span><span className="text-[11px] text-white/60">{r.leads} lead{r.leads > 1 ? 's' : ''} · {ago(r.when)}</span></span>
                   <form action={duplicateContentPost}><input type="hidden" name="id" value={r.id} /><button className="text-xs rounded-lg bg-white/[0.08] hover:bg-white/[0.14] px-2.5 py-1.5">Re-post as draft</button></form>
                 </li>
               ))}
@@ -103,19 +103,19 @@ export default async function Performance({ searchParams }: { searchParams: Prom
 
       <SectionTitle>Landing video · last 30 days</SectionTitle>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Pressed play" value={vs.plays} foot={<span className="text-xs text-white/40">{vs.today.play ?? 0} today</span>} />
-        <Kpi label="Reached halfway" value={vs.q50} foot={<span className="text-xs text-white/40">{vs.plays ? `${Math.round((vs.q50 / vs.plays) * 100)}% of plays` : 'no plays yet'}</span>} />
-        <Kpi label="Watched to the end" value={vs.ends} foot={<span className="text-xs text-white/40">{vs.plays ? `${Math.round((vs.ends / vs.plays) * 100)}% of plays` : 'no plays yet'}</span>} />
-        <Kpi label="Scorecard sign-ups after it" value={vs.signups} foot={<span className="text-xs text-white/40">{vs.popups ? `${vs.popups} saw the pop-up` : 'pop-up opens when the video ends'}</span>} />
+        <Kpi label="Pressed play" value={vs.plays} foot={<span className="text-xs text-white/60">{vs.today.play ?? 0} today</span>} />
+        <Kpi label="Reached halfway" value={vs.q50} foot={<span className="text-xs text-white/60">{vs.plays ? `${Math.round((vs.q50 / vs.plays) * 100)}% of plays` : 'no plays yet'}</span>} />
+        <Kpi label="Watched to the end" value={vs.ends} foot={<span className="text-xs text-white/60">{vs.plays ? `${Math.round((vs.ends / vs.plays) * 100)}% of plays` : 'no plays yet'}</span>} />
+        <Kpi label="Scorecard sign-ups after it" value={vs.signups} foot={<span className="text-xs text-white/60">{vs.popups ? `${vs.popups} saw the pop-up` : 'pop-up opens when the video ends'}</span>} />
       </div>
 
       <SectionTitle>Instagram and TikTok</SectionTitle>
       <RangeChips path="/dashboard/content/performance" param="range" value={range} options={RANGES} />
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Instagram followers" value={d.profile?.followers_count?.toLocaleString('en-GB') ?? '—'} foot={<span className="text-xs text-white/40">{d.profile ? `@${d.profile.username}` : ''}</span>} />
-        <Kpi label="Instagram reach" value={d.insights ? n(d.insights.reach) : '—'} foot={<span className="text-xs text-white/40">{d.insights ? `${n(d.insights.profile_views)} profile views` : 'needs the insights permission'}</span>} />
+        <Kpi label="Instagram followers" value={d.profile?.followers_count?.toLocaleString('en-GB') ?? '—'} foot={<span className="text-xs text-white/60">{d.profile ? `@${d.profile.username}` : ''}</span>} />
+        <Kpi label="Instagram reach" value={d.insights ? n(d.insights.reach) : '—'} foot={<span className="text-xs text-white/60">{d.insights ? `${n(d.insights.profile_views)} profile views` : 'needs the insights permission'}</span>} />
         <Kpi label={`Leads from Instagram · ${span}`} value={d.totalLeads} href={`/dashboard/leads?source=instagram_dm&range=${range}`} />
-        <Kpi label="TikTok followers" value={tt?.user ? n(tt.user.follower_count) : '—'} foot={<span className="text-xs text-white/40">{tt?.videos?.length ? `${n(ttViews)} views, last ${tt.videos.length} videos` : tt ? '' : <Link href="/dashboard/tiktok" className="hover:text-white">Connect TikTok →</Link>}</span>} />
+        <Kpi label="TikTok followers" value={tt?.user ? n(tt.user.follower_count) : '—'} foot={<span className="text-xs text-white/60">{tt?.videos?.length ? `${n(ttViews)} views, last ${tt.videos.length} videos` : tt ? '' : <Link href="/dashboard/tiktok" className="hover:text-white">Connect TikTok →</Link>}</span>} />
       </div>
       <SectionTitle>Posts · {span}</SectionTitle>
       <SectionError errors={errFor(d.errors, 'Instagram posts', 'Instagram profile')} />
@@ -126,11 +126,11 @@ export default async function Performance({ searchParams }: { searchParams: Prom
               <div className="aspect-square bg-white/[0.04] relative overflow-hidden">
                 {(p.thumbnail_url || (p.media_type !== 'VIDEO' && p.media_url))
                   ? <img src={p.thumbnail_url ?? p.media_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover group-hover:scale-[1.03] transition-transform" />
-                  : <div className="absolute inset-0 grid place-items-center text-xs text-white/30 p-3 text-center">{p.caption?.slice(0, 80)}</div>}
+                  : <div className="absolute inset-0 grid place-items-center text-xs text-white/55 p-3 text-center">{p.caption?.slice(0, 80)}</div>}
                 {p.leads > 0 && <span className="absolute top-2 left-2"><Badge tone="accent">{p.leads} lead{p.leads > 1 ? 's' : ''}</Badge></span>}
               </div>
               <div className="p-3 flex flex-col gap-1">
-                <p className="text-[11px] text-white/40">{TYPE[p.media_type] ?? 'Post'} · {ago(p.timestamp)}</p>
+                <p className="text-[11px] text-white/60">{TYPE[p.media_type] ?? 'Post'} · {ago(p.timestamp)}</p>
                 <p className="text-xs text-white/70 tabular-nums">♥ {p.like_count ?? 0} · 💬 {p.comments_count ?? 0}</p>
               </div>
             </a>
@@ -154,7 +154,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
           </div>
         </>
       ) : null}
-      <p className="text-xs text-white/35">LinkedIn doesn’t give apps stats on personal posts, so LinkedIn here means clicks on each post’s tracked link and the leads it brought.</p>
+      <p className="text-xs text-white/55">LinkedIn doesn’t give apps stats on personal posts, so LinkedIn here means clicks on each post’s tracked link and the leads it brought.</p>
     </>
   );
 }

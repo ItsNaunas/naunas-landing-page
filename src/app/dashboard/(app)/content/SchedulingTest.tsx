@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { testScheduling } from '../../actions';
+import { FUNNEL } from '@/config/funnel';
 
 type Ping = { scheduledFor?: string; firedAt?: string | null } | null;
 
@@ -21,10 +22,10 @@ export function SchedulingTest({ ready, last }: { ready: boolean; last: Ping }) 
     return () => clearInterval(t);
   }, [waiting, router]);
 
-  if (!ready) return <span className="text-xs text-white/35">Scheduling is off (QStash keys missing).</span>;
+  if (!ready) return <span className="text-xs text-white/55">Scheduling is off (QStash keys missing).</span>;
   return (
     <span className="flex items-center gap-2 flex-wrap text-xs">
-      {last?.firedAt && <span className="text-emerald-300">✅ Scheduling works (tested {new Date(last.firedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})</span>}
+      {last?.firedAt && <span className="text-emerald-300">✅ Scheduling works (tested {new Date(last.firedAt).toLocaleString('en-GB', { timeZone: FUNNEL.ownerTz, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})</span>}
       {waiting && <span className="text-sky-200">Testing… QStash should call back within about a minute.</span>}
       {missed && <span className="text-rose-300">❌ The test call never arrived. Check Upstash → QStash → Logs.</span>}
       {err && <span className="text-rose-300">{err}</span>}

@@ -16,6 +16,10 @@ export type Overdue = {
   dueAt: string; daysOverdue: number; url?: string; reminded: string[];
 };
 const LOG = 'money/invoice-chase.json';
+/** Invoices Naufal has given up chasing. Dashboard-only: the invoice stays open in Stripe. */
+const WRITTEN_OFF = 'money/written-off.json';
+export type WrittenOff = { number: string; who: string; amount: number; currency: string; at: string };
+export const writtenOff = () => getJSON<Record<string, WrittenOff>>(WRITTEN_OFF, {});
 
 type Inv = { id: string; number?: string; amount_due: number; currency: string; customer_name?: string; customer_email?: string; due_date?: number; hosted_invoice_url?: string };
 
@@ -24,10 +28,10 @@ export async function overdueInvoices(): Promise<Overdue[]> {
   if (!key) return [];
   const res = await fetch('https://api.stripe.com/v1/invoices?status=open&limit=100', { headers: { Authorization: `Bearer ${key}` }, cache: 'no-store' });
   if (!res.ok) throw new Error(`Stripe invoices ${res.status}`);
-  const log = await getJSON<Record<string, string[]>>(LOG, {});
+  const [log, off] = await Promise.all([getJSON<Record<string, string[]>>(LOG, {}), writtenOff()]);
   const now = Date.now();
   return ((await res.json()) as { data: Inv[] }).data
-    .filter((i) => i.due_date && i.due_date * 1000 < now && i.amount_due > 0)
+    .filter((i) => i.due_date && i.due_date * 1000 < now && i.amount_due > 0 && !off[i.id])
     .map((i) => ({
       id: i.id, number: i.number ?? i.id, who: i.customer_name ?? i.customer_email ?? 'Client', email: i.customer_email,
       amount: i.amount_due / 100, currency: i.currency, dueAt: new Date(i.due_date! * 1000).toISOString(),
@@ -46,6 +50,16 @@ export function chaseText(o: Overdue): string {
   if (o.daysOverdue <= 7) return `Hi ${first},\n\nA quick nudge on invoice ${o.number} for ${amt}, which was due ${o.daysOverdue === 0 ? 'today' : `${o.daysOverdue} day${o.daysOverdue === 1 ? '' : 's'} ago`}. Easy to miss, so here’s the link again:${link}\n\nThanks,\nNaufal`;
   if (o.daysOverdue <= 21) return `Hi ${first},\n\nInvoice ${o.number} for ${amt} is now ${o.daysOverdue} days overdue. Could you let me know when it will be paid, or if there’s anything holding it up? The link is here:${link}\n\nThanks,\nNaufal`;
   return `Hi ${first},\n\nInvoice ${o.number} for ${amt} is ${o.daysOverdue} days overdue and I haven’t heard back. Please settle it this week, or reply so we can agree a date. If there’s a problem with the work, tell me and I’ll put it right.${link}\n\nNaufal`;
+}
+
+/** Stop chasing an invoice (or start again with undo=true). Never touches Stripe. */
+export async function setWrittenOff(id: string, o: Omit<WrittenOff, 'at'> | null): Promise<void> {
+  if (!/^in_[A-Za-z0-9]+$/.test(id)) throw new Error('Bad invoice id.');
+  await updateJSON<Record<string, WrittenOff>>(WRITTEN_OFF, {}, (all) => {
+    const next = { ...all };
+    if (o) next[id] = { ...o, at: new Date().toISOString() }; else delete next[id];
+    return next;
+  });
 }
 
 /** Stripe re-sends its own invoice email to the customer. */

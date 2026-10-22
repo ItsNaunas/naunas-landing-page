@@ -22,7 +22,7 @@ export default async function OutreachLayout({ children }: { children: React.Rea
             <div className="absolute right-0 z-20 mt-2 w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-[#161616] p-4 shadow-xl flex flex-col gap-4">
               <ActionForm action={setOutreachSending} className="flex items-center justify-between gap-3">
                 <input type="hidden" name="on" value={settings.sending ? '0' : '1'} />
-                <span className="text-sm">Email sending<span className="block text-[11px] text-white/40">The 17:00 send for email-channel firms</span></span>
+                <span className="text-sm">Email sending<span className="block text-[11px] text-white/60">The 17:00 send for email-channel firms</span></span>
                 <button className={`relative h-7 w-14 shrink-0 rounded-full transition-colors ${settings.sending ? 'bg-emerald-500' : 'bg-white/15'}`} aria-label={settings.sending ? 'Turn sending off' : 'Turn sending on'}>
                   <span className={`absolute top-1 size-5 rounded-full bg-white transition-all ${settings.sending ? 'left-8' : 'left-1'}`} />
                 </button>
@@ -31,18 +31,18 @@ export default async function OutreachLayout({ children }: { children: React.Rea
                 <span className="text-sm">New firms a day, per channel</span>
                 <div className="grid grid-cols-3 gap-2">
                   {([['igNew', 'Instagram', settings.igNew], ['liNew', 'LinkedIn', settings.liNew], ['dailyNew', 'Email', settings.dailyNew]] as const).map(([name, label, v]) => (
-                    <label key={name} className="flex flex-col gap-1 text-[11px] text-white/45">{label}
+                    <label key={name} className="flex flex-col gap-1 text-[11px] text-white/60">{label}
                       <input name={name} type="number" min={0} max={40} defaultValue={v} className="rounded-lg bg-white/[0.05] border border-white/10 px-2 py-1.5 text-sm text-white" />
                     </label>
                   ))}
                 </div>
-                <label className="flex flex-col gap-1 text-[11px] text-white/45">When the list runs low, search these cities in turn (one per line)
-                  <textarea name="cities" rows={3} defaultValue={(settings.cities ?? []).join('\n')} placeholder={'Austin, TX\nNashville, TN\nScottsdale, AZ'} className="rounded-lg bg-white/[0.05] border border-white/10 px-2 py-1.5 text-xs text-white placeholder:text-white/25" />
+                <label className="flex flex-col gap-1 text-[11px] text-white/60">When the list runs low, search these cities in turn (one per line)
+                  <textarea name="cities" rows={3} defaultValue={(settings.cities ?? []).join('\n')} placeholder={'Austin, TX\nNashville, TN\nScottsdale, AZ'} className="rounded-lg bg-white/[0.05] border border-white/10 px-2 py-1.5 text-xs text-white placeholder:text-white/50" />
                 </label>
                 <button className="self-start rounded-lg bg-white text-black text-xs font-medium px-3 py-1.5">Save targets</button>
-                <p className="text-[11px] text-white/35">Each channel gets different firms. Week one: 7 / 7 / 6, then 10 / 10 / 10.</p>
+                <p className="text-[11px] text-white/55">Each channel gets different firms. Week one: 7 / 7 / 6, then 10 / 10 / 10.</p>
               </ActionForm>
-              <div className="border-t border-white/[0.06] pt-3 text-[11px] text-white/45 flex flex-col gap-1">
+              <div className="border-t border-white/[0.06] pt-3 text-[11px] text-white/60 flex flex-col gap-1">
                 <span>Research, reply drafts and post-call proposals all run here. The Claude routine only writes Monday’s content drafts.</span>
                 <a href={FUNNEL.routine.url} target="_blank" rel="noopener noreferrer" className="text-[#ff8a6d] hover:underline">Run the routine now (Run now on claude.ai) ↗</a>
               </div>

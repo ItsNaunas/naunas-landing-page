@@ -17,7 +17,7 @@ import { reportOpens } from '@/lib/leakReport';
 import { overdueInvoices, money } from '@/lib/invoices';
 
 export type Flag = {
-  id: string; level: 'high' | 'medium' | 'low'; area: 'Outreach' | 'Pipeline' | 'Content' | 'System';
+  id: string; level: 'high' | 'medium' | 'low'; area: 'Outreach' | 'Pipeline' | 'Money' | 'Content' | 'System';
   title: string; detail?: string; href: string; label?: string;
 };
 
@@ -58,7 +58,16 @@ export async function missing(): Promise<{ flags: Flag[]; deals: Deal[]; errors:
   for (const p of quietReplies.slice(0, 5)) add({ id: `reply-${p.id}`, level: 'high', area: 'Outreach', title: `${p.firm} replied ${daysSince(p.igRepliedAt ?? p.repliedAt)} days ago with no next step`, detail: 'No call booked and nothing promised. Move it towards a call, or offer the leak report.', href: firmHref(p), label: 'Open firm' });
 
   // ---- Money owed: open invoices past their due date
-  for (const o of await overdueInvoices().catch(() => [])) add({ id: `inv-${o.id}`, level: o.daysOverdue > 7 ? 'high' : 'medium', area: 'Pipeline', title: `${o.who} owes ${money(o.amount, o.currency)}: invoice ${o.number} ${o.daysOverdue} days overdue`, detail: o.reminded[0] ? `Last reminder ${daysSince(o.reminded[0])} days ago.` : 'No reminder sent yet. A chase message is ready on Money.', href: '/dashboard/money#overdue', label: 'Chase it' });
+  // One row for all of them: seven invoice rows used to push everything else off the list.
+  const overdue = await overdueInvoices().catch(() => []);
+  if (overdue.length === 1) {
+    const o = overdue[0];
+    add({ id: `inv-${o.id}`, level: o.daysOverdue > 7 ? 'high' : 'medium', area: 'Money', title: `${o.who} owes ${money(o.amount, o.currency)}: invoice ${o.number} ${o.daysOverdue} days overdue`, detail: o.reminded[0] ? `Last reminder ${daysSince(o.reminded[0])} days ago.` : 'No reminder sent yet. A chase message is ready on Money.', href: '/dashboard/money#overdue', label: 'Chase it' });
+  } else if (overdue.length > 1) {
+    const totals = Object.entries(overdue.reduce<Record<string, number>>((t, o) => ({ ...t, [o.currency]: (t[o.currency] ?? 0) + o.amount }), {})).map(([c, n]) => money(n, c)).join(' + ');
+    const who = [...new Set(overdue.map((o) => o.who))];
+    add({ id: 'invoices', level: overdue.some((o) => o.daysOverdue > 7) ? 'high' : 'medium', area: 'Money', title: `${overdue.length} invoices overdue · ${totals}`, detail: `${who.slice(0, 3).join(', ')}${who.length > 3 ? ` and ${who.length - 3} more` : ''}. Oldest ${overdue[0].daysOverdue} days. Chase or write off on Money.`, href: '/dashboard/money#overdue', label: 'Chase them' });
+  }
 
   // ---- Proposals opened but not accepted (2+ days), and published but never opened (3+ days)
   const rows = await listProposals().catch(() => []);

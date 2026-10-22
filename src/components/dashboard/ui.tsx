@@ -28,12 +28,12 @@ export function Card({ title, action, children, className = '', pad = true }: {
 }
 
 export function Delta({ now, prev, suffix = 'vs last week' }: { now: number; prev: number; suffix?: string }) {
-  if (!prev && !now) return <span className="text-xs text-white/35">No change {suffix}</span>;
+  if (!prev && !now) return <span className="text-xs text-white/55">No change {suffix}</span>;
   const diff = now - prev;
   const pct = prev ? Math.round((diff / prev) * 100) : null;
   const up = diff >= 0;
   return (
-    <span className="text-xs text-white/40">
+    <span className="text-xs text-white/60">
       <span className={up ? 'text-emerald-400' : 'text-rose-400'}>{up ? '▲' : '▼'} {pct === null ? `+${diff}` : `${Math.abs(pct)}%`}</span> {suffix}
     </span>
   );
@@ -53,13 +53,17 @@ export function Kpi({ label, value, foot, chart, href }: { label: string; value:
   return href ? <a href={href} className="block min-w-0">{body}</a> : <div className="min-w-0">{body}</div>;
 }
 
-export function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'accent' | 'good' | 'bad' | 'muted' }) {
-  const tones = {
+/** Accent = "act here". Status uses its own colours: good, warn, bad, info. Never orange for a state. */
+export type Tone = 'neutral' | 'accent' | 'good' | 'warn' | 'bad' | 'info' | 'muted';
+export function Badge({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: Tone }) {
+  const tones: Record<Tone, string> = {
     neutral: 'bg-white/[0.06] text-white/75',
     accent: 'bg-[#F2613F]/15 text-[#ff8a6d]',
     good: 'bg-emerald-400/10 text-emerald-300',
+    warn: 'bg-amber-400/10 text-amber-200',
     bad: 'bg-rose-400/10 text-rose-300',
-    muted: 'bg-white/[0.04] text-white/40',
+    info: 'bg-sky-400/10 text-sky-200',
+    muted: 'bg-white/[0.04] text-white/60',
   };
   return <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${tones[tone]}`}>{children}</span>;
 }
@@ -69,7 +73,7 @@ export function PageHeader({ title, sub, action }: { title: string; sub?: string
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>{title}</h1>
-        {sub && <p className="text-sm text-white/45 mt-1">{sub}</p>}
+        {sub && <p className="text-sm text-white/60 mt-1">{sub}</p>}
       </div>
       {action}
     </div>
@@ -81,14 +85,14 @@ export function TabIntro({ sub, action }: { sub?: React.ReactNode; action?: Reac
   if (!sub && !action) return null;
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      {sub ? <p className="text-sm text-white/45 max-w-3xl">{sub}</p> : <span />}
+      {sub ? <p className="text-sm text-white/60 max-w-3xl">{sub}</p> : <span />}
       {action}
     </div>
   );
 }
 
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 grid place-items-center text-center text-sm text-white/40 py-8 px-4">{children}</div>;
+  return <div className="flex-1 grid place-items-center text-center text-sm text-white/60 py-8 px-4">{children}</div>;
 }
 
 /** Page-level summary of failed sources; the affected sections show their own error too. */

@@ -43,8 +43,8 @@ export default async function Calls() {
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         <Kpi label="Coming up" value={s.upcoming} />
-        <Kpi label="Show-up rate · 90 days" value={s.showRate === null ? '—' : `${s.showRate}%`} foot={<span className="text-xs text-white/40">{s.held} held</span>} />
-        <Kpi label="No-shows · 90 days" value={s.noShows} foot={<span className="text-xs text-white/40">each got the rebook email</span>} />
+        <Kpi label="Show-up rate · 90 days" value={s.showRate === null ? '—' : `${s.showRate}%`} foot={<span className="text-xs text-white/60">{s.held} held</span>} />
+        <Kpi label="No-shows · 90 days" value={s.noShows} foot={<span className="text-xs text-white/60">each got the rebook email</span>} />
         <Kpi label="Cancelled · 90 days" value={s.cancelled} />
       </div>
 
@@ -59,11 +59,11 @@ export default async function Calls() {
                 <li key={b.uid} className="px-5 py-4 flex flex-wrap items-center gap-x-6 gap-y-2">
                   <div className="w-[150px] shrink-0">
                     <p className="text-sm font-medium">{when(b.start)}</p>
-                    <p className="text-xs text-white/40">{untilOrAgo(b.start)} · your time</p>
+                    <p className="text-xs text-white/60">{untilOrAgo(b.start)} · your time</p>
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">{a?.name ?? b.title}</p>
-                    <p className="text-xs text-white/40">{a?.timeZone ? `${when(b.start, a.timeZone, false)} for them · ${tzName(a.timeZone)}` : a?.email}</p>
+                    <p className="text-xs text-white/60">{a?.timeZone ? `${when(b.start, a.timeZone, false)} for them · ${tzName(a.timeZone)}` : a?.email}</p>
                   </div>
                   <div className="flex gap-2">
                     {a?.email && <a href={`/dashboard/leads?q=${encodeURIComponent(a.email)}`} className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/70 hover:text-white hover:border-white/25">Brief & history</a>}
@@ -86,7 +86,7 @@ export default async function Calls() {
                 const a = b.attendees[0];
                 return (
                   <tr key={b.uid} className="border-t border-white/[0.04] first:border-t-0">
-                    <td className="px-5 py-3 whitespace-nowrap text-white/50">{when(b.start)}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-white/65">{when(b.start)}</td>
                     <td className="px-3 py-3">{a?.email ? <a href={`/dashboard/leads?q=${encodeURIComponent(a.email)}`} className="hover:text-[#F2613F]">{a.name}</a> : a?.name}</td>
                     <td className="px-5 py-3 text-right">{a?.absent ? <Badge tone="bad">No-show</Badge> : <Badge tone="good">Held</Badge>}</td>
                   </tr>

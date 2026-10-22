@@ -37,11 +37,11 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
 
   return (
     <>
-      <a href="/dashboard/system/connections" className="text-xs text-white/45 hover:text-white -mb-3">← Connections</a>
+      <a href="/dashboard/system/connections" className="text-xs text-white/60 hover:text-white -mb-3">← Connections</a>
       <PageHeader title="TikTok"
         sub={user ? `${user.display_name ?? 'Connected'}${user.username ? ` · @${user.username}` : ''} · post videos and see how they do` : 'Post videos and see how they do'}
         action={connected ? (
-          <form action={disconnectTikTok}><button className="text-xs text-white/40 hover:text-rose-300">Disconnect</button></form>
+          <form action={disconnectTikTok}><button className="text-xs text-white/60 hover:text-rose-300">Disconnect</button></form>
         ) : undefined} />
 
       {q.connected && <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] px-4 py-3 text-sm text-emerald-200/90">TikTok connected.</div>}
@@ -54,7 +54,7 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
             <div>
               <p className="font-medium">Connect your TikTok account</p>
-              <p className="text-sm text-white/50 mt-1 max-w-xl">You’ll log in on TikTok and approve access. Naunas can then read your profile stats and videos, and post videos only when you press Publish here.</p>
+              <p className="text-sm text-white/65 mt-1 max-w-xl">You’ll log in on TikTok and approve access. Naunas can then read your profile stats and videos, and post videos only when you press Publish here.</p>
               <div className="flex flex-wrap gap-1 mt-2.5">{SCOPES.map((s) => <Badge key={s} tone="muted">{s}</Badge>)}</div>
             </div>
             <a href="/dashboard/tiktok/connect" className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Connect TikTok</a>
@@ -66,10 +66,10 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
         <>
           <SectionError errors={errors.filter((e) => e.startsWith('TikTok profile:'))} />
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-            <Kpi label="Followers" value={user ? n(user.follower_count) : '—'} foot={<span className="text-xs text-white/40">following {user ? n(user.following_count) : '—'}</span>} />
+            <Kpi label="Followers" value={user ? n(user.follower_count) : '—'} foot={<span className="text-xs text-white/60">following {user ? n(user.following_count) : '—'}</span>} />
             <Kpi label="Likes (all time)" value={user ? n(user.likes_count) : '—'} />
             <Kpi label="Videos" value={user ? n(user.video_count) : '—'} />
-            <Kpi label="Views · last 20 videos" value={videos ? n(views) : '—'} foot={<span className="text-xs text-white/40">{videos?.length ? `${n(Math.round(views / videos.length))} per video` : ''}</span>} />
+            <Kpi label="Views · last 20 videos" value={videos ? n(views) : '—'} foot={<span className="text-xs text-white/60">{videos?.length ? `${n(Math.round(views / videos.length))} per video` : ''}</span>} />
           </div>
 
           <SectionTitle>Publish a video</SectionTitle>
@@ -87,7 +87,7 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
                       <li key={p.publishId} className="px-5 py-3 flex items-center gap-3 text-sm">
                         <Badge tone={s.tone}>{s.label}</Badge>
                         <span className="truncate flex-1 min-w-0">{p.caption || 'Untitled video'}</span>
-                        <span className="text-xs text-white/35 shrink-0">{p.failReason ? `${p.failReason} · ` : ''}{ago(p.at)}</span>
+                        <span className="text-xs text-white/55 shrink-0">{p.failReason ? `${p.failReason} · ` : ''}{ago(p.at)}</span>
                       </li>
                     );
                   })}
@@ -105,11 +105,11 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
                   <div className="aspect-[9/16] bg-white/[0.04] relative overflow-hidden">
                     {v.cover_image_url
                       ? <img src={v.cover_image_url} alt="" loading="lazy" className="absolute inset-0 size-full object-cover group-hover:scale-[1.03] transition-transform" />
-                      : <div className="absolute inset-0 grid place-items-center text-xs text-white/30 p-3 text-center">{(v.title || v.video_description)?.slice(0, 80)}</div>}
+                      : <div className="absolute inset-0 grid place-items-center text-xs text-white/55 p-3 text-center">{(v.title || v.video_description)?.slice(0, 80)}</div>}
                     <span className="absolute bottom-2 left-2"><Badge>▶ {n(v.view_count)}</Badge></span>
                   </div>
                   <div className="p-3 flex flex-col gap-1">
-                    <p className="text-[11px] text-white/40 truncate">{(v.title || v.video_description || 'Video')} · {ago(new Date(v.create_time * 1000).toISOString())}</p>
+                    <p className="text-[11px] text-white/60 truncate">{(v.title || v.video_description || 'Video')} · {ago(new Date(v.create_time * 1000).toISOString())}</p>
                     <p className="text-xs text-white/70 tabular-nums">♥ {n(v.like_count)} · 💬 {n(v.comment_count)} · ↗ {n(v.share_count)}</p>
                   </div>
                 </a>

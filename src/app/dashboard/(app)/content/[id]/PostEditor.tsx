@@ -7,6 +7,7 @@ import {
   retryContentChannel, discardHeldTikTok, deleteContentDraft, adaptContent, copyAsTextPost,
 } from '../../../actions';
 import type { ContentPost, ChannelKey, Issue, Media } from '@/lib/content';
+import { FUNNEL } from '@/config/funnel';
 
 type Campaign = { id: string; name: string; keywords: string[] };
 type Creator = { nickname?: string; username?: string; avatar?: string; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxSec: number } | null;
@@ -19,7 +20,7 @@ const LABEL: Record<ChannelKey, string> = { linkedin: 'LinkedIn', instagram: 'In
 const LIMIT: Record<ChannelKey, number> = { linkedin: 3000, instagram: 2200, tiktok: 2200 };
 const PRIVACY: Record<string, string> = { PUBLIC_TO_EVERYONE: 'Everyone', MUTUAL_FOLLOW_FRIENDS: 'Friends', FOLLOWER_OF_CREATOR: 'Followers', SELF_ONLY: 'Only me' };
 const STATUS: Record<string, { label: string; cls: string }> = {
-  off: { label: 'Off', cls: 'bg-white/[0.06] text-white/40' }, ready: { label: 'Ready', cls: 'bg-white/[0.08] text-white/70' },
+  off: { label: 'Off', cls: 'bg-white/[0.06] text-white/60' }, ready: { label: 'Ready', cls: 'bg-white/[0.08] text-white/70' },
   scheduled: { label: 'Scheduled', cls: 'bg-sky-400/15 text-sky-200' }, publishing: { label: 'Publishing…', cls: 'bg-amber-400/15 text-amber-200' },
   posted: { label: 'Posted', cls: 'bg-emerald-400/15 text-emerald-300' }, failed: { label: 'Failed', cls: 'bg-rose-400/15 text-rose-300' },
   held: { label: 'Held for TikTok approval', cls: 'bg-amber-400/15 text-amber-200' },
@@ -44,7 +45,8 @@ function nextAt(hhmm: string, tz: string) {
   }
   return new Date(Date.now() + 86_400_000);
 }
-const fmt = (d: Date, tz?: string) => d.toLocaleString('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+// Always a fixed zone: the server renders this too, so the browser's own zone would mismatch on hydration.
+const fmt = (d: Date, tz: string = FUNNEL.ownerTz) => d.toLocaleString('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const localInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
 export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx }) {
@@ -176,13 +178,13 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           {preview ? (preview.kind === 'image'
             ? <img src={preview.url} alt="" className="absolute inset-0 size-full object-cover" />
             : <video src={preview.url} controls muted playsInline className="absolute inset-0 size-full object-cover" />)
-            : m ? <span className="text-xs text-white/50 px-4 text-center">{m.name ?? (m.kind === 'video' ? 'Video uploaded' : 'Image uploaded')}<br /><span className="text-white/30">Tap to replace</span></span>
-            : <span className="text-xs text-white/45 text-center px-4">Add a video or image<br /><span className="text-white/30">Vertical 9:16 works everywhere</span></span>}
+            : m ? <span className="text-xs text-white/65 px-4 text-center">{m.name ?? (m.kind === 'video' ? 'Video uploaded' : 'Image uploaded')}<br /><span className="text-white/55">Tap to replace</span></span>
+            : <span className="text-xs text-white/60 text-center px-4">Add a video or image<br /><span className="text-white/55">Vertical 9:16 works everywhere</span></span>}
           {!locked && <input type="file" accept="video/mp4,video/quicktime,image/jpeg,image/png" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />}
         </label>
         <div className="flex flex-col gap-3 min-w-0">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-white/50">The idea (your notes or master caption; each channel gets its own version below)</span>
+            <span className="text-xs text-white/65">The idea (your notes or master caption; each channel gets its own version below)</span>
             <textarea rows={6} disabled={locked} value={post.master.idea} onChange={(e) => setMaster({ idea: e.target.value })} placeholder="What’s this post about? The point, the story, the call to action." className={field} />
           </label>
           <details className="rounded-lg border border-white/[0.08] px-3 py-2" open={!!post.master.transcript}>
@@ -195,13 +197,13 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           <div className="flex flex-wrap items-center gap-3">
             {ctx.ai
               ? <button type="button" disabled={locked || adapting} onClick={runAdapt} className="rounded-lg border border-[#F2613F]/50 bg-[#F2613F]/10 px-3.5 py-1.5 text-sm text-[#ffb19e] hover:bg-[#F2613F]/20 disabled:opacity-40">{adapting ? 'Writing…' : '✨ Write all 3 with AI'}</button>
-              : <span className="text-xs text-white/35">AI drafting turns on with OPENAI_API_KEY.</span>}
-            {aiNote?.icp && <span className="text-xs text-white/50">🎯 {aiNote.icp}</span>}
+              : <span className="text-xs text-white/55">AI drafting turns on with OPENAI_API_KEY.</span>}
+            {aiNote?.icp && <span className="text-xs text-white/65">🎯 {aiNote.icp}</span>}
           </div>
           {aiNote && aiNote.unsupported.length > 0 && (
             <p className="text-xs text-amber-200/90">⚠ Check before posting (not backed by your idea/transcript): {aiNote.unsupported.join(' · ')}</p>
           )}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/45">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/60">
             {progress !== null && <span>Uploading… {progress}%</span>}
             {m && <span>{m.kind === 'video' ? `Video · ${m.durationSec ?? '?'}s` : 'Image'}{m.width ? ` · ${m.width}×${m.height}` : ''}{m.width && m.height && Math.abs(m.height / m.width - 16 / 9) < 0.05 ? ' · 9:16 ✓' : ''}</span>}
             <span>{saved === 'saving' ? 'Saving…' : saved === 'dirty' ? 'Unsaved' : saved === 'error' ? 'Not saved' : 'Saved'}</span>
@@ -226,15 +228,15 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                 </label>
                 <span className={`text-[11px] px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
               </div>
-              {disabledTt && <p className="text-xs text-white/40">TikTok posts need a video.</p>}
+              {disabledTt && <p className="text-xs text-white/60">TikTok posts need a video.</p>}
 
               {ch.enabled && (
                 <>
-                  {c === 'linkedin' && <p className="text-xs text-white/45">Posting as {ctx.linkedinName ?? '…'}{ctx.linkedinDays == null ? ' (not connected)' : ` · ${ctx.linkedinDays} days left on the connection`}</p>}
-                  {c === 'tiktok' && ctx.creator && <p className="text-xs text-white/45">Posting to {ctx.creator.nickname ?? ctx.creator.username}{ctx.creator.username ? ` @${ctx.creator.username}` : ''}</p>}
+                  {c === 'linkedin' && <p className="text-xs text-white/60">Posting as {ctx.linkedinName ?? '…'}{ctx.linkedinDays == null ? ' (not connected)' : ` · ${ctx.linkedinDays} days left on the connection`}</p>}
+                  {c === 'tiktok' && ctx.creator && <p className="text-xs text-white/60">Posting to {ctx.creator.nickname ?? ctx.creator.username}{ctx.creator.username ? ` @${ctx.creator.username}` : ''}</p>}
 
                   <label className="flex flex-col gap-1.5">
-                    <span className="text-xs text-white/50 flex justify-between"><span>{c === 'linkedin' ? 'Post' : 'Caption'}</span><span className={text.length > LIMIT[c] ? 'text-rose-300' : ''}>{text.length}/{LIMIT[c].toLocaleString('en-GB')}</span></span>
+                    <span className="text-xs text-white/65 flex justify-between"><span>{c === 'linkedin' ? 'Post' : 'Caption'}</span><span className={text.length > LIMIT[c] ? 'text-rose-300' : ''}>{text.length}/{LIMIT[c].toLocaleString('en-GB')}</span></span>
                     <textarea rows={c === 'linkedin' ? 10 : 7} disabled={chLocked} value={text} className={field}
                       placeholder={c === 'linkedin' ? 'Hook line.\n\nShort paragraphs. 3–5 hashtags at the end.' : c === 'instagram' ? `Caption… then: Comment ${kw} and I’ll send it to you.` : 'Short caption #hashtags'}
                       onChange={(e) => setCh(c, (c === 'linkedin' ? { text: e.target.value } : { caption: e.target.value }) as never)} />
@@ -246,7 +248,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                         <option value="PUBLIC">Anyone can see it</option><option value="CONNECTIONS">Connections only</option>
                       </select>
                       <label className="flex flex-col gap-1.5">
-                        <span className="text-xs text-white/50">First comment (your link goes here; {'{link}'} = this post’s tracked link)</span>
+                        <span className="text-xs text-white/65">First comment (your link goes here; {'{link}'} = this post’s tracked link)</span>
                         <textarea rows={2} disabled={chLocked} value={post.channels.linkedin.firstComment} onChange={(e) => setCh('linkedin', { firstComment: e.target.value })} placeholder={ctx.firstComment ? 'Free Leak Map here: {link}' : ''} className={field} />
                       </label>
                     </>
@@ -274,22 +276,22 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                       </select>
                       <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
                         {([['allowComment', 'Comment', ctx.creator?.commentDisabled], ['allowDuet', 'Duet', ctx.creator?.duetDisabled], ['allowStitch', 'Stitch', ctx.creator?.stitchDisabled]] as const).map(([k, l, off]) => (
-                          <label key={k} className={`flex items-center gap-1.5 ${off ? 'text-white/30' : ''}`}>
+                          <label key={k} className={`flex items-center gap-1.5 ${off ? 'text-white/55' : ''}`}>
                             <input type="checkbox" className={box} disabled={chLocked || !!off} checked={post.channels.tiktok[k]} onChange={(e) => setCh('tiktok', { [k]: e.target.checked } as never)} />Allow {l}
                           </label>
                         ))}
                       </div>
                       <div className="rounded-lg border border-white/[0.08] p-2.5 flex flex-col gap-1.5 text-sm">
-                        <label className="flex items-center gap-2"><input type="checkbox" className={box} disabled={chLocked} checked={post.channels.tiktok.yourBrand} onChange={(e) => setCh('tiktok', { yourBrand: e.target.checked })} />Promotes my own business <span className="text-xs text-white/40">(“Promotional content”)</span></label>
-                        <label className="flex items-center gap-2"><input type="checkbox" className={box} disabled={chLocked} checked={post.channels.tiktok.brandedContent} onChange={(e) => setCh('tiktok', { brandedContent: e.target.checked, ...(e.target.checked && post.channels.tiktok.privacy === 'SELF_ONLY' ? { privacy: '' } : {}) })} />Paid partnership <span className="text-xs text-white/40">(“Paid partnership”)</span></label>
+                        <label className="flex items-center gap-2"><input type="checkbox" className={box} disabled={chLocked} checked={post.channels.tiktok.yourBrand} onChange={(e) => setCh('tiktok', { yourBrand: e.target.checked })} />Promotes my own business <span className="text-xs text-white/60">(“Promotional content”)</span></label>
+                        <label className="flex items-center gap-2"><input type="checkbox" className={box} disabled={chLocked} checked={post.channels.tiktok.brandedContent} onChange={(e) => setCh('tiktok', { brandedContent: e.target.checked, ...(e.target.checked && post.channels.tiktok.privacy === 'SELF_ONLY' ? { privacy: '' } : {}) })} />Paid partnership <span className="text-xs text-white/60">(“Paid partnership”)</span></label>
                       </div>
-                      <p className="text-[11px] text-white/40">By posting, you agree to TikTok’s {post.channels.tiktok.brandedContent && <><a className="underline" href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener noreferrer">Branded Content Policy</a> and </>}<a className="underline" href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.</p>
+                      <p className="text-[11px] text-white/60">By posting, you agree to TikTok’s {post.channels.tiktok.brandedContent && <><a className="underline" href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener noreferrer">Branded Content Policy</a> and </>}<a className="underline" href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer">Music Usage Confirmation</a>.</p>
                     </>
                   )}
 
                   {!chLocked && hooks[c]?.length ? (
                     <div className="flex flex-col gap-1">
-                      <span className="text-[11px] text-white/40">Other hooks (tap to use):</span>
+                      <span className="text-[11px] text-white/60">Other hooks (tap to use):</span>
                       {hooks[c]!.map((h) => (
                         <button key={h} type="button" onClick={() => useHook(c, h)} className="text-left text-xs rounded-md bg-white/[0.04] hover:bg-white/[0.09] px-2 py-1.5 text-white/75">{h}</button>
                       ))}
@@ -297,9 +299,9 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                   ) : null}
                   {c === 'linkedin' && post.channels.linkedin.text && (
                     <button type="button" disabled={busy} onClick={() => startBusy(async () => { const r = await copyAsTextPost(post.id); if (r.id) window.location.href = `/dashboard/content/${r.id}`; else setMsg({ tone: 'bad', text: r.error ?? 'Could not copy' }); })}
-                      className="self-start text-[11px] text-white/45 hover:text-white">Repurpose: copy as a text-only LinkedIn post →</button>
+                      className="self-start text-[11px] text-white/60 hover:text-white">Repurpose: copy as a text-only LinkedIn post →</button>
                   )}
-                  <p className="text-[11px] text-white/35 truncate">Tracked link: {ctx.links[c]}</p>
+                  <p className="text-[11px] text-white/55 truncate">Tracked link: {ctx.links[c]}</p>
                 </>
               )}
 
@@ -308,7 +310,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                   {ch.url && <a href={ch.url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 hover:text-white">Open on {LABEL[c]} ↗</a>}
                   {ch.error && <p className="text-rose-300/90">{ch.error}</p>}
                   {ch.status === 'failed' && <button disabled={busy} onClick={() => act(() => retryContentChannel(post.id, c), `${LABEL[c]}: retried.`)} className="self-start text-[#ff8a6d] hover:text-white disabled:opacity-40">Retry {LABEL[c]}</button>}
-                  {ch.status === 'held' && <button disabled={busy} onClick={() => act(() => discardHeldTikTok(post.id), 'Removed from the TikTok queue.')} className="self-start text-white/40 hover:text-rose-300 disabled:opacity-40">Don’t send to TikTok</button>}
+                  {ch.status === 'held' && <button disabled={busy} onClick={() => act(() => discardHeldTikTok(post.id), 'Removed from the TikTok queue.')} className="self-start text-white/60 hover:text-rose-300 disabled:opacity-40">Don’t send to TikTok</button>}
                 </div>
               )}
             </div>
@@ -318,7 +320,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
 
       {/* Newsletter */}
       <details className="rounded-2xl border border-white/[0.08] bg-[#121212] px-4 py-3" open={!!post.newsletterBlurb}>
-        <summary className="text-sm font-medium cursor-pointer">Newsletter blurb <span className="text-xs font-normal text-white/40">(goes into Monday’s draft if this post makes the week’s list)</span></summary>
+        <summary className="text-sm font-medium cursor-pointer">Newsletter blurb <span className="text-xs font-normal text-white/60">(goes into Monday’s draft if this post makes the week’s list)</span></summary>
         <textarea rows={3} disabled={locked} value={post.newsletterBlurb ?? ''} onChange={(e) => setPost((p) => ({ ...p, newsletterBlurb: e.target.value }))}
           placeholder="2–3 sentences for the weekly email. The AI writes one for you." className={`${field} mt-2`} />
       </details>
@@ -327,12 +329,12 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
       {(blocking.length > 0 || warns.length > 0) && (
         <div className="rounded-2xl border border-white/[0.08] bg-[#121212] p-4 flex flex-col gap-2">
           <p className="text-sm font-medium">Before it goes out</p>
-          {blocking.map((i) => <p key={i.text} className="text-sm text-rose-300">✕ <span className="text-white/45">{i.ch === 'post' ? '' : `${LABEL[i.ch as ChannelKey]}: `}</span>{i.text}</p>)}
+          {blocking.map((i) => <p key={i.text} className="text-sm text-rose-300">✕ <span className="text-white/60">{i.ch === 'post' ? '' : `${LABEL[i.ch as ChannelKey]}: `}</span>{i.text}</p>)}
           {warns.map((i) => (
             <label key={i.text} className="flex items-start gap-2 text-sm text-amber-200/90">
               <input type="checkbox" className={`${box} mt-0.5`} disabled={locked} checked={post.flags.includes(i.text)}
                 onChange={(e) => setPost((p) => ({ ...p, flags: e.target.checked ? [...p.flags, i.text] : p.flags.filter((f) => f !== i.text) }))} />
-              <span><span className="text-white/45">{i.ch === 'post' ? '' : `${LABEL[i.ch as ChannelKey]}: `}</span>{i.text} <span className="text-white/35">(tick to go ahead anyway)</span></span>
+              <span><span className="text-white/60">{i.ch === 'post' ? '' : `${LABEL[i.ch as ChannelKey]}: `}</span>{i.text} <span className="text-white/55">(tick to go ahead anyway)</span></span>
             </label>
           ))}
         </div>
@@ -342,7 +344,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
       <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] lg:bottom-4 z-10 rounded-2xl border border-white/10 bg-[#0f0f0f]/95 backdrop-blur p-3 flex flex-wrap items-center gap-3">
         {post.status === 'scheduled' && post.scheduledFor ? (
           <>
-            <span className="text-sm">Scheduled for <b>{fmt(new Date(post.scheduledFor))}</b> <span className="text-white/40">({fmt(new Date(post.scheduledFor), ctx.usTz)} US East)</span></span>
+            <span className="text-sm">Scheduled for <b>{fmt(new Date(post.scheduledFor))}</b> <span className="text-white/60">({fmt(new Date(post.scheduledFor), ctx.usTz)} US East)</span></span>
             {Date.parse(post.scheduledFor) < Date.now() - 10 * 60_000 && <span className="text-xs text-rose-300">Overdue: the schedule didn’t fire.</span>}
             <button disabled={busy} onClick={() => act(() => publishContentNow(post.id), 'Published.')} className="rounded-lg border border-white/15 px-3 py-1.5 text-sm hover:border-white/40 disabled:opacity-40">Publish now instead</button>
             <button disabled={busy} onClick={() => act(() => cancelContentSchedule(post.id), 'Schedule cancelled.')} className="text-sm text-white/55 hover:text-rose-300 disabled:opacity-40">Cancel schedule</button>
@@ -355,7 +357,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
             </button>
             {ctx.qstash ? (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-white/40">or schedule:</span>
+                <span className="text-xs text-white/60">or schedule:</span>
                 {quick.map((d) => (
                   <button key={d.toISOString()} type="button" disabled={!canGo || busy} onClick={() => setWhen(localInput(d))}
                     className="text-xs rounded-full border border-white/10 px-2.5 py-1 hover:border-white/30 disabled:opacity-35">{fmt(d, ctx.usTz)} ET</button>
@@ -363,14 +365,14 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                 <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="rounded-lg bg-white/[0.04] border border-white/10 px-2 py-1 text-xs [color-scheme:dark]" />
                 <button disabled={!canGo || busy || !when} onClick={() => act(() => scheduleContent(post.id, new Date(when).toISOString()), 'Scheduled.')}
                   className="rounded-lg border border-white/15 px-3 py-1.5 text-sm hover:border-white/40 disabled:opacity-35">Schedule</button>
-                {when && <span className="text-[11px] text-white/40">= {fmt(new Date(when), ctx.usTz)} US East</span>}
+                {when && <span className="text-[11px] text-white/60">= {fmt(new Date(when), ctx.usTz)} US East</span>}
               </div>
-            ) : <span className="text-xs text-white/35">Scheduling turns on when the QStash keys are added.</span>}
+            ) : <span className="text-xs text-white/55">Scheduling turns on when the QStash keys are added.</span>}
           </>
         )}
         {!ran && post.status !== 'publishing' && (
           <button disabled={busy} onClick={() => { if (window.confirm('Delete this draft?')) startBusy(async () => { await deleteContentDraft(post.id); window.location.href = '/dashboard/content'; }); }}
-            className="ml-auto text-xs text-white/30 hover:text-rose-300">Delete draft</button>
+            className="ml-auto text-xs text-white/55 hover:text-rose-300">Delete draft</button>
         )}
         {msg && <p className={`w-full text-xs ${msg.tone === 'good' ? 'text-emerald-300/90' : 'text-rose-300'}`}>{msg.text}</p>}
       </div>

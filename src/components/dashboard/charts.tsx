@@ -28,7 +28,7 @@ export function BarSeries({ data, height = 180 }: { data: { day: string; count: 
   const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   return (
     <div className="flex gap-3">
-      <div className="flex flex-col justify-between text-[10px] text-white/30 tabular-nums pb-5" style={{ height }}>
+      <div className="flex flex-col justify-between text-[11px] text-white/55 tabular-nums pb-5" style={{ height }}>
         {ticks.slice().reverse().map((t) => <span key={t}>{t}</span>)}
       </div>
       <div className="flex-1 min-w-0">
@@ -44,7 +44,7 @@ export function BarSeries({ data, height = 180 }: { data: { day: string; count: 
             </div>
           ))}
         </div>
-        <div className="flex justify-between text-[10px] text-white/30 mt-2">
+        <div className="flex justify-between text-[11px] text-white/55 mt-2">
           <span>{fmt(data[0].day)}</span><span>{fmt(data[Math.floor(data.length / 2)].day)}</span><span>Today</span>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function Funnel({ steps }: { steps: { label: string; value: number }[] })
               <span className="text-white/70">{s.label}</span>
               <span className="tabular-nums">
                 <b className="font-semibold">{s.value}</b>
-                {conv !== null && <span className="text-white/35 text-xs ml-2">{conv}%</span>}
+                {conv !== null && <span className="text-white/55 text-xs ml-2">{conv}%</span>}
               </span>
             </div>
             <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">

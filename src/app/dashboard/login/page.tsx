@@ -20,7 +20,7 @@ export default function DashboardLogin() {
           />
         </label>
         {error && <p className="text-sm text-[#F2613F]" role="alert">{error}</p>}
-        <button disabled={pending} className="bg-[#F2613F] hover:bg-[#ff7656] text-[#0C0C0C] font-semibold py-3 rounded-full transition-colors disabled:opacity-50">
+        <button disabled={pending} className="bg-[#F2613F] hover:bg-[#ff7553] text-[#0C0C0C] font-semibold py-3 rounded-full transition-colors disabled:opacity-50">
           {pending ? 'Checking…' : 'Sign in'}
         </button>
       </form>

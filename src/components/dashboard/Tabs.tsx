@@ -21,9 +21,9 @@ export function SectionHeader({ title, tabs, action }: { title: string; tabs: Ta
           const on = t.href === active;
           return (
             <Link key={t.href} href={t.href} aria-current={on ? 'page' : undefined}
-              className={`relative shrink-0 px-3 py-2.5 text-sm whitespace-nowrap transition-colors ${on ? 'text-white' : 'text-white/50 hover:text-white/80'}`}>
+              className={`relative shrink-0 px-3 py-2.5 text-sm whitespace-nowrap transition-colors ${on ? 'text-white' : 'text-white/65 hover:text-white/80'}`}>
               {t.label}
-              {!!t.badge && <span className="ml-1.5 rounded-full bg-[#F2613F] px-1.5 py-px text-[10px] font-semibold text-white tabular-nums">{t.badge}</span>}
+              {!!t.badge && <span className="ml-1.5 rounded-full bg-[#F2613F] px-1.5 py-px text-[11px] font-semibold text-white tabular-nums">{t.badge}</span>}
               {on && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-[#F2613F]" />}
             </Link>
           );
