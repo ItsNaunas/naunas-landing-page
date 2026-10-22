@@ -295,3 +295,19 @@
 
 .headlineUnderline path:nth-child(2) { animation-delay: .4s; }
 .flow:hover .headlineUnderline path:nth-child(2) { animation-delay: .1s; }
+
+/* Phone layout (2026-10-22). The hero no longer forces everything into one screen height (that squashed the
+   scene to a 175px strip). Order: headline, copy, buttons, the journey scene at full width, then the trust row. */
+@media(max-width:767px) {
+  .hero { min-height: 0; padding: 92px 0 30px; align-items: flex-start; }
+  .inner { padding-inline: 24px; }
+  .layout { grid-template-columns: 1fr; row-gap: 0; }
+  .copy { display: contents; }
+  .headline { font-size: clamp(38px, 11.5vw, 54px); line-height: .99; }
+  .body { margin-top: 14px; font-size: 15px; line-height: 1.5; max-width: 36ch; }
+  .copy > .actions { order: 3; margin-top: 20px; display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; }
+  .actions button { font-size: 12.5px; padding-inline: 15px; }
+  .secondary { font-size: 12.5px; gap: 6px; white-space: nowrap; }
+  .visual { order: 4; grid-row: auto; margin-top: 26px; }
+  .copy > .proof { order: 5; margin-top: 26px; justify-self: start; }
+}

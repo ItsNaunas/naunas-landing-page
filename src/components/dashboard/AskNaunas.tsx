@@ -69,7 +69,7 @@ export function AskNaunas() {
   return (
     <>
       <button onClick={() => setOpen(true)} aria-label="Ask Naunas"
-        className={`fixed right-4 bottom-24 md:bottom-6 z-40 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
+        className={`fixed right-4 bottom-24 md:bottom-6 z-30 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
         <span aria-hidden>✦</span> Ask
       </button>
       {open && (
