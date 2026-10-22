@@ -3,6 +3,7 @@ import { instagramData } from '@/lib/ops/tabs';
 import { demoOn } from '@/lib/ops/demo';
 import { CHANNELS, CHANNEL_CODE } from '@/lib/content';
 import { postPerformance, evergreen, type PostPerf } from '@/lib/performance';
+import { videoStats, type VideoStats } from '@/lib/videoWatch';
 import { tiktokConfigured, tiktokConnected, tiktokUser, tiktokVideos, type TikTokUser, type TikTokVideo } from '@/lib/tiktok';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
@@ -44,6 +45,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
       return { user, videos };
     })(),
   ]);
+  const vs: VideoStats = demoOn() ? { days: 30, plays: 42, q50: 27, ends: 15, popups: 14, signups: 4, today: { play: 3 } } : await videoStats(30).catch(() => ({ days: 30, plays: 0, q50: 0, ends: 0, popups: 0, signups: 0, today: {} }));
   const board = perf.rows.filter((r) => Date.parse(r.when) >= Date.now() - 120 * 86_400_000).slice(0, 10);
   const again = evergreen(perf.rows);
   const ttViews = (tt?.videos ?? []).reduce((s, v) => s + (v.view_count ?? 0), 0);
@@ -98,6 +100,14 @@ export default async function Performance({ searchParams }: { searchParams: Prom
             </ul>
           ) : <Empty>Posts older than 90 days that brought leads show up here. Same idea, new hook: it’s a new audience by then.</Empty>}
         </Card>
+
+      <SectionTitle>Landing video · last 30 days</SectionTitle>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
+        <Kpi label="Pressed play" value={vs.plays} foot={<span className="text-xs text-white/40">{vs.today.play ?? 0} today</span>} />
+        <Kpi label="Reached halfway" value={vs.q50} foot={<span className="text-xs text-white/40">{vs.plays ? `${Math.round((vs.q50 / vs.plays) * 100)}% of plays` : 'no plays yet'}</span>} />
+        <Kpi label="Watched to the end" value={vs.ends} foot={<span className="text-xs text-white/40">{vs.plays ? `${Math.round((vs.ends / vs.plays) * 100)}% of plays` : 'no plays yet'}</span>} />
+        <Kpi label="Scorecard sign-ups after it" value={vs.signups} foot={<span className="text-xs text-white/40">{vs.popups ? `${vs.popups} saw the pop-up` : 'pop-up opens when the video ends'}</span>} />
+      </div>
 
       <SectionTitle>Instagram and TikTok</SectionTitle>
       <RangeChips path="/dashboard/content/performance" param="range" value={range} options={RANGES} />

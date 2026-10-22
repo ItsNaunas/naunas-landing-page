@@ -3,19 +3,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { track } from '@vercel/analytics';
-import { getAttribution } from '@/lib/attribution';
+import { LeakMapForm, signedUp } from './LeakMapForm';
 
-// Free-resource pop-up: offers the Leak Map ~10s after landing (after Dot's hero intro has played), once per visitor.
-// Not auto-shown on /audit (they're already mid-enquiry) or /links (it has its own Leak Map button).
+// Free-resource pop-up: offers the Leak Map ~10s after landing (after Dot's hero intro has played), once per
+// visitor, and waits while the landing video is playing. Buttons anywhere on the site can open it:
+//   window.dispatchEvent(new CustomEvent('open-leak-map', { detail: { src: 'video_end', variant: 'scorecard' } }))
+// The 'scorecard' variant (end of the video, 2026-10-22) frames the same sign-up as "find your weakest step".
+// Not auto-shown on /audit (they're already mid-enquiry), /links or /scorecard (they have their own form).
 const SEEN_KEY = 'leakmap_popup_seen_v1';
-const HIDDEN_ON = ['/audit', '/links', '/dashboard', '/privacy', '/terms'];
-const CLIENT_VALUE = ['Under $5k', '$5k-25k', '$25k-100k', '$100k+'];
-
-type Status = 'idle' | 'sending' | 'done' | 'error';
-
-const inputClass =
-  'w-full bg-transparent px-4 py-3 text-sm text-[var(--fg)] placeholder:text-white/30 outline-none transition-colors focus:border-[#F2613F]';
-const inputStyle = { border: '1px solid rgba(255,255,255,0.12)' };
+const HIDDEN_ON = ['/audit', '/links', '/dashboard', '/privacy', '/terms', '/scorecard', '/r/'];
 
 function seen(): boolean {
   try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return false; }
@@ -23,33 +19,44 @@ function seen(): boolean {
 function markSeen() {
   try { localStorage.setItem(SEEN_KEY, '1'); } catch { /* private mode: fine */ }
 }
+const videoPlaying = () => [...document.querySelectorAll('video')].some((v) => !v.paused && !v.ended);
+
+type Variant = 'leakmap' | 'scorecard';
 
 export function LeadMagnetPopup() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<Status>('idle');
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({ name: '', email: '', clientValue: '' });
+  const [variant, setVariant] = useState<Variant>('leakmap');
+  const [src, setSrc] = useState('popup');
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (HIDDEN_ON.some((p) => pathname?.startsWith(p)) || seen()) return;
-    const t = setTimeout(() => {
-      // Don't stack on top of another open dialog (e.g. the audit pop-up).
+    if (HIDDEN_ON.some((p) => pathname?.startsWith(p)) || seen() || signedUp()) return;
+    let t = 0;
+    const tryShow = () => {
+      // Don't stack on top of another open dialog (e.g. the audit pop-up); don't interrupt the video.
       if (document.querySelector('[role="dialog"]')) return;
+      if (videoPlaying()) { t = window.setTimeout(tryShow, 5000); return; }
+      setVariant('leakmap'); setSrc(`popup${pathname ?? ''}`);
       setOpen(true);
       markSeen();
       track('leakmap_popup_shown');
-    }, 10000);
+    };
+    t = window.setTimeout(tryShow, 10000);
     return () => clearTimeout(t);
   }, [pathname]);
 
-  // Buttons anywhere on the site can open it: window.dispatchEvent(new Event('open-leak-map'))
   useEffect(() => {
-    const openNow = () => { setOpen(true); markSeen(); track('leakmap_popup_opened'); };
+    const openNow = (e: Event) => {
+      const d = (e as CustomEvent<{ src?: string; variant?: Variant }>).detail ?? {};
+      setVariant(d.variant === 'scorecard' ? 'scorecard' : 'leakmap');
+      setSrc(d.src ? `${d.src}${pathname ?? ''}` : `button${pathname ?? ''}`);
+      setOpen(true); markSeen();
+      track('leakmap_popup_opened', { src: d.src ?? 'button' });
+    };
     window.addEventListener('open-leak-map', openNow);
     return () => window.removeEventListener('open-leak-map', openNow);
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -59,30 +66,7 @@ export function LeadMagnetPopup() {
   }, [open]);
 
   if (!open) return null;
-
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('sending');
-    setError('');
-    try {
-      const src = new URLSearchParams(window.location.search).get('src') ?? '';
-      const res = await fetch('/api/leak-map', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, src: `popup${pathname ?? ''}${src ? `:${src}` : ''}`, attribution: getAttribution() }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? 'Something went wrong.');
-      track('leakmap_signup');
-      setStatus('done');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
-      setStatus('error');
-    }
-  };
+  const scorecard = variant === 'scorecard';
 
   return (
     <div
@@ -117,54 +101,17 @@ export function LeadMagnetPopup() {
         </div>
 
         <div className="p-6 sm:p-8">
-          <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: '#F2613F' }}>Free · email course + PDF</span>
+          <span className="text-[11px] font-medium uppercase tracking-widest" style={{ color: '#F2613F' }}>{scorecard ? 'Free · scorecard + email course' : 'Free · email course + PDF'}</span>
           <h3 id="leakmap-title" className="text-2xl font-semibold text-[var(--fg)] mt-2 leading-tight">
-            The Leak Map
+            {scorecard ? 'Find your weakest step.' : 'The Leak Map'}
           </h3>
           <p className="text-sm mt-2 leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            The 8 places businesses with big clients quietly lose them, and exactly what to do at each one: steps, scripts and tools.
+            {scorecard
+              ? 'The scorecard is page 19 of the Leak Map: score yourself 0–2 on each of the eight steps in two minutes. The free email course then walks you through fixing the weakest one.'
+              : 'The 8 places businesses with big clients quietly lose them, and exactly what to do at each one: steps, scripts and tools.'}
           </p>
-
-          {status === 'done' ? (
-            <div className="mt-6 flex flex-col gap-3">
-              <p className="text-base font-semibold text-[var(--fg)]">You&apos;re in. The PDF is on its way to your inbox, and the course starts tomorrow.</p>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.55)' }}>Or grab it right now:</p>
-              <a
-                href="/leak-map.pdf"
-                target="_blank"
-                rel="noopener"
-                onClick={() => track('leakmap_download')}
-                className="inline-flex items-center justify-center text-sm font-semibold text-[#0C0C0C] px-5 py-3 rounded-full glow-accent"
-                style={{ background: '#F2613F' }}
-              >
-                Download the Leak Map →
-              </a>
-            </div>
-          ) : (
-            <form onSubmit={submit} className="mt-6 flex flex-col gap-3">
-              <input required placeholder="First name" autoComplete="given-name" value={form.name} onChange={set('name')} className={inputClass} style={inputStyle} />
-              <input required type="email" placeholder="Email" autoComplete="email" value={form.email} onChange={set('email')} className={inputClass} style={inputStyle} />
-              <select value={form.clientValue} onChange={set('clientValue')} className={inputClass} style={{ ...inputStyle, appearance: 'none', color: form.clientValue ? '#fff' : 'rgba(255,255,255,0.3)' }}>
-                <option value="" style={{ background: '#111' }}>What&apos;s a new client worth to you? (optional)</option>
-                {CLIENT_VALUE.map((o) => <option key={o} value={o} style={{ background: '#111', color: '#fff' }}>{o}</option>)}
-              </select>
-              {status === 'error' && <p className="text-xs" style={{ color: '#F2613F' }}>{error}</p>}
-              <button
-                type="submit"
-                disabled={status === 'sending'}
-                className="w-full text-sm font-semibold text-[#0C0C0C] px-5 py-3.5 rounded-full transition-opacity disabled:opacity-60 glow-accent"
-                style={{ background: '#F2613F' }}
-              >
-                {status === 'sending' ? 'Sending…' : 'Send me the Leak Map →'}
-              </button>
-              <button type="button" onClick={() => setOpen(false)} className="text-xs underline" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                No thanks
-              </button>
-              <p className="text-[11px] text-center" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                A free email course with the 24-page PDF as your resource. Unsubscribe any time.
-              </p>
-            </form>
-          )}
+          <LeakMapForm src={src} variant={variant} onDismiss={() => setOpen(false)}
+            onDone={() => { if (src.startsWith('video_end')) navigator.sendBeacon?.('/api/video', new Blob([JSON.stringify({ e: 'signup' })], { type: 'application/json' })); }} />
         </div>
       </div>
     </div>

@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       await alertError('LeakMap: HubSpot', err, 'They got the Leak Map and the course, but are NOT in HubSpot yet.');
     }
-    await logEvent('lead', `Leak Map sign-up · ${name}${clientValue ? ` (${clientValue})` : ''}`, contactId ? hubspotUrl.contact(contactId) : undefined);
+    const from = src.startsWith('video_end') ? ' · after the video' : src.startsWith('scorecard-page') ? ' · scorecard page' : '';
+    await logEvent('lead', `Leak Map sign-up · ${name}${clientValue ? ` (${clientValue})` : ''}${from}`, contactId ? hubspotUrl.contact(contactId) : undefined);
     if (clientValue !== '$25k-100k' && clientValue !== '$100k+') return;
     await notify({
       level: 'lead',
