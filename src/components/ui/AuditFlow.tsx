@@ -16,8 +16,7 @@ const BUSINESS = [
   'Professional services (finance, insurance, legal, consulting)',
   'Other',
 ];
-const CLIENT_VALUE = ['Under $5k', '$5k-25k', '$25k-100k', '$100k+'];
-const REVENUE = ['Under $20k', '$20k-75k', '$75k-250k', '$250k+'];
+import { CLIENT_VALUE, REVENUE } from '@/lib/formOptions';
 
 type Stage = 'form' | 'sending' | 'calendar' | 'emailOnly' | 'booked';
 

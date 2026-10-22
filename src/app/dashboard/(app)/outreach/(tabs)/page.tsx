@@ -15,6 +15,8 @@ import { getOwed, needsYou } from '@/lib/owed';
 import { demoOn } from '@/lib/ops/demo';
 import { addOwedAsset } from '@/app/dashboard/actions';
 import { Plan } from '@/app/dashboard/(app)/StartOfDay';
+import { triageInbox, openTriaged, type Triaged } from '@/lib/triage';
+import { after } from 'next/server';
 export default async function OutreachToday() {
   const d = await outreachData();
   const owedAll = demoOn() ? [{ id: 'o1', who: 'Laurence Grant', what: 'Loom teardown', channel: 'LinkedIn', owedAt: new Date(Date.now() - 18 * 3_600_000).toISOString() }] : await getOwed().catch(() => []);
@@ -28,6 +30,11 @@ export default async function OutreachToday() {
   ]);
   const checkins = dueCheckins(leads, touches);
   const asks = demoOn() ? [] : await openAsks().catch(() => []);
+  // Reply triage (was the routine's job 1): new mail from known people, with a drafted answer. Runs in the background, every 15 min at most.
+  if (!demoOn()) after(() => triageInbox().then(() => undefined).catch((err) => console.error('[triage]', err)));
+  const triaged = demoOn() ? [] as Triaged[] : await openTriaged().catch(() => [] as Triaged[]);
+  const replies = triaged.length ? triaged.map((t) => ({ messageId: t.messageId, who: t.who, href: t.contactId ? `/dashboard/leads/${t.contactId}` : t.firmId ? `/dashboard/outreach/firm/${encodeURIComponent(t.firmId)}` : '/dashboard/outreach', subject: t.summary, text: t.text, date: t.at, draft: t.draft, needsYou: t.needsYou, kind: t.kind }))
+    : d.replies;
   const today = repDay();
   const isToday = (t?: string) => !!t && repDay(t) === today;
   const everyone = Object.values(d.queue).flat();
@@ -48,7 +55,7 @@ export default async function OutreachToday() {
       <Plan />
       <ChannelBoard channels={d.channels} />
 
-      <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} asks={asks} />
+      <TodayList owed={owed} replies={replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} asks={asks} />
 
       <details className="rounded-2xl border border-white/[0.07] bg-[#121212]">
         <summary className="cursor-pointer px-5 py-3 text-sm">+ Someone said yes to a Loom or PDF</summary>

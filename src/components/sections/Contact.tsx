@@ -4,8 +4,7 @@ import { useRef, useState } from 'react';
 import { getAttribution } from '@/lib/attribution';
 import { motion, useInView } from 'framer-motion';
 
-const CLIENT_VALUE = ['Under $5k', '$5k-25k', '$25k-100k', '$100k+'];
-const REVENUE = ['Under $20k', '$20k-75k', '$75k-250k', '$250k+'];
+import { CLIENT_VALUE, REVENUE } from '@/lib/formOptions';
 const BUSINESS_TYPES = [
   'Agency',
   'Coaching / Consulting',

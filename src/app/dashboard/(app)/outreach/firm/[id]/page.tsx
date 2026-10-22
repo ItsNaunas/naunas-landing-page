@@ -65,6 +65,10 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
         </div>
       </div>
 
+      {p.contactId && (p.status === 'replied' || !!p.bookedAt) && (
+        <a href={`/dashboard/leads/${p.contactId}`} className="rounded-xl border border-[#F2613F]/30 bg-[#F2613F]/[0.06] px-4 py-3 text-sm hover:border-[#F2613F]/60">They’re a lead now: the lead page has emails, calls, the deal, proposals and this outreach history in one place →</a>
+      )}
+
       {(live || p.status === 'replied') && (
         <Card>
           <div className="flex flex-wrap items-center gap-3">

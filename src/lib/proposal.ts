@@ -27,6 +27,8 @@ export type Proposal = {
   published: boolean; publishedAt?: string;
   opens: number; openedAt?: string; lastOpenAt?: string;
   acceptedAt?: string; acceptedBy?: string; paidAt?: string;
+  /** Same-day recap email drafted after the call (lib/postcall). */
+  recap?: string;
 };
 export type ProposalRow = { token: string; client: string; contactId?: string; dealId?: string; status: ProposalStatus; title: string; updatedAt: string };
 

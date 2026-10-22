@@ -7,7 +7,7 @@ import type { Prospect } from '@/lib/outreach';
 import type { WarmLead } from '@/lib/checkins';
 import type { IgPost } from '@/lib/igPosts';
 import type { Ask } from '@/lib/asks';
-import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiStep, markAskDone } from '@/app/dashboard/actions';
+import { markOwedSent, closeOwed, markIgFollowup, markIgReplied, markDmSent, markWarmed, markCheckin, markLiStep, markAskDone, markReplyHandled } from '@/app/dashboard/actions';
 import { CopyText } from './OutreachClient';
 import { CheckinMessage } from './CheckinMessage';
 import { FocusShell, OpenCopy } from './FocusShell';
@@ -16,7 +16,7 @@ import { FocusShell, OpenCopy } from './FocusShell';
 // and a tick. Order = money first: promises you made, people who replied, warm leads going cold, then the
 // Instagram sequence (follow-ups before new openers before warm-ups). Every button only records what YOU did.
 
-type Reply = { messageId?: string; uid?: number | string; who: string; href: string; subject: string; text: string; date: string };
+type Reply = { messageId?: string; uid?: number | string; who: string; href: string; subject: string; text: string; date: string; draft?: string; needsYou?: boolean; kind?: string };
 type Props = {
   owed: { toSend: Owed[]; toNudge: Owed[] };
   replies: Reply[];
@@ -89,8 +89,9 @@ export function TodayList({ owed, replies, checkins, drafts, ig, posts, doneToda
 
           <Group n={2} title="They replied" count={replies.length}>
             {replies.map((m) => (
-              <Row key={m.messageId || String(m.uid)} itemId={String(m.messageId || String(m.uid))} who={m.who} channel="Email" href={m.href} hrefLabel="Open lead (draft reply there)" task={`Replied ${ago(m.date)}: ${m.subject}`}>
+              <Row key={m.messageId || String(m.uid)} itemId={String(m.messageId || String(m.uid))} who={m.who} channel="Email" href={m.href} hrefLabel={m.draft ? 'Open lead to send' : 'Open lead (draft reply there)'} task={`Replied ${ago(m.date)}: ${m.subject}${m.needsYou ? ' · needs your judgement' : ''}`}>
                 <p className="text-[12.5px] text-white/65 line-clamp-2">“{m.text}”</p>
+                {m.draft && <><Msg text={m.draft} /><div className="flex flex-wrap gap-3 items-center"><CopyText text={m.draft} label="Copy draft" />{m.messageId && <ActionForm action={markReplyHandled}><input type="hidden" name="id" value={m.messageId} /><button className={btn}>Answered</button></ActionForm>}</div></>}
               </Row>
             ))}
           </Group>

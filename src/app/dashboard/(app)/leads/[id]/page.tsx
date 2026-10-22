@@ -10,6 +10,11 @@ import { ReplyBox, NoteBox, StageControl } from './LeadClient';
 import { getProspects, CHANNEL_LABEL, type Prospect } from '@/lib/outreach';
 import { demoOn } from '@/lib/ops/demo';
 import { proposalsFor, STATUS_LABEL } from '@/lib/proposal';
+import { Timeline } from '../../outreach/FirmTimeline';
+import { ReplyPanel } from '../../outreach/firm/[id]/ReplyPanel';
+import { ReportPanel } from '../../outreach/firm/[id]/ReportPanel';
+import { getReport } from '@/lib/leakReport';
+import { aiReady } from '@/lib/ai';
 import { newProposal } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +66,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
   // The cold-outreach firm behind this contact, if any (research, channel, leak report, firm page).
   const firm = demoOn() ? undefined : (await getProspects().catch(() => [] as Prospect[])).find((x) => x.contactId === id);
   const proposals = demoOn() ? [] : await proposalsFor(id, p.deal?.id).catch(() => []);
+  const report = firm?.reportToken ? await getReport(firm.reportToken).catch(() => null) : null;
 
   return (
     <>
@@ -134,8 +140,14 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                       <div key={k} className="contents"><dt className="text-white/40">{k}</dt><dd className="text-white/80">{v}</dd></div>
                     ))}
                   </dl>
-                  {firm.reportToken && <p className="text-xs mt-3"><a href={`/dashboard/outreach/report/${firm.reportToken}`} className="text-[#ff8a6d] hover:underline">Leak report ›</a></p>}
+                  <div className="mt-3 pt-3 border-t border-white/[0.06]"><Timeline p={firm} /></div>
                 </Card>
+              )}
+              {firm && (
+                <Card title="Reply to them"><ReplyPanel id={firm.id} channel={firm.channel ? CHANNEL_LABEL[firm.channel] : 'Instagram'} ai={aiReady()} /></Card>
+              )}
+              {firm?.website && (
+                <Card title="Leak report"><ReportPanel id={firm.id} report={report} site={FUNNEL.site} /></Card>
               )}
               {p.notWorking && (
                 <Card title="In their words">

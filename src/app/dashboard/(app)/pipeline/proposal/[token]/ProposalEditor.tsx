@@ -39,7 +39,7 @@ export function ProposalEditor({ p, url, ai }: { p: Proposal; url: string; ai: b
         </div>
         <label className={label}>Timeline<textarea name="timeline" defaultValue={p.timeline} rows={2} className={field} disabled={locked} /></label>
         <div className="grid sm:grid-cols-2 gap-3">
-          <label className={label}>Price (you write this, never the AI)<input name="price" defaultValue={p.price} placeholder="e.g. £4,500 fixed" className={field} disabled={locked} /></label>
+          <label className={label}>Price (you write this, never the AI)<input name="price" defaultValue={p.price} placeholder="Leak-Fix Sprint £750 · Growth Pack from £5,000" className={field} disabled={locked} /></label>
           <label className={label}>Deposit to start<input name="deposit" defaultValue={p.deposit} placeholder="e.g. £1,500" className={field} disabled={locked} /></label>
         </div>
         <label className={label}>Stripe Payment Link for the deposit (buy.stripe.com/…; the deal id and their email are added automatically)<input name="paymentLink" defaultValue={p.paymentLink ?? ''} placeholder="https://buy.stripe.com/…" className={field} /></label>
@@ -58,6 +58,13 @@ export function ProposalEditor({ p, url, ai }: { p: Proposal; url: string; ai: b
       </form>
 
       <aside className="flex flex-col gap-3">
+        {p.recap && (
+          <div className="rounded-2xl border border-[#F2613F]/25 bg-[#F2613F]/[0.05] p-4 flex flex-col gap-2">
+            <p className="font-medium text-sm">Same-day recap email (draft)</p>
+            <p className="text-[12.5px] text-white/75 whitespace-pre-wrap">{p.recap}</p>
+            <CopyText text={p.recap} label="Copy recap" />
+          </div>
+        )}
         <div className="rounded-2xl border border-white/[0.07] bg-[#121212] p-4 flex flex-col gap-2">
           <p className="font-medium text-sm">{p.published ? 'Live link' : 'Not published yet'}</p>
           {p.published ? <><p className="text-xs text-white/50 break-all">{url}</p><CopyText text={url} label="Copy link" /></> : <p className="text-xs text-white/50">Publishing notes the link on the HubSpot deal and moves it to Scope sent. Nothing is emailed; you send the link.</p>}

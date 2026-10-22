@@ -66,6 +66,8 @@ export async function GET(req: NextRequest) {
   await pullDealStages().catch((err) => console.error('[health] deal stages', err));
   // Start-of-day plan for the home page (Ask Naunas), from the fixed flags + numbers.
   if (aiReady()) await writeBriefing().catch((err) => console.error('[health] briefing', err));
+  // Reply triage before the brief, so the brief can count them.
+  await import('@/lib/triage').then((m) => m.triageInbox({ force: true })).catch((err) => console.error('[health] triage', err));
   // Morning outreach brief (this cron runs 06:00 UTC = 09:00 Zanzibar).
   await sendTodayBrief().catch((err) => console.error('[health] today brief', err));
   // Instagram insights for recent posts (the Content leaderboard). Quiet on failure: stats only.

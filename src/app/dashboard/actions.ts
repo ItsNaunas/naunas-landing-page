@@ -1050,3 +1050,11 @@ export async function migrateStore() {
   await logEvent('alert', `Store copy: ${r.copied} copied, ${r.skipped} skipped${r.failed.length ? `, ${r.failed.length} failed` : ''}`, '/dashboard/system');
   await done();
 }
+
+/** Outreach → Today: a triaged reply has been answered (or needs nothing). */
+export async function markReplyHandled(form: FormData) {
+  await requireSession();
+  const { markTriaged } = await import('@/lib/triage');
+  await markTriaged(str(form, 'id'));
+  changed();
+}

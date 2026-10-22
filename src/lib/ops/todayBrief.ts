@@ -6,6 +6,7 @@ import { warmLeads, dueCheckins, getTouches } from '@/lib/checkins';
 import { igSequence } from '@/lib/ops/more';
 import { notify, line } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
+import { openTriaged } from '@/lib/triage';
 
 export async function sendTodayBrief() {
   const [prospects, owedAll, leads, touches, settings] = await Promise.all([
@@ -14,7 +15,9 @@ export async function sendTodayBrief() {
   const owed = needsYou(owedAll);
   const ig = igSequence(prospects, false, { ig: settings.igNew, li: settings.liNew });
   const checkins = dueCheckins(leads, touches);
+  const replies = await openTriaged().catch(() => []);
   const rows: [string, string, number][] = [
+    ['💬', 'Replies to answer (drafts ready)', replies.length],
     ['🤝', 'Promised (Loom/PDF)', owed.toSend.length],
     ['🔁', 'Nudges', owed.toNudge.length],
     ['🔥', 'Warm leads to re-open', checkins.length],
