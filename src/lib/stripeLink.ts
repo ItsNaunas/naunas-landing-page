@@ -3,7 +3,8 @@
 // "Deposit to start" amount. The deal id and their email are still added on the page (lib/proposal depositHref),
 // so the existing Stripe webhook marks the deal Won and sends onboarding exactly as before.
 
-export const stripeLinksReady = () => !!process.env.STRIPE_LINKS_KEY;
+const linksKey = () => process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || process.env.STRIPE_LINKS_KEY;
+export const stripeLinksReady = () => !!linksKey();
 
 /** "£1,500" → { amount: 150000, currency: 'gbp' }. Pounds, dollars or euros; null when no amount can be read. */
 export function parseAmount(text: string): { amount: number; currency: 'gbp' | 'usd' | 'eur' } | null {
@@ -20,7 +21,7 @@ export function parseAmount(text: string): { amount: number; currency: 'gbp' | '
 async function stripe<T>(path: string, form: Record<string, string>): Promise<T> {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST', cache: 'no-store',
-    headers: { Authorization: `Bearer ${process.env.STRIPE_LINKS_KEY}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { Authorization: `Bearer ${linksKey()}`, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(form),
   });
   const body = (await res.json()) as T & { error?: { message?: string } };
@@ -30,7 +31,7 @@ async function stripe<T>(path: string, form: Record<string, string>): Promise<T>
 
 /** A one-off Payment Link for this deposit. Returns the buy.stripe.com URL. */
 export async function createDepositLink(opts: { deposit: string; client: string; proposalUrl: string; dealId?: string }): Promise<string> {
-  if (!stripeLinksReady()) throw new Error('STRIPE_LINKS_KEY is not set.');
+  if (!stripeLinksReady()) throw new Error('STRIPE_SECRET_KEY is not set.');
   const a = parseAmount(opts.deposit);
   if (!a) throw new Error('Write the deposit as an amount, e.g. £1,500.');
   const price = await stripe<{ id: string }>('prices', {

@@ -108,10 +108,10 @@ async function cal<T>(path: string): Promise<T> {
 export const calBookings = (status: 'upcoming' | 'past' | 'cancelled', take = 50, attendeeEmail?: string) =>
   cal<{ data: CalBooking[] }>(`/bookings?status=${status}&take=${take}${status === 'upcoming' ? '&sortStart=asc' : '&sortStart=desc'}${attendeeEmail ? `&attendeeEmail=${encodeURIComponent(attendeeEmail)}` : ''}`).then((r) => r.data);
 
-// ---------- Stripe (STRIPE_READ_KEY: restricted, read-only) ----------
+// ---------- Stripe (STRIPE_KEY: one restricted key; STRIPE_READ_KEY still works for read-only) ----------
 async function stripe<T>(path: string): Promise<T> {
-  const key = process.env.STRIPE_READ_KEY;
-  if (!key) throw new Error('Missing STRIPE_READ_KEY');
+  const key = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || process.env.STRIPE_READ_KEY;
+  if (!key) throw new Error('Missing STRIPE_SECRET_KEY');
   const res = await fetch(`https://api.stripe.com/v1${path}`, { headers: { Authorization: `Bearer ${key}` }, cache: 'no-store' });
   if (!res.ok) throw new Error(`Stripe ${path.split('?')[0]} → ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return res.json() as Promise<T>;

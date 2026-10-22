@@ -7,6 +7,7 @@ import { igSequence } from '@/lib/ops/more';
 import { notify, line } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
 import { openTriaged } from '@/lib/triage';
+import { overdueInvoices } from '@/lib/invoices';
 
 export async function sendTodayBrief() {
   const [prospects, owedAll, leads, touches, settings] = await Promise.all([
@@ -16,7 +17,9 @@ export async function sendTodayBrief() {
   const ig = igSequence(prospects, false, { ig: settings.igNew, li: settings.liNew });
   const checkins = dueCheckins(leads, touches);
   const replies = await openTriaged().catch(() => []);
+  const overdue = await overdueInvoices().catch(() => []);
   const rows: [string, string, number][] = [
+    ['🧾', 'Overdue invoices to chase', overdue.length],
     ['💬', 'Replies to answer (drafts ready)', replies.length],
     ['🤝', 'Promised (Loom/PDF)', owed.toSend.length],
     ['🔁', 'Nudges', owed.toNudge.length],

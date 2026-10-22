@@ -172,7 +172,7 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `DATABASE_URL` | Neon → project → Connection string (pooled) | dashboard store on Postgres: safe under concurrent writes; press “Copy from Blob” on System → Health once after setting it |
 | `DASHBOARD_PASSWORD` | step 8b | dashboard |
 | `CAL_API_KEY` | Cal.com → Settings → Developer → API keys | dashboard Calls tab (optional) |
-| `STRIPE_READ_KEY` | Stripe restricted key, READ only: Charges, PaymentIntents, Checkout Sessions, Invoices, Subscriptions, Balance | dashboard Money tab (optional) |
+| `STRIPE_SECRET_KEY` (or a restricted `STRIPE_KEY`) | Stripe secret key; a restricted key also works with READ: Charges, PaymentIntents, Checkout Sessions, Subscriptions, Balance. WRITE: Invoices, Products, Prices, Payment Links. Everything else None | Money tab, overdue-invoice reminders, proposal deposit links (optional; replaces STRIPE_READ_KEY + STRIPE_LINKS_KEY, which still work) |
 | `FATHOM_API_KEY` | Fathom → Settings → API Access | call recordings + recaps on lead pages (optional) |
 | `FATHOM_WEBHOOK_SECRET` | Fathom → API Access → Manage → Add Webhook (URL `/api/fathom-webhook`, include summary + action items) | same-day recap to HubSpot + Telegram (optional) |
 | `APIFY_TOKEN` | Apify → Settings → Integrations | Outreach → Find prospects (optional, monthly cap in dashboard) |

@@ -46,7 +46,7 @@ export function collector() {
 
 export const connected = {
   cal: () => !!process.env.CAL_API_KEY,
-  stripe: () => !!process.env.STRIPE_READ_KEY,
+  stripe: () => !!(process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || process.env.STRIPE_READ_KEY),
   instagram: () => !!process.env.IG_ACCESS_TOKEN,
   blob: () => !!process.env.BLOB_READ_WRITE_TOKEN,
 };

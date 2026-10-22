@@ -2,6 +2,10 @@ import { moneyData } from '@/lib/ops/tabs';
 import { hubspotUrl } from '@/lib/hubspot';
 import { PageHeader, Errors, Badge, Card, Kpi, Empty, gbp, compactGbp, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, ConnectCard, Meter, when, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
+import { overdueInvoices, chaseText, canSendReminders, money, type Overdue } from '@/lib/invoices';
+import { demoOn } from '@/lib/ops/demo';
+import { CopyButton } from '@/components/dashboard/client';
+import { ReminderButton } from './ReminderButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,12 +37,13 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
             'Set READ on: Charges, PaymentIntents, Checkout Sessions, Invoices, Subscriptions, Balance. Leave everything else as None.',
             'Create, then copy the key (starts rk_live_)',
           ]}
-          env="STRIPE_READ_KEY"
+          env="STRIPE_KEY"
         />
       </>
     );
   }
 
+  const overdue: Overdue[] = demoOn() ? [] : await overdueInvoices().catch(() => []);
   const k = d.kpis;
   const range = <RangeChips path="/dashboard/money" param="months" value={months} options={RANGES} />;
   const top = Math.max(1, k.goal, ...d.months.map((m) => m.value));
@@ -49,6 +54,28 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
       <Errors errors={d.errors} />
       <SectionError errors={errFor(d.errors, 'Balance', 'Subscriptions')} />
       {range}
+
+      {overdue.length > 0 && (
+        <div id="overdue" className="scroll-mt-20 flex flex-col gap-3">
+          <SectionTitle action={<span className="text-xs text-white/45">Copy the message, or have Stripe re-send the invoice</span>}>Overdue · {overdue.length}</SectionTitle>
+          {overdue.map((o) => (
+            <Card key={o.id}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium">{o.who} · {money(o.amount, o.currency)}</p>
+                  <p className="text-xs text-white/45 mt-0.5">Invoice {o.number} · <span className={o.daysOverdue > 21 ? 'text-rose-300' : o.daysOverdue > 7 ? 'text-amber-300' : ''}>{o.daysOverdue} days overdue</span>{o.reminded[0] ? ` · last reminder ${when(o.reminded[0]).split(',')[0]}` : ' · no reminder yet'}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {o.url && <a href={o.url} {...linkProps} className="text-xs text-white/50 hover:text-white">Invoice ↗</a>}
+                  <CopyButton text={chaseText(o)} label="Copy chase message" />
+                  {canSendReminders() && <ReminderButton id={o.id} who={o.who} />}
+                </div>
+              </div>
+              <p className="mt-3 text-[13px] text-white/70 whitespace-pre-wrap rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">{chaseText(o)}</p>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         <Kpi label="Paid this month" value={compactGbp(k.thisMonth)} foot={<span className="text-xs text-white/40">{Math.round((k.thisMonth / k.goal) * 100)}% of {compactGbp(k.goal)}</span>} />

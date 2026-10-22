@@ -1066,3 +1066,13 @@ export async function markReplyHandled(form: FormData) {
   await markTriaged(str(form, 'id'));
   changed();
 }
+
+/** Money: Stripe re-sends the invoice email. */
+export async function sendInvoiceReminder(_prev: SaveState, form: FormData): Promise<SaveState> {
+  await requireSession();
+  const { sendReminder } = await import('@/lib/invoices');
+  try { await sendReminder(str(form, 'id')); } catch (err) { return { error: String((err as Error).message ?? err) }; }
+  await logEvent('payment_issue', `Invoice reminder sent · ${str(form, 'who')}`, '/dashboard/money');
+  await done();
+  return { savedAt: Date.now() };
+}
