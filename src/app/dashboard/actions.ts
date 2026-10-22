@@ -908,3 +908,133 @@ export async function refreshBriefing() {
   });
   changed();
 }
+
+// ---------------------------------------------------------------- Proposals (lib/proposal)
+
+/** From a lead page or Pipeline: a blank proposal for this person, then straight to the editor. */
+export async function newProposal(form: FormData) {
+  await requireSession();
+  const { createProposal } = await import('@/lib/proposal');
+  const client = str(form, 'client') || str(form, 'name');
+  if (!client) return;
+  const p = await createProposal({
+    client, contactId: str(form, 'contactId') || undefined, dealId: str(form, 'dealId') || undefined,
+    firstName: str(form, 'firstName') || client.split(/\s+/)[0], business: str(form, 'business') || undefined, email: str(form, 'email') || undefined,
+  });
+  await done();
+  redirect(`/dashboard/pipeline/proposal/${p.token}`);
+}
+
+export async function saveProposalEdits(_prev: ReportState, form: FormData): Promise<ReportState> {
+  await requireSession();
+  const { getProposal, saveProposal, setPublished } = await import('@/lib/proposal');
+  const p = await getProposal(str(form, 'token'));
+  if (!p) return { error: 'Proposal not found.' };
+  const link = str(form, 'paymentLink');
+  if (link && !/^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com)\//.test(link)) return { error: 'The deposit link must be a Stripe Payment Link (https://buy.stripe.com/…).' };
+  const locked = !!p.acceptedAt;
+  const blocks = locked ? p.blocks : Array.from({ length: 12 }, (_, i) => ({ title: str(form, `b${i}_title`), text: str(form, `b${i}_text`) })).filter((b) => b.title || b.text);
+  await saveProposal({
+    ...p, paymentLink: link || undefined,
+    ...(locked ? {} : {
+      title: str(form, 'title') || p.title, intro: str(form, 'intro'), blocks, timeline: str(form, 'timeline'), price: str(form, 'price'), deposit: str(form, 'deposit'),
+      nextSteps: str(form, 'nextSteps') || p.nextSteps, validUntil: str(form, 'validUntil') || undefined,
+    }),
+  });
+  const intent = form.get('intent');
+  if (intent === 'publish' && !p.published) {
+    const fresh = await getProposal(p.token);
+    if (!fresh?.intro || !fresh.blocks.length || !fresh.price) return { error: 'Add an intro, at least one block and the price before publishing.' };
+    await setPublished(p.token, true);
+  }
+  if (intent === 'unpublish' && p.published && !locked) await setPublished(p.token, false);
+  await done();
+  return { savedAt: Date.now() };
+}
+
+/** AI writes the scope from the lead's brief, booking answers and call notes. Never the price. */
+export async function draftProposalAI(_prev: ReportState, form: FormData): Promise<ReportState> {
+  await requireSession();
+  const { getProposal, draftProposal } = await import('@/lib/proposal');
+  const p = await getProposal(str(form, 'token'));
+  if (!p) return { error: 'Proposal not found.' };
+  try {
+    let ctx: Parameters<typeof draftProposal>[1] = { business: p.business };
+    if (p.contactId && process.env.HUBSPOT_TOKEN) {
+      const { leadProfile } = await import('@/lib/ops/more');
+      const { profile } = await leadProfile(p.contactId);
+      if (profile) ctx = { business: profile.business || p.business, clientValue: profile.clientValue, notWorking: profile.notWorking, brief: profile.brief, answers: profile.answers, callSummary: profile.meetings[0]?.summary, actions: profile.meetings[0]?.actions };
+    }
+    await draftProposal(p.token, ctx);
+  } catch (err) { return { error: String((err as Error).message ?? err) }; }
+  await done();
+  return { savedAt: Date.now() };
+}
+
+// ---------------------------------------------------------------- Replies and bookings by hand (lib/replyDraft, lib/crmSync)
+
+export type DraftState = { reply?: string; theirMessage?: string; error?: string } | null;
+
+/** Firm page: paste what a cold prospect said, get a reply in Naufal's voice. Nothing is sent. */
+export async function draftFirmReply(_prev: DraftState, form: FormData): Promise<DraftState> {
+  await requireSession();
+  const id = str(form, 'id');
+  const theirMessage = str(form, 'theirMessage');
+  const p = (await getProspects()).find((x) => x.id === id);
+  if (!p) return { error: 'Firm not found.', theirMessage };
+  try {
+    const { draftReply } = await import('@/lib/replyDraft');
+    const { FUNNEL } = await import('@/config/funnel');
+    const r = p.drafts?.research;
+    const sentDm = p.dmStyle && p.drafts?.dms?.find((d) => d.style === p.dmStyle)?.text;
+    const reply = await draftReply({
+      channel: p.channel ?? (p.instagram ? 'instagram' : 'email'), who: r?.owner ?? p.firm, firm: p.firm, firstName: p.drafts?.firstName,
+      gap: r?.gap, research: [r?.portfolio, r?.enquiryPath, r?.detail].filter(Boolean).join(' · ') || undefined,
+      reportUrl: p.reportToken ? `${FUNNEL.site}/r/${p.reportToken}` : undefined,
+      previous: [sentDm ? `Naufal (opener): ${sentDm}` : '', p.liDmAt && p.channel === 'linkedin' ? 'Naufal sent the LinkedIn DM asking how enquiries reach them.' : ''].filter(Boolean),
+      theirMessage,
+    });
+    return { reply, theirMessage };
+  } catch (err) { return { error: String((err as Error).message ?? err), theirMessage }; }
+}
+
+/** Lead page: a reply to the last inbound email, from the thread, the brief and the deal stage. */
+export async function draftEmailReply(contactId: string): Promise<{ text?: string; error?: string }> {
+  await requireSession();
+  try {
+    const { leadProfile } = await import('@/lib/ops/more');
+    const { draftReply } = await import('@/lib/replyDraft');
+    const { profile } = await leadProfile(contactId);
+    if (!profile) return { error: 'Lead not found.' };
+    const inbound = profile.thread.filter((m) => m.folder === 'inbox');
+    const last = inbound.at(-1);
+    if (!last?.text) return { error: 'No email from them to reply to yet.' };
+    const text = await draftReply({
+      channel: 'email', who: profile.name, firm: profile.business || undefined, firstName: profile.name.replace(/^@/, '').split(' ')[0],
+      research: [profile.brief?.slice(0, 1500), profile.notWorking ? `In their words: ${profile.notWorking}` : '', `Deal stage: ${profile.stageLabel}.`].filter(Boolean).join('\n'),
+      previous: profile.thread.slice(-6, -1).map((m) => `${m.folder === 'sent' ? 'Naufal' : profile.name}: ${(m.text ?? '').replace(/\s+/g, ' ').slice(0, 400)}`),
+      theirMessage: last.text.slice(0, 3000),
+    });
+    return { text };
+  } catch (err) { return { error: String((err as Error).message ?? err) }; }
+}
+
+/** Firm page: they booked the audit but the booking didn't match (personal email). Links the firm by hand. */
+export async function markBooked(form: FormData) {
+  await requireSession();
+  const id = str(form, 'id');
+  const p = (await getProspects()).find((x) => x.id === id);
+  if (!p) return;
+  const dealId = str(form, 'deal').match(/record\/0-3\/(\d+)/)?.[1] ?? (/^\d{6,}$/.test(str(form, 'deal')) ? str(form, 'deal') : undefined);
+  const m = await import('@/lib/crmSync');
+  // Into HubSpot first (contact + deal at Contacted) if the firm isn't there yet, so the booking has a deal to sit on.
+  let ids: { contactId?: string; dealId?: string } = { contactId: p.contactId, dealId: dealId ?? p.dealId };
+  if (!ids.contactId && process.env.HUBSPOT_TOKEN) {
+    const synced = await m.syncProspect(id, { status: 'replied' }).catch(() => null);
+    if (synced) ids = { contactId: synced.contactId, dealId: dealId ?? synced.dealId };
+  }
+  await m.onColdBooking(p, ids).catch((err) => console.error('[markBooked]', err));
+  if (ids.dealId && process.env.HUBSPOT_TOKEN) await setDealStage(ids.dealId, (await import('@/lib/hubspot')).STAGE.auditBooked).catch(() => {});
+  await logEvent('booking', `Audit booked (linked by hand) · ${p.firm}`, `/dashboard/outreach/firm/${encodeURIComponent(p.id)}`);
+  changed();
+}

@@ -9,6 +9,8 @@ import { setLeadOutreachStatus, leadSequence } from '../../../actions';
 import { ReplyBox, NoteBox, StageControl } from './LeadClient';
 import { getProspects, CHANNEL_LABEL, type Prospect } from '@/lib/outreach';
 import { demoOn } from '@/lib/ops/demo';
+import { proposalsFor, STATUS_LABEL } from '@/lib/proposal';
+import { newProposal } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +60,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
   const groups = p.email_status?.groups ?? [];
   // The cold-outreach firm behind this contact, if any (research, channel, leak report, firm page).
   const firm = demoOn() ? undefined : (await getProspects().catch(() => [] as Prospect[])).find((x) => x.contactId === id);
+  const proposals = demoOn() ? [] : await proposalsFor(id, p.deal?.id).catch(() => []);
 
   return (
     <>
@@ -281,6 +284,21 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               ) : <p className="text-[13px] text-white/40">Not in MailerLite.</p>}
             </Card>
           )}
+
+          <Card title="Proposal" action={proposals.length ? <Badge tone={proposals[0].status === 'paid' || proposals[0].status === 'accepted' ? 'good' : proposals[0].status === 'draft' ? 'muted' : 'accent'}>{STATUS_LABEL[proposals[0].status]}</Badge> : undefined}>
+            {proposals.length > 0 && (
+              <ul className="flex flex-col gap-1.5 text-[13px] mb-3">
+                {proposals.map((r) => <li key={r.token} className="flex items-center justify-between gap-2"><a href={`/dashboard/pipeline/proposal/${r.token}`} className="truncate hover:text-[#F2613F]">{r.title}</a><span className="text-xs text-white/40 shrink-0">{STATUS_LABEL[r.status]}</span></li>)}
+              </ul>
+            )}
+            <form action={newProposal} className="flex flex-col gap-2">
+              <input type="hidden" name="contactId" value={p.id} /><input type="hidden" name="dealId" value={p.deal?.id ?? ''} />
+              <input type="hidden" name="client" value={p.business || p.name} /><input type="hidden" name="firstName" value={p.name.replace(/^@/, '').split(' ')[0]} />
+              <input type="hidden" name="business" value={p.business} /><input type="hidden" name="email" value={p.email} />
+              <button className="rounded-full bg-white text-black text-xs font-medium px-3 py-1.5 self-start">{proposals.length ? '+ Another proposal' : 'New proposal'}</button>
+              <p className="text-[11px] text-white/40">One link: scope, price, accept by name, deposit via Stripe. Drafted from the brief and call notes.</p>
+            </form>
+          </Card>
 
           <Card title="Add a note"><NoteBox contactId={p.id} dealId={p.deal?.id} /></Card>
 

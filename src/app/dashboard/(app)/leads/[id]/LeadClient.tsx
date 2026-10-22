@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
-import { sendLeadEmail, addLeadNote, moveDealStage, type SaveState } from '../../../actions';
+import { sendLeadEmail, addLeadNote, moveDealStage, draftEmailReply, type SaveState } from '../../../actions';
 
 const input = 'w-full rounded-lg bg-[#0C0C0C] border border-white/10 px-3 py-2.5 text-sm text-white outline-none focus:border-[#F2613F] placeholder:text-white/25';
 const btn = 'rounded-full bg-[#F2613F] hover:bg-[#ff7656] text-[#0C0C0C] text-sm font-semibold px-4 py-2 disabled:opacity-40';
@@ -13,7 +13,15 @@ export function ReplyBox({ to, name, contactId, dealId, subject, inReplyTo, refe
   const [state, action, pending] = useActionState<SaveState, FormData>(sendLeadEmail, null);
   const ref = useRef<HTMLFormElement>(null);
   const [confirm, setConfirm] = useState(false);
-  useEffect(() => { if (state?.savedAt) { ref.current?.reset(); setConfirm(false); } }, [state?.savedAt]);
+  const [text, setText] = useState('');
+  const [drafting, setDrafting] = useState<string | null>(null);
+  useEffect(() => { if (state?.savedAt) { ref.current?.reset(); setText(''); setConfirm(false); } }, [state?.savedAt]);
+  async function draft() {
+    setDrafting('Writing…');
+    const r = await draftEmailReply(contactId);
+    setDrafting(r.error ?? null);
+    if (r.text) setText(r.text);
+  }
   if (!to) return <p className="text-sm text-white/40">No email address on this lead yet.</p>;
   return (
     <form ref={ref} action={action} className="flex flex-col gap-3 rounded-2xl border border-white/[0.08] bg-[#151515] p-4">
@@ -22,7 +30,8 @@ export function ReplyBox({ to, name, contactId, dealId, subject, inReplyTo, refe
         <span>From contact@naunas.co.uk to</span><span className="text-white/80">{to}</span>
       </div>
       <input name="subject" defaultValue={subject} className={input} aria-label="Subject" />
-      <textarea name="text" rows={6} required placeholder={`Hi ${name.split(' ')[0]},`} className={`${input} resize-y`} aria-label="Message" />
+      <textarea name="text" rows={6} required placeholder={`Hi ${name.split(' ')[0]},`} className={`${input} resize-y`} aria-label="Message" value={text} onChange={(e) => setText(e.target.value)} />
+      <div className="flex items-center gap-3 text-xs"><button type="button" onClick={draft} disabled={drafting === 'Writing…'} className="text-white/60 hover:text-white disabled:opacity-50">✦ Draft with AI from their last email</button>{drafting && drafting !== 'Writing…' && <span className="text-rose-300">{drafting}</span>}{drafting === 'Writing…' && <span className="text-white/40">Writing…</span>}</div>
       {state?.error && <p className="text-sm text-rose-300" role="alert">{state.error}</p>}
       {state?.savedAt && <p className="text-sm text-emerald-300" role="status">Sent ✓ and logged in HubSpot.</p>}
       <div className="flex items-center justify-end gap-3">

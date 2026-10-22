@@ -6,6 +6,7 @@ import { markDealWon, openDealForEmail, addNote, hubspotUrl } from '@/lib/hubspo
 import { notify, line, alertError, type Button } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
 import { logEvent, type EventKind } from '@/lib/events';
+import { markProposalPaid } from '@/lib/proposal';
 
 // Stripe webhook, signed with STRIPE_WEBHOOK_SECRET. The single place Stripe events land (replaces the n8n
 // "Stripe Alerts to Email" workflow). Every event does two things:
@@ -207,6 +208,7 @@ async function deposit(type: string, s: Session) {
     return NextResponse.json({ success: true, won: false });
   }
   if (won.alreadyWon) return NextResponse.json({ success: true, duplicate: true });
+  await markProposalPaid(dealId).catch(() => undefined);
 
   let emailed = false;
   const mailer = getMailer();

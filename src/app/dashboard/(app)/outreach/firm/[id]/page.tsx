@@ -7,10 +7,12 @@ import { demoOn } from '@/lib/ops/demo';
 import { Badge, Card, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle } from '@/components/dashboard/kit';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { setProspect, markIgReplied, addOwedAsset, researchNow } from '@/app/dashboard/actions';
+import { setProspect, markIgReplied, addOwedAsset, researchNow, markBooked } from '@/app/dashboard/actions';
 import { getReport } from '@/lib/leakReport';
 import { FUNNEL } from '@/config/funnel';
 import { ReportPanel } from './ReportPanel';
+import { ReplyPanel } from './ReplyPanel';
+import { aiReady } from '@/lib/ai';
 import { pullDealStagesSoon, outcomeOf } from '@/lib/crmSync';
 import { hubspotUrl } from '@/lib/hubspot';
 import { DraftEditor, CopyText } from '../../OutreachClient';
@@ -79,7 +81,25 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
             </ActionForm>
             {hold && <span className="text-xs text-white/45">{hold}</span>}
           </div>
+          {!p.bookedAt && (
+            <details className="mt-3 border-t border-white/[0.06] pt-3">
+              <summary className="cursor-pointer text-xs text-white/50 hover:text-white">They booked the audit, but it didn’t match here (personal email)? Link it by hand</summary>
+              <ActionForm action={markBooked} className="mt-2 flex flex-wrap items-center gap-2">
+                <input type="hidden" name="id" value={p.id} />
+                <input name="deal" placeholder="HubSpot deal link (optional)" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-1.5 text-xs text-white placeholder:text-white/30 min-w-[260px]" />
+                <button className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium">They booked</button>
+                <span className="text-[11px] text-white/40">Stops the sequence, marks Booked, notes the research on the deal.</span>
+              </ActionForm>
+            </details>
+          )}
         </Card>
+      )}
+
+      {(p.status === 'replied' || !!p.igRepliedAt) && (
+        <>
+          <SectionTitle>Reply to them</SectionTitle>
+          <Card><ReplyPanel id={p.id} channel={p.channel ? CHANNEL_LABEL[p.channel] : 'Instagram'} ai={aiReady()} /></Card>
+        </>
       )}
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-3 md:gap-4">

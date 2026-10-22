@@ -4,6 +4,10 @@ import { hubspotUrl } from '@/lib/hubspot';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, gbp, compactGbp, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
 import { Funnel, HBars } from '@/components/dashboard/charts';
+import { listProposals, STATUS_LABEL } from '@/lib/proposal';
+import { demoOn } from '@/lib/ops/demo';
+import { newProposal } from '@/app/dashboard/actions';
+import { ago } from '@/components/dashboard/ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +23,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
   const range = (await searchParams).range ?? '90';
   const days = Number(range) || 90;
   const d = await pipelineData(days);
+  const proposals = demoOn() ? [] : await listProposals().catch(() => []);
   const span = RANGES.find(([v]) => v === range)?.[1] ?? `${days} days`;
 
   return (
@@ -35,6 +40,26 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         <Kpi label={`Win rate · ${span}`} value={d.winRate === null ? '—' : `${d.winRate}%`} foot={<span className="text-xs text-white/40">won ÷ (won + lost)</span>} />
         <Kpi label={`Won · ${span}`} value={compactGbp(d.wonValue)} />
       </div>
+
+      <SectionTitle action={<span className="text-xs text-white/45">Scope, price, accept by name, deposit via Stripe: one link</span>}>Proposals</SectionTitle>
+      <Card pad={false}>
+        {proposals.length ? (
+          <ul className="divide-y divide-white/[0.05]">
+            {proposals.slice(0, 12).map((r) => (
+              <li key={r.token}><a href={`/dashboard/pipeline/proposal/${r.token}`} className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02]">
+                <span className="min-w-0 flex-1"><span className="block text-[13px] text-white/90 truncate">{r.client}</span><span className="block text-xs text-white/40 truncate">{r.title}</span></span>
+                <span className="text-xs text-white/40">{ago(r.updatedAt)}</span>
+                <Badge tone={r.status === 'paid' || r.status === 'accepted' ? 'good' : r.status === 'opened' ? 'accent' : r.status === 'sent' ? 'neutral' : 'muted'}>{STATUS_LABEL[r.status]}</Badge>
+              </a></li>
+            ))}
+          </ul>
+        ) : <Empty>No proposals yet. Start one from a lead page (it pulls in their brief and call notes), or from scratch below.</Empty>}
+        <form action={newProposal} className="px-5 py-3 border-t border-white/[0.06] flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-[11px] text-white/45 flex-1 min-w-[160px]">Client or firm<input name="client" required placeholder="e.g. Oakline Interiors" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30" /></label>
+          <label className="flex flex-col gap-1 text-[11px] text-white/45 flex-1 min-w-[160px]">Their email (for the deposit link)<input name="email" type="email" placeholder="optional" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/30" /></label>
+          <button className="rounded-lg bg-white text-black text-sm font-medium px-4 py-2">New proposal</button>
+        </form>
+      </Card>
 
       <SectionTitle>Board · open now</SectionTitle>
       <SectionError errors={errFor(d.errors, 'Open deals')} />
