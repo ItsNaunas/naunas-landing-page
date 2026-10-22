@@ -1,6 +1,6 @@
 // Invoice chasing (2026-10-23): open Stripe invoices past their due date, with a chase message that gets firmer
 // the longer it's overdue, and a button that makes Stripe re-send the invoice email (POST /invoices/:id/send).
-// Shown on Money and flagged on Overview + the morning brief. Key: STRIPE_KEY (one restricted key for the whole
+// Shown on Money and flagged on Overview + the morning brief. Key: STRIPE_SECRET_KEY (or a restricted STRIPE_KEY) for the whole
 // dashboard), else STRIPE_READ_KEY for reading only.
 
 import { getJSON, updateJSON } from '@/lib/store';

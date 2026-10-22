@@ -37,7 +37,7 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
             'Set READ on: Charges, PaymentIntents, Checkout Sessions, Invoices, Subscriptions, Balance. Leave everything else as None.',
             'Create, then copy the key (starts rk_live_)',
           ]}
-          env="STRIPE_KEY"
+          env="STRIPE_SECRET_KEY"
         />
       </>
     );

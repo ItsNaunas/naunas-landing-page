@@ -346,7 +346,7 @@ export function integrations() {
       { name: 'Cal.com webhook', role: 'Bookings → CRM + emails', ok: has('CAL_WEBHOOK_SECRET'), env: 'CAL_WEBHOOK_SECRET' },
       { name: 'Cal.com API', role: 'Calls tab (read bookings)', ok: has('CAL_API_KEY'), env: 'CAL_API_KEY' },
       { name: 'Stripe webhook', role: 'Payments → Won + onboarding', ok: has('STRIPE_WEBHOOK_SECRET'), env: 'STRIPE_WEBHOOK_SECRET' },
-      { name: 'Stripe key', role: 'Money tab, invoice reminders, proposal deposit links', ok: has('STRIPE_KEY') || has('STRIPE_READ_KEY'), env: 'STRIPE_KEY (restricted)' },
+      { name: 'Stripe key', role: 'Money tab, invoice reminders, proposal deposit links', ok: has('STRIPE_SECRET_KEY') || has('STRIPE_KEY') || has('STRIPE_READ_KEY'), env: 'STRIPE_SECRET_KEY' },
       { name: 'Instagram', role: 'Keyword DMs + posts', ok: has('IG_ACCESS_TOKEN'), env: 'IG_ACCESS_TOKEN' },
       { name: 'TikTok app', role: 'Post videos + video stats (connect under Connections)', ok: has('TIKTOK_CLIENT_KEY') && has('TIKTOK_CLIENT_SECRET'), env: 'TIKTOK_CLIENT_KEY + TIKTOK_CLIENT_SECRET' },
       { name: 'LinkedIn app', role: 'Post to your profile (connect under Connections, renew every 60 days)', ok: has('LINKEDIN_CLIENT_ID') && has('LINKEDIN_CLIENT_SECRET'), env: 'LINKEDIN_CLIENT_ID + LINKEDIN_CLIENT_SECRET' },
