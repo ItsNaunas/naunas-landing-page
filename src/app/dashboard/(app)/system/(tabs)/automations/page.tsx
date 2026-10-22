@@ -18,7 +18,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
   const { kind } = await searchParams;
   const d = await automationsData(kind);
   const last = d.reports[0];
-  const stale = !last || Date.now() - Date.parse(last.runAt) > 26 * 3600_000;
+  const stale = !last || Date.now() - Date.parse(last.runAt) > 8 * DAY;
 
   return (
     <>
@@ -29,10 +29,10 @@ export default async function Automations({ searchParams }: { searchParams: Prom
         <Card title="Claude funnel operator" action={<a href={FUNNEL.routine.url} {...linkProps} className="text-xs text-white/40 hover:text-white">Open ↗</a>}>
           <SectionError errors={errFor(d.errors, 'Routine')} />
           <div className="flex items-center gap-2 mb-3">
-            <Badge tone={stale ? 'bad' : 'good'}>{stale ? 'No run in 26h' : 'Running'}</Badge>
-            <span className="text-xs text-white/40">{last ? `last run ${ago(last.runAt)}` : 'no runs logged yet'} · daily 13:00 Zanzibar</span>
+            <Badge tone={stale ? 'bad' : 'good'}>{stale ? 'No run in 8 days' : 'Running'}</Badge>
+            <span className="text-xs text-white/40">{last ? `last run ${ago(last.runAt)}` : 'no runs logged yet'} · Mondays 13:00 Zanzibar</span>
           </div>
-          <p className="text-xs text-white/45 leading-relaxed">Three jobs: triage replies in contact@ and draft answers, draft the recap and proposal after a call, and write Monday’s three content drafts. It drafts; it never contacts anyone. Research, briefs and review asks now run in the dashboard.</p>
+          <p className="text-xs text-white/45 leading-relaxed">One job: Monday’s three content drafts, from the week’s lead words and call notes. Replies, post-call recaps and proposals, research, briefs and review asks all run in the dashboard now.</p>
           {last?.needsYou.length ? (
             <div className="mt-4">
               <p className="text-xs text-white/40 mb-1.5">Needs you from the last run</p>

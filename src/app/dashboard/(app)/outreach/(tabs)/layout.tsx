@@ -40,7 +40,7 @@ export default async function OutreachLayout({ children }: { children: React.Rea
                 <p className="text-[11px] text-white/35">Each channel gets different firms. Week one: 7 / 7 / 6, then 10 / 10 / 10.</p>
               </ActionForm>
               <div className="border-t border-white/[0.06] pt-3 text-[11px] text-white/45 flex flex-col gap-1">
-                <span>Research runs here as soon as you approve a firm. The 13:00 Claude routine now handles replies in contact@, post-call proposals and Monday content.</span>
+                <span>Research, reply drafts and post-call proposals all run here. The Claude routine only writes Monday’s content drafts.</span>
                 <a href={FUNNEL.routine.url} target="_blank" rel="noopener noreferrer" className="text-[#ff8a6d] hover:underline">Run the routine now (Run now on claude.ai) ↗</a>
               </div>
             </div>
