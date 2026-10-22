@@ -20,7 +20,12 @@ export async function searchContacts(opts: { since?: number; query?: string; lim
     method: 'POST',
     body: JSON.stringify({
       ...(opts.query ? { query: opts.query } : {}),
-      filterGroups: opts.since ? [{ filters: [{ propertyName: 'createdate', operator: 'GTE', value: String(opts.since) }] }] : [],
+      // A search box lookup finds anyone; lists and counts only include people the funnel or outreach created
+      // (naunas_lead_source set), so a mailbox import of vendors and newsletters never counts as leads.
+      filterGroups: opts.query ? [] : [{ filters: [
+        { propertyName: 'naunas_lead_source', operator: 'HAS_PROPERTY' },
+        ...(opts.since ? [{ propertyName: 'createdate', operator: 'GTE', value: String(opts.since) }] : []),
+      ] }],
       sorts: [{ propertyName: 'createdate', direction: 'DESCENDING' }],
       properties: CONTACT_PROPS, limit: opts.limit ?? 100,
     }),

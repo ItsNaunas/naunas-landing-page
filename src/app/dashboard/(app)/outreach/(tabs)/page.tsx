@@ -1,15 +1,8 @@
 import { outreachData } from '@/lib/ops/more';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { STEP_DAYS, STEP_LABEL } from '@/lib/outreach';
-import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
-import { Funnel } from '@/components/dashboard/charts';
-import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, bumpRepCount, markWarmed, markIgFollowup, markIgReplied } from '@/app/dashboard/actions';
-import { SearchForm, DraftEditor, CopyText } from '@/app/dashboard/(app)/outreach/OutreachClient';
+import { TabIntro, Errors } from '@/components/dashboard/ui';
 
 export const dynamic = 'force-dynamic';
-
-const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') as 'good' | 'accent' | 'muted';
 
 import { warmLeads, dueCheckins, getTouches, getCheckinDrafts, type WarmLead } from '@/lib/checkins';
 import { repDay } from '@/lib/reps';
@@ -18,14 +11,11 @@ import { openAsks } from '@/lib/asks';
 import { ChannelBoard } from '../ChannelBoard';
 import { syncIgPosts, getIgPosts } from '@/lib/igPosts';
 import { FUNNEL } from '@/config/funnel';
-import { getOwed, needsYou, dueAt, nudgeAt } from '@/lib/owed';
+import { getOwed, needsYou } from '@/lib/owed';
 import { demoOn } from '@/lib/ops/demo';
-import { addOwedAsset, markOwedSent, closeOwed } from '@/app/dashboard/actions';
+import { addOwedAsset } from '@/app/dashboard/actions';
 export default async function OutreachToday() {
   const d = await outreachData();
-  const q = d.queue;
-  const inFlight = [...q.scheduled, ...q.active];
-  const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
   const owedAll = demoOn() ? [{ id: 'o1', who: 'Laurence Grant', what: 'Loom teardown', channel: 'LinkedIn', owedAt: new Date(Date.now() - 18 * 3_600_000).toISOString() }] : await getOwed().catch(() => []);
   const owed = needsYou(owedAll);
   const warmOn = FUNNEL.outreach.warmCheckins;
@@ -51,7 +41,7 @@ export default async function OutreachToday() {
       <Errors errors={d.errors} />
       {emailWaiting > 0 && (!d.settings.sending || !d.connected.inbox) && (
         <div className="rounded-xl border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 text-sm text-amber-100/90">
-          {emailWaiting} firm{emailWaiting > 1 ? 's are' : ' is'} waiting for their first email, but {!d.connected.inbox ? 'IMAP is off in Zoho (replies can’t be seen, so cold email is blocked)' : 'Sending is OFF'}. Fix it in ⚙ Settings above{!d.connected.inbox ? ' and Zoho Mail → Settings → Mail Accounts → IMAP Access' : ''}.
+          {emailWaiting} firm{emailWaiting > 1 ? 's are' : ' is'} waiting for their first email, but {!d.connected.inbox ? 'the ZOHO_SMTP_* keys aren’t set (replies can’t be read, so cold email is blocked)' : 'Sending is OFF'}. {!d.connected.inbox ? 'Add them in Vercel, then check System → Health.' : 'Fix it in ⚙ Settings above.'}
         </div>
       )}
       <ChannelBoard channels={d.channels} />

@@ -51,11 +51,12 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
 
 const isActive = (path: string, href: string) => (href === '/dashboard' ? path === href : path.startsWith(href));
 
-export function SideNav({ badges = {} }: { badges?: Badges }) {
+/** hide: pages whose keys aren't set yet (e.g. Money without a Stripe key). They stay reachable by URL and from Connections. */
+export function SideNav({ badges = {}, hide = [] }: { badges?: Badges; hide?: string[] }) {
   const path = usePathname();
   return (
     <nav className="flex flex-col gap-5" aria-label="Dashboard">
-      {NAV_GROUPS.map((g) => (
+      {NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((n) => !hide.includes(n.href)) })).filter((g) => g.items.length).map((g) => (
         <div key={g.label} className="flex flex-col gap-0.5">
           <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/30">{g.label}</p>
           {g.items.map((n) => {
@@ -76,7 +77,7 @@ export function SideNav({ badges = {} }: { badges?: Badges }) {
 }
 
 /** Mobile: 4 main tabs + "More" sheet with everything else. */
-export function BottomNav({ badges = {} }: { badges?: Badges }) {
+export function BottomNav({ badges = {}, hide = [] }: { badges?: Badges; hide?: string[] }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
@@ -87,7 +88,7 @@ export function BottomNav({ badges = {} }: { badges?: Badges }) {
         <div className="md:hidden fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="More pages">
           <button className="absolute inset-0 bg-black/60" aria-label="Close" onClick={() => setOpen(false)} />
           <div className="absolute bottom-[68px] inset-x-3 rounded-2xl bg-[#161616] border border-white/10 p-2 grid grid-cols-3 gap-1">
-            {ALL.filter((n) => !BOTTOM.includes(n.href)).map((n) => (
+            {ALL.filter((n) => !BOTTOM.includes(n.href) && !hide.includes(n.href)).map((n) => (
               <Link key={n.href} href={n.href} className={`flex flex-col items-center gap-1.5 rounded-xl py-3 text-xs ${isActive(path, n.href) ? 'bg-white/[0.08] text-white' : 'text-white/60'}`}>
                 <Icon name={n.icon} size={20} />{n.label}
               </Link>

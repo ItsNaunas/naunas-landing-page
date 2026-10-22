@@ -2,27 +2,21 @@ import { outreachData } from '@/lib/ops/more';
 import { ActionForm } from '@/components/dashboard/ActionForm';
 import { STEP_DAYS, STEP_LABEL, emailHold, CHANNEL_LABEL } from '@/lib/outreach';
 import { Timeline } from '@/app/dashboard/(app)/outreach/FirmTimeline';
-import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, ConnectCard, Meter, when, untilOrAgo, SectionError, errFor } from '@/components/dashboard/kit';
-import { Funnel } from '@/components/dashboard/charts';
-import { setProspect, markDmSent, setOutreachSending, refreshProspectSearches, bumpRepCount, markWarmed } from '@/app/dashboard/actions';
-import { SearchForm, DraftEditor, CopyText } from '@/app/dashboard/(app)/outreach/OutreachClient';
+import { TabIntro, Card, Empty } from '@/components/dashboard/ui';
+import { SectionTitle, when, untilOrAgo } from '@/components/dashboard/kit';
+import { setProspect } from '@/app/dashboard/actions';
 
 export const dynamic = 'force-dynamic';
-
-const FIT_TONE = (f: number) => (f >= 6 ? 'good' : f >= 4 ? 'accent' : 'muted') as 'good' | 'accent' | 'muted';
 
 export default async function OutreachSequences() {
   const d = await outreachData();
   const q = d.queue;
   const inFlight = [...q.scheduled, ...q.active];
-  const goodOnes = q.review.filter((p) => p.fit >= 5).map((p) => p.id);
 
   return (
     <>
-      <TabIntro sub="Firms getting the E1 to E4 emails. A reply stops a sequence on its own." />
-      {/* In flight */}
-      <SectionTitle>Sequences in flight · {inFlight.length}</SectionTitle>
+      <TabIntro sub="Every firm being worked, on whichever channel it was started, and what’s due next. A reply stops it; so does Stop." />
+      <SectionTitle>In flight · {inFlight.length}</SectionTitle>
       <Card pad={false}>
         {inFlight.length ? (
           <div className="overflow-x-auto"><table className="w-full text-[13px] min-w-[560px]">
@@ -43,10 +37,9 @@ export default async function OutreachSequences() {
               })}
             </tbody>
           </table></div>
-        ) : <Empty>No sequences running. Approve and schedule drafts above.</Empty>}
+        ) : <Empty>Nothing in flight. Start firms from Prospects → Ready to start.</Empty>}
       </Card>
       {q.replied.length > 0 && <p className="text-xs text-white/40 -mt-2">{q.replied.length} replied (sequence stopped): {q.replied.map((p) => p.firm).join(', ')}. Last reply {when(q.replied[0].repliedAt ?? '')}.</p>}
-      <p className="text-xs text-white/30">The 5 wave-1 firms that were mid-sequence before this page existed are finished by the vault engine and show up here as replies or under Leads → Cold email.</p>
     </>
   );
 }

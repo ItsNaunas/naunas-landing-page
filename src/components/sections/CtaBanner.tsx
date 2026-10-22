@@ -51,7 +51,7 @@ export function CtaBanner({ onAuditClick }: CtaBannerProps) {
               <span style={{ color: 'var(--accent)' }}>Start building.</span>
             </h2>
             <p className="mt-6 text-base leading-relaxed max-w-sm" style={{ color: 'var(--muted)' }}>
-              Answer a few quick questions, pick a time, and I'll show you where your business is leaking and what I'd fix first.
+              Answer a few quick questions, pick a time, and I&apos;ll show you where your business is leaking and what I&apos;d fix first.
             </p>
           </div>
 

@@ -41,6 +41,7 @@ export function Footer({ onAuditClick }: FooterProps) {
               { l: 'The Client System', href: '/#services' },
               { l: 'Case studies', href: '/case-studies' },
               { l: 'Free Leak Map', href: '/leak-map.pdf' },
+              { l: 'Free scorecard', href: '/scorecard' },
               { l: 'Free audit', href: '/audit?src=footer' },
               { l: 'FAQ', href: '/#faq' },
               { l: 'Privacy', href: '/privacy' },

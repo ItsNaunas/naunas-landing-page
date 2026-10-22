@@ -46,8 +46,8 @@ export function About() {
           </h2>
 
           <p className="text-base md:text-lg leading-relaxed max-w-md" style={{ color: '#555' }}>
-            I'm Naufal. I design and build every system myself: no account managers, no hand-offs.
-            I've built them for a design studio, a Brooklyn live-music brand, a subscription platform and a cleaning company, for owners in the US and UK.
+            I&apos;m Naufal. I design and build every system myself: no account managers, no hand-offs.
+            I&apos;ve built them for a design studio, a Brooklyn live-music brand, a subscription platform and a cleaning company, for owners in the US and UK.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-2">

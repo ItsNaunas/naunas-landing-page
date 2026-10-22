@@ -222,7 +222,7 @@ export async function runOutreach(opts: { dryRun?: boolean } = {}): Promise<RunR
   const result: RunResult = { sent: 0, newFirms: 0, replies: 0, skipped: [], errors: [], repliedIds: [] };
   const settings = await getSettings();
   await ingestDrafts().catch((e) => result.errors.push(`drafts: ${e instanceof Error ? e.message : e}`));
-  let list = await getProspects();
+  const list = await getProspects();
 
   // 1. Replies stop the sequence (and ping Telegram); the funnel routine drafts the answer.
   const live = list.filter((p) => p.status === 'active' && p.email && p.startedAt);

@@ -5,7 +5,7 @@ import { SectionTitle, Feed, Chips, EVENT_META, when, SectionError, errFor } fro
 
 export const dynamic = 'force-dynamic';
 
-const JOBS = ['replies', 'calls', 'proposals', 'retention', 'content'] as const;
+const JOBS = ['replies', 'proposals', 'content'] as const;
 const DAY = 86_400_000;
 
 function Freshness({ at, warnAfterDays }: { at: string | null; warnAfterDays: number }) {
@@ -32,7 +32,7 @@ export default async function Automations({ searchParams }: { searchParams: Prom
             <Badge tone={stale ? 'bad' : 'good'}>{stale ? 'No run in 26h' : 'Running'}</Badge>
             <span className="text-xs text-white/40">{last ? `last run ${ago(last.runAt)}` : 'no runs logged yet'} · daily 13:00 Zanzibar</span>
           </div>
-          <p className="text-xs text-white/45 leading-relaxed">Triage replies, research upcoming calls, recap + proposal after calls, testimonial and referral asks, Monday content. It drafts; it never contacts anyone.</p>
+          <p className="text-xs text-white/45 leading-relaxed">Three jobs: triage replies in contact@ and draft answers, draft the recap and proposal after a call, and write Monday’s three content drafts. It drafts; it never contacts anyone. Research, briefs and review asks now run in the dashboard.</p>
           {last?.needsYou.length ? (
             <div className="mt-4">
               <p className="text-xs text-white/40 mb-1.5">Needs you from the last run</p>

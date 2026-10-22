@@ -78,10 +78,10 @@ export function Contact() {
                 Prefer to write?
               </span>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight mt-3" style={{ color: '#fff' }}>
-                Send a message.<br />I'll reply myself.
+                Send a message.<br />I&apos;ll reply myself.
               </h2>
               <p className="text-base md:text-lg leading-relaxed mt-4 max-w-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Not ready for a call? Tell me what's not working and I'll reply within 48 hours with where I'd start.
+                Not ready for a call? Tell me what&apos;s not working and I&apos;ll reply within 48 hours with where I&apos;d start.
               </p>
             </div>
 
@@ -145,7 +145,7 @@ export function Contact() {
                 </div>
                 <h3 className="text-xl font-semibold" style={{ color: '#fff' }}>Request received</h3>
                 <p className="text-sm max-w-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  I'll read it myself and reply within 48 hours.
+                  I&apos;ll read it myself and reply within 48 hours.
                 </p>
               </div>
             ) : (

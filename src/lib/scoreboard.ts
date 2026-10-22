@@ -26,7 +26,7 @@ export async function weeklyScoreboard(): Promise<AlertMessage> {
   const since = String(Date.now() - 7 * 24 * 3600 * 1000);
 
   const [newContacts, won, lost, ...open] = await Promise.all([
-    crmSearch('contacts', [{ propertyName: 'createdate', operator: 'GTE', value: since }], ['email', 'naunas_lead_source', 'instagram_campaign']),
+    crmSearch('contacts', [{ propertyName: 'createdate', operator: 'GTE', value: since }, { propertyName: 'naunas_lead_source', operator: 'HAS_PROPERTY' }], ['email', 'naunas_lead_source', 'instagram_campaign']),
     crmSearch('deals', [{ propertyName: 'dealstage', operator: 'EQ', value: STAGE.won }, { propertyName: 'closedate', operator: 'GTE', value: since }], ['amount', 'dealname']),
     crmSearch('deals', [{ propertyName: 'dealstage', operator: 'EQ', value: STAGE.lost }, { propertyName: 'closedate', operator: 'GTE', value: since }], ['naunas_lost_reason']),
     ...OPEN.map(([stage]) => crmSearch('deals', [{ propertyName: 'dealstage', operator: 'EQ', value: stage }], ['amount'])),

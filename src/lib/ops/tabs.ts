@@ -323,7 +323,10 @@ export async function automationsData(kind?: string) {
       { name: 'Instagram', detail: 'Keyword comments and DMs', last: last(['ig_comment', 'ig_dm']) },
       { name: 'Tracked links', detail: '/go/<campaign> clicks', last: last(['click']) },
     ],
-    crons: [{ name: 'Daily health check + Monday scoreboard', schedule: 'Every day 09:00 Zanzibar', last: health.at ?? null, ok: health.ok ?? null }],
+    crons: [
+      { name: 'Daily health check', schedule: 'Every day 09:00 Zanzibar: checks every key, pulls deal stages from HubSpot, builds review/referral asks, writes the morning plan and the Telegram brief. Mondays add the scoreboard and the newsletter draft.', last: health.at ?? null, ok: health.ok ?? null },
+      { name: 'Daily outreach send', schedule: 'Every day 17:00 Zanzibar: email steps due for email-channel firms, only while Sending is on', last: last(['outreach_email']), ok: null },
+    ],
     feed: (kind ? events.filter((e) => e.kind === kind) : events).slice(0, 100),
     kinds: tally(events.map((e) => e.kind)),
   };

@@ -65,19 +65,19 @@ export async function missing(): Promise<{ flags: Flag[]; deals: Deal[]; errors:
   // ---- Outreach engine
   if (settings) {
     const emailWaiting = prospects.filter((p) => p.status === 'scheduled' && (!p.channel || p.channel === 'email') && p.email).length;
-    if (emailWaiting && (!settings.sending || !inboxReady())) add({ id: 'email-blocked', level: 'high', area: 'System', title: `${plural(emailWaiting, 'firm')} waiting for a first email that can't go`, detail: !inboxReady() ? 'IMAP is off in Zoho, so cold email is blocked (replies can’t be seen).' : 'Sending is off in ⚙ Settings.', href: '/dashboard/outreach', label: 'Open settings' });
+    if (emailWaiting && (!settings.sending || !inboxReady())) add({ id: 'email-blocked', level: 'high', area: 'System', title: `${plural(emailWaiting, 'firm')} waiting for a first email that can't go`, detail: !inboxReady() ? 'The ZOHO_SMTP_* keys aren’t set, so replies can’t be read and cold email is blocked.' : 'Sending is off in ⚙ Settings.', href: '/dashboard/outreach', label: 'Open settings' });
     const board = channelBoard(prospects, settings);
     const dow = (new Date().getUTCDay() + 6) % 7; // Monday = 0
-    for (const c of board) {
-      const expected = c.target * (dow + 1);
-      if (c.target > 0 && dow >= 1 && c.newThisWeek < expected * 0.5) add({ id: `behind-${c.key}`, level: 'medium', area: 'Outreach', title: `${c.label} behind this week: ${c.newThisWeek} new of about ${expected}`, href: '/dashboard/outreach', label: 'Open Today' });
-    }
+    // One flag for the week's pace (from Wednesday on), not one nag per channel every day.
+    const expected = board.reduce((n, c) => n + c.target * (dow + 1), 0);
+    const got = board.reduce((n, c) => n + c.newThisWeek, 0);
+    if (expected > 0 && dow >= 2 && got < expected * 0.5) add({ id: 'behind', level: 'low', area: 'Outreach', title: `Outreach behind this week: ${got} new firms of about ${expected}`, detail: board.map((c) => `${c.label} ${c.newThisWeek}/${c.target * (dow + 1)}`).join(' · '), href: '/dashboard/outreach', label: 'Open Today' });
     const seq = igSequence(prospects, false, { ig: settings.igNew, li: settings.liNew });
     const due = seq.followups.length + seq.linkedin.filter((l) => l.step !== 'engage').length;
     if (due) add({ id: 'followups', level: 'medium', area: 'Outreach', title: `${plural(due, 'follow-up')} due on Instagram and LinkedIn`, href: '/dashboard/outreach', label: 'Open Today' });
     const pipe = prospects.filter((p) => ['new', 'approved', 'drafted'].includes(p.status)).length;
     const daily = settings.igNew + settings.liNew + settings.dailyNew;
-    if (pipe < daily) add({ id: 'dry', level: 'medium', area: 'Outreach', title: `Prospect list running dry: ${pipe} firms left to review or start`, detail: `You start about ${daily} a day. Find new firms on Google Maps.`, href: '/dashboard/outreach/prospects?step=review', label: 'Find firms' });
+    if (pipe < daily) add({ id: 'dry', level: 'medium', area: 'Outreach', title: `Prospect list running dry: ${pipe} firms left to review or start`, detail: `Your targets add up to ${daily} new firms a day. Find new firms on Google Maps.`, href: '/dashboard/outreach/prospects?step=review', label: 'Find firms' });
     const ready = prospects.filter((p) => p.status === 'drafted').length;
     if (ready >= daily) add({ id: 'ready', level: 'low', area: 'Outreach', title: `${plural(ready, 'firm')} researched and ready to start`, href: '/dashboard/outreach/prospects?step=ready', label: 'Start them' });
   }
