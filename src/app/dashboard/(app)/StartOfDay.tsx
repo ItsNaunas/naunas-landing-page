@@ -6,7 +6,7 @@ import { Markdown } from '@/components/dashboard/AskNaunas';
 import { refreshBriefing } from '@/app/dashboard/actions';
 import { untilOrAgo } from '@/components/dashboard/kit';
 
-/** Outreach → Today: the day's written plan (by the health cron at 09:00, or on demand). The flags live on Overview. */
+/** Today: the day's written plan (by the health cron at 09:00, or on demand), above the contact list. */
 export async function Plan() {
   if (demoOn()) return null;
   const brief = await getBriefing().catch(() => null);
@@ -30,7 +30,7 @@ export async function Plan() {
           )}
         </>
       ) : (
-        <p className="text-sm text-white/55">{aiReady() ? 'Written at 09:00 each morning from everything the dashboard knows. Press “Write today’s plan” to get it now, or use Ask (bottom right).' : 'Add OPENAI_API_KEY in Vercel to get a written plan each morning.'}</p>
+        <p className="text-sm text-white/55">{aiReady() ? 'Written at 09:00 each morning from everything the dashboard knows. Press “Write today’s plan” to get it now, or use Ask (Ctrl+J).' : 'Connect OpenAI (System → Connections) to get a written plan each morning.'}</p>
       )}
     </section>
   );

@@ -8,7 +8,7 @@ import { linkProps } from '@/components/dashboard/ui';
 import { logout } from '../actions';
 import { attention } from '@/lib/ops/attention';
 import { connected } from '@/lib/ops/common';
-import { AskNaunas } from '@/components/dashboard/AskNaunas';
+import { AskNaunas, AskButton } from '@/components/dashboard/AskNaunas';
 
 // Naunas Ops shell: grouped sidebar + top bar (search, refresh) on desktop; top bar + bottom tabs on mobile.
 // The session is checked here as well as in the proxy, so nothing under (app) renders without it.
@@ -25,7 +25,8 @@ export const maxDuration = 120;
 export default async function OpsLayout({ children }: { children: React.ReactNode }) {
   if (!(await validSession((await cookies()).get(DASH_COOKIE)?.value))) redirect('/dashboard/login');
   const a = await attention().catch(() => ({ content: 0, outreach: 0 }));
-  const badges = { '/dashboard/content': a.content, '/dashboard/outreach': a.outreach };
+  // The contact list lives on Today now, so its count badges Today.
+  const badges = { '/dashboard/content': a.content, '/dashboard': a.outreach };
   // Money needs a Stripe read key; until it's set the page is a setup card, so it stays out of the nav.
   const hide = connected.stripe() ? [] : ['/dashboard/money'];
   return (
@@ -45,7 +46,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
           <div className="max-w-[1320px] px-4 md:px-8 py-3 flex items-center gap-3">
             <div className="md:hidden"><Logo /></div>
             <div className="flex-1 max-w-md ml-auto md:ml-0"><SearchBox /></div>
-            <div className="hidden md:block ml-auto"><RefreshButton /></div>
+            <div className="hidden md:flex items-center gap-2 ml-auto"><RefreshButton /><AskButton /></div>
           </div>
         </header>
         <main className="flex-1 max-w-[1320px] w-full px-4 md:px-8 pt-6 pb-28 md:pb-12 flex flex-col gap-6">{children}</main>

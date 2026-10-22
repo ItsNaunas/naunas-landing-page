@@ -181,8 +181,8 @@ await page.getByRole('link', { name: '← Connections' }).click(); await page.wa
 check('LinkedIn page ← back link', page.url().endsWith('/system/connections'));
 await go('/dashboard');
 check('Money hidden from the sidebar without STRIPE_READ_KEY', (await page.locator('aside').getByRole('link', { name: /^Money/ }).count()) === 0);
-for (const label of ['Overview', 'Leads', 'Outreach', 'Pipeline', 'Content', 'System']) {
-  const target = { Overview: '/dashboard', Leads: '/dashboard/leads', Outreach: '/dashboard/outreach', Pipeline: '/dashboard/pipeline', Content: '/dashboard/content', Money: '/dashboard/money', System: '/dashboard/system' }[label];
+for (const label of ['Today', 'Leads', 'Outreach', 'Pipeline', 'Content', 'System']) {
+  const target = { Today: '/dashboard', Leads: '/dashboard/leads', Outreach: '/dashboard/outreach/prospects', Pipeline: '/dashboard/pipeline', Content: '/dashboard/content', Money: '/dashboard/money', System: '/dashboard/system' }[label];
   await page.locator('aside').getByRole('link', { name: new RegExp(`^${label}`) }).click();
   await page.waitForURL((u) => u.pathname === target, { timeout: 60000 }).catch(() => {});
   await page.waitForLoadState('networkidle');

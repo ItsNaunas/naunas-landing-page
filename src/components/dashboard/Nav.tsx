@@ -21,11 +21,12 @@ const ICONS: Record<string, React.ReactNode> = {
   more: <path d="M5 12h.01M12 12h.01M19 12h.01" />,
 };
 
-export const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: string }[] }[] = [
+/** match: the URL prefix that lights the item up, when it differs from where the link goes. */
+export const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: string; match?: string }[] }[] = [
   { label: 'Run the day', items: [
-    { href: '/dashboard', label: 'Overview', icon: 'today' },
+    { href: '/dashboard', label: 'Today', icon: 'today' },
     { href: '/dashboard/leads', label: 'Leads', icon: 'leads' },
-    { href: '/dashboard/outreach', label: 'Outreach', icon: 'outreach' },
+    { href: '/dashboard/outreach/prospects', label: 'Outreach', icon: 'outreach', match: '/dashboard/outreach' },
     { href: '/dashboard/pipeline', label: 'Pipeline', icon: 'pipeline' },
   ] },
   { label: 'Grow', items: [
@@ -37,7 +38,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
   ] },
 ];
 const ALL = NAV_GROUPS.flatMap((g) => g.items);
-const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach', '/dashboard/content'];
+const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach/prospects', '/dashboard/content'];
 export type Badges = Partial<Record<string, number>>;
 const Dot = ({ n }: { n?: number }) => (n ? <span className="ml-auto rounded-full bg-[#F2613F] px-1.5 py-px text-[11px] font-semibold text-white tabular-nums">{n}</span> : null);
 
@@ -49,7 +50,8 @@ function Icon({ name, size = 18 }: { name: string; size?: number }) {
   );
 }
 
-const isActive = (path: string, href: string) => (href === '/dashboard' ? path === href : path.startsWith(href));
+const matchOf = (href: string) => ALL.find((n) => n.href === href)?.match ?? href;
+const isActive = (path: string, href: string) => (href === '/dashboard' ? path === href : path.startsWith(matchOf(href)));
 
 /** hide: pages whose keys aren't set yet (e.g. Money without a Stripe key). They stay reachable by URL and from Connections. */
 export function SideNav({ badges = {}, hide = [] }: { badges?: Badges; hide?: string[] }) {

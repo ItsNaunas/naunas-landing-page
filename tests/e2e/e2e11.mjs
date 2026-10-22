@@ -28,19 +28,20 @@ await page.goto(`${BASE}/dashboard/login`); await page.fill('input[name=password
 await page.goto(`${BASE}/dashboard`, { waitUntil: 'networkidle' });
 const home = await page.locator('main').innerText();
 check('Home shows the Needs-you list', home.includes('Needs you'));
-check('Flag: overdue promise', home.includes('You promised Ann · Firm X a Loom teardown'));
+// Promises and blocked email show once, in Today's contact list on the same page (not again as flags).
+check('Overdue promise on Today', home.includes('Ann · Firm X') && home.includes('Loom teardown'));
 check('Flag: reply with no next step', /Firm rp replied 3 days ago with no next step/.test(home));
-check('Flag: email blocked', home.includes('waiting for a first email that can'));
+check('Email blocked banner on Today', home.includes('waiting for their first email'));
 check('Flag: health problem', home.includes('health check found a problem'));
 check('Flag: research failed + list running dry are counted', /\d+ things need you/.test(home), home.match(/\d+ things need you/)?.[0]);
 check('Flags link to the fix', (await page.locator('a', { hasText: 'Firm rp replied' }).getAttribute('href')) === '/dashboard/outreach/firm/rp');
 
-// Today's plan (mock OpenAI) now lives on Outreach → Today
+// Today's plan (mock OpenAI) lives on Today, above the contact list (/dashboard/outreach redirects there)
 await page.goto(`${BASE}/dashboard/outreach`, { waitUntil: 'networkidle' });
 const nav = page.waitForEvent('framenavigated', { timeout: 20000 }).catch(() => null);
 await Promise.all([page.waitForResponse((x) => x.request().method() === 'POST', { timeout: 60000 }), page.getByRole('button', { name: /Write today’s plan/ }).click()]);
 await nav; await page.waitForLoadState('networkidle');
-const plan = await page.locator('section', { hasText: 'Today’s plan' }).innerText();
+const plan = await page.locator('section', { hasText: 'Today’s plan' }).last().innerText();
 check('Today’s plan written and shown', plan.includes('Do this first') && plan.includes('Firm rp'), plan.slice(0, 120));
 check('Unsafe action link dropped from the plan', (await page.locator('a[href^="https://evil"]').count()) === 0);
 

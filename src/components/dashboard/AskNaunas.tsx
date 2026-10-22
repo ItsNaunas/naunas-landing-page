@@ -39,6 +39,20 @@ export function Markdown({ text }: { text: string }) {
   return <div className="flex flex-col gap-2 text-sm leading-relaxed text-white/80">{blocks}</div>;
 }
 
+export const ASK_EVENT = 'naunas:ask';
+/** Open the Ask panel from anywhere, optionally with a question typed in. */
+export const openAsk = (question?: string) => window.dispatchEvent(new CustomEvent(ASK_EVENT, { detail: question }));
+
+/** Top-bar trigger (desktop). */
+export function AskButton() {
+  return (
+    <button type="button" onClick={() => openAsk()} title="Ask Naunas (Ctrl+J)" aria-label="Ask Naunas"
+      className="hidden md:flex items-center gap-2 rounded-xl bg-[#F2613F] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">
+      <span aria-hidden>✦</span> Ask <kbd className="rounded border border-white/30 px-1 text-[11px] font-mono text-white/80">Ctrl J</kbd>
+    </button>
+  );
+}
+
 export function AskNaunas() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -50,9 +64,15 @@ export function AskNaunas() {
   useEffect(() => { try { const s = sessionStorage.getItem(KEY); if (s) setMsgs(JSON.parse(s)); } catch { /* no storage */ } }, []);
   useEffect(() => { try { sessionStorage.setItem(KEY, JSON.stringify(msgs.slice(-20))); } catch { /* no storage */ } end.current?.scrollIntoView({ block: 'end' }); }, [msgs, open]);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+      if (e.key.toLowerCase() === 'j' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setOpen((o) => !o); }
+    };
+    // The top-bar button and the command palette open the panel with this event.
+    const onOpen = (e: Event) => { setOpen(true); const q = (e as CustomEvent<string | undefined>).detail; if (q) setText(q); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener(ASK_EVENT, onOpen);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener(ASK_EVENT, onOpen); };
   }, []);
 
   async function send(q: string) {
@@ -68,8 +88,9 @@ export function AskNaunas() {
 
   return (
     <>
+      {/* Phones only: on desktop the button sits in the top bar (AskButton) so it never covers content. */}
       <button onClick={() => setOpen(true)} aria-label="Ask Naunas"
-        className={`fixed right-4 bottom-24 md:bottom-6 z-30 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
+        className={`md:hidden fixed right-4 bottom-24 z-30 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
         <span aria-hidden>✦</span> Ask
       </button>
       {open && (
