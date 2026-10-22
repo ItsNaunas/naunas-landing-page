@@ -10,6 +10,7 @@ import { ConnectCard } from '@/components/dashboard/kit';
 import { setProspect, refreshProspectSearches, importWave1, startAllReady, researchNow } from '@/app/dashboard/actions';
 import { SearchForm, DraftEditor } from '@/app/dashboard/(app)/outreach/OutreachClient';
 import { pullDealStagesSoon, outcomeOf } from '@/lib/crmSync';
+import { SequencesTable } from '@/app/dashboard/(app)/outreach/SequencesTable';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +59,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
             className={`rounded-xl border px-3 py-2.5 transition-colors ${s.key === step ? 'border-[#F2613F]/60 bg-[#F2613F]/[0.08]' : 'border-white/[0.07] bg-white/[0.02] hover:border-white/20'}`}>
             <span className="block text-[11px] text-white/60">{i + 1}. {s.label}</span>
             <span className="block text-xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{s.count}</span>
-            <span className="hidden md:block text-[11px] text-white/55 truncate">{s.hint}</span>
+            <span className="hidden md:block text-[11px] leading-snug text-white/60 line-clamp-2">{s.hint}</span>
           </Link>
         ))}
       </nav>
@@ -161,19 +162,20 @@ export default async function OutreachProspects({ searchParams }: { searchParams
         </>
       )}
 
-      {(step === 'outreach' || step === 'replied' || step === 'booked') && (
+      {step === 'outreach' && <SequencesTable inFlight={outreach} replied={q.replied} />}
+
+      {(step === 'replied' || step === 'booked') && (
         <Card pad={false}>
           {list.length ? (
             <ul className="divide-y divide-white/[0.05]">
               {list.map((p) => (
                 <li key={p.id} className="px-5 py-2.5 text-[13px] flex flex-wrap items-center justify-between gap-3">
-                  <span>{firmLink(p)} {p.channel && <Badge tone="muted">{CHANNEL_LABEL[p.channel]}</Badge>} {outcomeOf(p) && step !== 'outreach' && <Badge tone={p.wonAt ? 'good' : p.lostAt ? 'muted' : 'accent'}>{outcomeOf(p)}</Badge>}</span>
-                  <span className="text-xs text-white/60">{step === 'booked' ? `booked ${ago(p.bookedAt!)}` : step === 'replied' ? `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}` : `started ${ago(p.scheduledAt ?? p.startedAt ?? p.createdAt)}`}</span>
+                  <span>{firmLink(p)} {p.channel && <Badge tone="muted">{CHANNEL_LABEL[p.channel]}</Badge>} {outcomeOf(p) && <Badge tone={p.wonAt ? 'good' : p.lostAt ? 'muted' : 'info'}>{outcomeOf(p)}</Badge>}</span>
+                  <span className="text-xs text-white/60">{step === 'booked' ? `booked ${ago(p.bookedAt!)}` : `replied ${ago(p.igRepliedAt ?? p.repliedAt ?? p.createdAt)}`}</span>
                 </li>
               ))}
             </ul>
-          ) : <Empty>{step === 'outreach' ? 'No firms in outreach yet. Start some from Ready to start.' : step === 'booked' ? 'No audit calls booked from cold outreach yet.' : 'No replies yet.'}</Empty>}
-          {step === 'outreach' && <p className="px-5 py-3 text-xs text-white/60 border-t border-white/[0.06]">Day-by-day progress for each firm is on the <Link href="/dashboard/outreach/sequences" className="underline hover:text-white">Sequences</Link> tab.</p>}
+          ) : <Empty>{step === 'booked' ? 'No audit calls booked from cold outreach yet.' : 'No replies yet.'}</Empty>}
         </Card>
       )}
 

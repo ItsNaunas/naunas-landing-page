@@ -15,7 +15,7 @@ export default async function LinkedIn({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <a href="/dashboard/system/connections" className="text-xs text-white/60 hover:text-white -mb-3">← Connections</a>
+      <a href="/dashboard/system#connections" className="text-xs text-white/60 hover:text-white -mb-3">← System</a>
       <PageHeader title="LinkedIn"
         sub={live ? `${account.name ?? 'Connected'} · your profile connection` : 'Connect your profile so Content can post to it'}
         action={account ? <form action={disconnectLinkedIn}><button className="text-xs text-white/60 hover:text-rose-300">Disconnect</button></form> : undefined} />

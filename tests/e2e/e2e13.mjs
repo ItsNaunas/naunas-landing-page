@@ -23,7 +23,7 @@ const settle = async () => { await page.waitForLoadState('networkidle', { timeou
 await page.goto(`${BASE}/dashboard/login`); await page.fill('input[name=password]', 'localtest'); await page.click('button'); await page.waitForURL(/\/dashboard(?!\/login)(\/|\?|$)/);
 
 // 1. New proposal from Pipeline
-await page.goto(`${BASE}/dashboard/pipeline`, { waitUntil: 'load' }); await settle();
+await page.goto(`${BASE}/dashboard/pipeline/proposals`, { waitUntil: 'load' }); await settle();
 check('Pipeline shows the Proposals card', (await page.locator('main').innerText()).includes('No proposals yet'));
 await page.fill('input[name=client]', 'Oakline Interiors'); await page.fill('input[name=email]', 'mia@oakline.example');
 await Promise.all([page.waitForURL('**/dashboard/pipeline/proposal/*', { timeout: 60000 }), page.getByRole('button', { name: 'New proposal' }).click()]);
@@ -70,7 +70,7 @@ check('Accept event logged', (read('events.json') ?? []).some((e) => e.kind === 
 await page.goto(`${BASE}/dashboard/pipeline/proposal/${token}`, { waitUntil: 'load' }); await settle();
 const ed2 = await page.locator('main').innerText();
 check('Editor shows Accepted + signed name + locked scope', ed2.includes('Accepted') && ed2.includes('Mia Turner') && (await page.locator('input[name=title]').isDisabled()));
-await page.goto(`${BASE}/dashboard/pipeline`, { waitUntil: 'load' }); await settle();
+await page.goto(`${BASE}/dashboard/pipeline/proposals`, { waitUntil: 'load' }); await settle();
 check('Pipeline lists the proposal as Accepted', (await page.locator('main').innerText()).includes('Accepted'));
 await page.goto(`${BASE}/dashboard`, { waitUntil: 'load' }); await settle();
 check('Home activity shows proposal events', /Proposal (sent|opened|accepted)/.test(await page.locator('main').innerText()));

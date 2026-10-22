@@ -1,13 +1,13 @@
 import { SectionHeader } from '@/components/dashboard/Tabs';
-import { connected } from '@/lib/ops/common';
 
+// Calls is always a tab: without CAL_API_KEY it shows how to connect Cal.com instead of disappearing.
 export default function PipelineLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <SectionHeader title="Pipeline" tabs={[
         { href: '/dashboard/pipeline', label: 'Deals' },
-        // Needs CAL_API_KEY; until then the tab is a setup card (still at /dashboard/pipeline/calls and under Connections).
-        ...(connected.cal() ? [{ href: '/dashboard/pipeline/calls', label: 'Calls' }] : []),
+        { href: '/dashboard/pipeline/proposals', label: 'Proposals' },
+        { href: '/dashboard/pipeline/calls', label: 'Calls' },
       ]} />
       {children}
     </>

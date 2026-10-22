@@ -6,14 +6,12 @@ import { SectionTitle, SectionError, RangeChips, errFor } from '@/components/das
 import { Funnel, HBars } from '@/components/dashboard/charts';
 import { listProposals, STATUS_LABEL } from '@/lib/proposal';
 import { demoOn } from '@/lib/ops/demo';
-import { newProposal } from '@/app/dashboard/actions';
-import { ago } from '@/components/dashboard/ui';
 
 export const dynamic = 'force-dynamic';
 
 function Idle({ days }: { days: number }) {
   if (days >= 14) return <Badge tone="bad">{days}d quiet</Badge>;
-  if (days >= 7) return <Badge tone="accent">{days}d quiet</Badge>;
+  if (days >= 7) return <Badge tone="warn">{days}d quiet</Badge>;
   return <span className="text-[11px] text-white/55">{days ? `${days}d ago` : 'today'}</span>;
 }
 
@@ -41,25 +39,15 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
         <Kpi label={`Won · ${span}`} value={compactGbp(d.wonValue)} />
       </div>
 
-      <SectionTitle action={<span className="text-xs text-white/60">Scope, price, accept by name, deposit via Stripe: one link</span>}>Proposals</SectionTitle>
-      <Card pad={false}>
-        {proposals.length ? (
-          <ul className="divide-y divide-white/[0.05]">
-            {proposals.slice(0, 12).map((r) => (
-              <li key={r.token}><a href={`/dashboard/pipeline/proposal/${r.token}`} className="px-5 py-3 flex items-center gap-3 hover:bg-white/[0.02]">
-                <span className="min-w-0 flex-1"><span className="block text-[13px] text-white/90 truncate">{r.client}</span><span className="block text-xs text-white/60 truncate">{r.title}</span></span>
-                <span className="text-xs text-white/60">{ago(r.updatedAt)}</span>
-                <Badge tone={r.status === 'paid' || r.status === 'accepted' ? 'good' : r.status === 'opened' ? 'accent' : r.status === 'sent' ? 'neutral' : 'muted'}>{STATUS_LABEL[r.status]}</Badge>
-              </a></li>
-            ))}
-          </ul>
-        ) : <Empty>No proposals yet. Start one from a lead page (it pulls in their brief and call notes), or from scratch below.</Empty>}
-        <form action={newProposal} className="px-5 py-3 border-t border-white/[0.06] flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1 text-[11px] text-white/60 flex-1 min-w-[160px]">Client or firm<input name="client" required placeholder="e.g. Oakline Interiors" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" /></label>
-          <label className="flex flex-col gap-1 text-[11px] text-white/60 flex-1 min-w-[160px]">Their email (for the deposit link)<input name="email" type="email" placeholder="optional" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" /></label>
-          <button className="rounded-lg bg-white text-black text-sm font-medium px-4 py-2">New proposal</button>
-        </form>
-      </Card>
+      {proposals.length > 0 && (() => {
+        const waiting = proposals.filter((p) => p.status === 'sent' || p.status === 'opened' || p.status === 'accepted');
+        return waiting.length ? (
+          <a href="/dashboard/pipeline/proposals" className="rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-2 hover:border-white/20">
+            <span>{waiting.length} proposal{waiting.length === 1 ? '' : 's'} out: {waiting.slice(0, 3).map((p) => `${p.client} (${STATUS_LABEL[p.status].toLowerCase()})`).join(', ')}</span>
+            <span className="text-xs text-white/60">Proposals →</span>
+          </a>
+        ) : null;
+      })()}
 
       <SectionTitle>Board · open now</SectionTitle>
       <SectionError errors={errFor(d.errors, 'Open deals')} />
@@ -77,7 +65,7 @@ export default async function Pipeline({ searchParams }: { searchParams: Promise
                   <p className="text-[13px] font-medium leading-snug">{dl.name}</p>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {dl.amount > 0 && <Badge tone="good">{gbp(dl.amount)}</Badge>}
-                    {dl.priority === 'high' && <Badge tone="accent">High value</Badge>}
+                    {dl.priority === 'high' && <Badge tone="neutral">★ High value</Badge>}
                     {dl.source && <Badge tone="muted">{SOURCE_LABEL[dl.source] ?? dl.source}</Badge>}
                   </div>
                   <Idle days={dl.idle} />

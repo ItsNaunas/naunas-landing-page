@@ -22,7 +22,7 @@ export default async function ProposalEditPage({ params, searchParams }: PagePro
   const tone = status === 'paid' ? 'good' : status === 'accepted' ? 'good' : status === 'opened' ? 'accent' : status === 'sent' ? 'neutral' : 'muted';
   return (
     <>
-      <Link href={p.contactId ? `/dashboard/leads/${p.contactId}` : '/dashboard/pipeline'} className="text-xs text-white/60 hover:text-white -mb-3">← {p.contactId ? 'Lead' : 'Pipeline'}</Link>
+      <Link href={p.contactId ? `/dashboard/leads/${p.contactId}` : '/dashboard/pipeline/proposals'} className="text-xs text-white/60 hover:text-white -mb-3">← {p.contactId ? 'Lead' : 'Proposals'}</Link>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>Proposal · {p.client}</h1>

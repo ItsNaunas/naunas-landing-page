@@ -5,7 +5,8 @@ import { getIndex, CHANNELS, CHANNEL_LABEL, CHANNEL_CODE, type IndexRow, type Ch
 import { tiktokApproved } from '@/lib/publish';
 import { demoOn } from '@/lib/ops/demo';
 import { Errors, Card, Empty, Badge, ago, linkProps } from '@/components/dashboard/ui';
-import { SectionTitle, Meter } from '@/components/dashboard/kit';
+import { Meter } from '@/components/dashboard/kit';
+import { IdeaTabs } from '../IdeaTabs';
 import { CopyButton } from '@/components/dashboard/client';
 import { SendHeldButton } from '../HeldTray';
 import { SchedulingTest } from '../SchedulingTest';
@@ -129,52 +130,58 @@ export default async function Content() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-3 md:gap-4">
-        <div className="lg:col-span-2 flex flex-col gap-3 min-w-0">
-          <SectionTitle>Drafts from the routine</SectionTitle>
-          {Object.keys(byRun).length ? Object.entries(byRun).map(([runAt, drafts]) => (
-            <div key={runAt} className="flex flex-col gap-3">
-              <p className="text-xs text-white/60">Written {ago(runAt)}</p>
-              {drafts.map((dr, i) => (
-                <Card key={i}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex gap-1.5">
-                        <Badge tone="accent">{KIND(dr.title)}</Badge>
-                        {dr.detail?.match(/Layer:\s*(\d\s*\w[\w-]*)/)?.[1] && <Badge>Layer {dr.detail.match(/Layer:\s*(\d\s*\w[\w-]*)/)![1]}</Badge>}
+      <div className="grid lg:grid-cols-3 gap-3 md:gap-4 items-start">
+        <div className="lg:col-span-2 min-w-0">
+          <IdeaTabs panels={[
+            { label: 'Routine drafts', count: d.drafts.length, content: Object.keys(byRun).length ? (
+              <div className="flex flex-col divide-y divide-white/[0.05]">
+                {Object.entries(byRun).map(([runAt, drafts]) => drafts.map((dr, i) => (
+                  <div key={runAt + i} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <Badge tone="neutral">{KIND(dr.title)}</Badge>
+                          {dr.detail?.match(/Layer:\s*(\d\s*\w[\w-]*)/)?.[1] && <Badge tone="muted">Layer {dr.detail.match(/Layer:\s*(\d\s*\w[\w-]*)/)![1]}</Badge>}
+                          <span className="text-[11px] text-white/55">written {ago(runAt)}</span>
+                        </div>
+                        <p className="text-base font-medium mt-2">{dr.title.replace(/^(leak post|hot take|build)[:\s]*/i, '')}</p>
                       </div>
-                      <p className="text-base font-medium mt-2">{dr.title.replace(/^(leak post|hot take|build)[:\s]*/i, '')}</p>
+                      {dr.detail && <CopyButton text={dr.detail} />}
                     </div>
-                    {dr.detail && <CopyButton text={dr.detail} />}
+                    {dr.detail && <p className="mt-3 text-[13px] leading-relaxed text-white/70 whitespace-pre-wrap">{dr.detail}</p>}
                   </div>
-                  {dr.detail && <p className="mt-3 text-[13px] leading-relaxed text-white/70 whitespace-pre-wrap">{dr.detail}</p>}
-                </Card>
-              ))}
-            </div>
-          )) : <Card><Empty>The first three drafts arrive with Monday’s run: a Leak post, a hot take and a build-in-public post, each with its comment keyword.</Empty></Card>}
-
-          <SectionTitle>Idea bank · your leads’ own words</SectionTitle>
-          <Card pad={false}>
-            {x.ideas.length ? (
+                )))}
+              </div>
+            ) : <Empty>The first three drafts arrive with Monday’s run: a Leak post, a hot take and a build-in-public post, each with its comment keyword.</Empty> },
+            { label: 'Hook bank', count: x.hooks.length, content: (
+              <ul className="divide-y divide-white/[0.05]">
+                {x.hooks.map((h) => (
+                  <li key={h.hook} className="px-5 py-3 flex items-start justify-between gap-3">
+                    <div><p className="text-sm text-white/85">{h.hook}</p><p className="text-[11px] text-white/60 mt-0.5">{h.note}</p></div>
+                    <CopyButton text={h.hook} label="Copy" />
+                  </li>
+                ))}
+              </ul>
+            ) },
+            { label: 'Leads’ own words', count: x.ideas.length, content: x.ideas.length ? (
               <ul className="divide-y divide-white/[0.05]">
                 {x.ideas.map((i, n) => (
                   <li key={n} className="px-5 py-3.5 flex items-start gap-3">
                     <span className="text-[#F2613F] text-lg leading-none mt-0.5" aria-hidden>“</span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-white/85">{i.text}</p>
-                      <p className="text-[11px] text-white/55 mt-1">{i.who} · {ago(i.at)}</p>
+                      <p className="text-[11px] text-white/60 mt-1">{i.who} · {ago(i.at)}</p>
                     </div>
                     <CopyButton text={i.text} label="Copy" />
                   </li>
                 ))}
               </ul>
-            ) : <Empty>Every “what’s not working” answer from the audit form lands here: ready-made hooks in your buyers’ words.</Empty>}
-          </Card>
+            ) : <Empty>Every “what’s not working” answer from the audit form lands here: ready-made hooks in your buyers’ words.</Empty> },
+          ]} />
         </div>
 
         <div className="flex flex-col gap-3 min-w-0">
-          <SectionTitle>Leak Map coverage</SectionTitle>
-          <Card>
+          <Card title="Leak Map coverage">
             <ul className="flex flex-col gap-2">
               {x.coverage.map((c) => (
                 <li key={c.n} className="flex items-center justify-between text-[13px]">
@@ -184,18 +191,6 @@ export default async function Content() {
               ))}
             </ul>
             {gaps.length > 0 && <p className="text-[11px] text-white/60 mt-3">Nothing yet on {gaps.map((g) => g.name).join(', ')}. Worth a post.</p>}
-          </Card>
-
-          <SectionTitle>Hook bank</SectionTitle>
-          <Card pad={false}>
-            <ul className="divide-y divide-white/[0.05]">
-              {x.hooks.map((h) => (
-                <li key={h.hook} className="px-5 py-3 flex items-start justify-between gap-3">
-                  <div><p className="text-[13px] text-white/85">{h.hook}</p><p className="text-[11px] text-white/55 mt-0.5">{h.note}</p></div>
-                  <CopyButton text={h.hook} label="Copy" />
-                </li>
-              ))}
-            </ul>
           </Card>
         </div>
       </div>

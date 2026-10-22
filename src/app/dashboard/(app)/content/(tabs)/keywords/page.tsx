@@ -30,14 +30,12 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
       <RangeChips path="/dashboard/content/keywords" param="range" value={range} options={RANGES} />
       {!d.connected && <ConnectCard title="Connect Instagram" why="Needed for keyword DMs and post stats." steps={['Follow RUNBOOK §8 (Meta app, Instagram API with Instagram Login)']} env="IG_ACCESS_TOKEN" />}
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Followers" value={d.profile?.followers_count?.toLocaleString('en-GB') ?? '—'} foot={<span className="text-xs text-white/60">{d.insights ? `${(d.insights.reach ?? 0).toLocaleString('en-GB')} reach · ${(d.insights.profile_views ?? 0).toLocaleString('en-GB')} profile views (${Math.min(30, Number(range) || 30)}d)` : d.profile?.media_count ? `${d.profile.media_count} posts` : ''}</span>} />
+      {/* Followers and reach live on Performance; this tab is the keyword funnel: triggers → DMs → clicks → leads. */}
+      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
         <Kpi label="Keyword triggers" value={t.triggers} foot={<span className="text-xs text-white/60">{t.dms} DMs sent</span>} />
         <Kpi label="Link clicks" value={t.clicks} foot={<span className="text-xs text-white/60">{rate(t.clicks, t.dms)} of DMs</span>} />
         <Kpi label={`Leads from Instagram · ${span}`} value={d.totalLeads} foot={<span className="text-xs text-white/60">tagged in HubSpot</span>} href={`/dashboard/leads?source=instagram_dm&range=${range}`} />
       </div>
-
-      {d.connected && !d.insights && <p className="text-xs text-white/55 -mt-2">Reach and profile views appear here once the Meta app has the <code className="text-white/55">instagram_business_manage_insights</code> permission (then regenerate the token).</p>}
 
       <SectionTitle>Keyword campaigns</SectionTitle>
       <SectionError errors={errFor(d.errors, 'Instagram leads')} />

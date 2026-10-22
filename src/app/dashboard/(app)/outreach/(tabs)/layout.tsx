@@ -9,7 +9,6 @@ export default function OutreachLayout({ children }: { children: React.ReactNode
         action={<OutreachSettings />}
         tabs={[
           { href: '/dashboard/outreach/prospects', label: 'Prospects' },
-          { href: '/dashboard/outreach/sequences', label: 'Sequences' },
           { href: '/dashboard/outreach/results', label: 'Results' },
         ]} />
       {children}

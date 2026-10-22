@@ -132,7 +132,8 @@ await act(page.getByRole('button', { name: 'Start outreach' }).last());
 check('Schedule is blocked for a placeholder draft', prospect('firmf').status === 'drafted' && (await page.locator('text=placeholder text').count()) > 0);
 
 // Sequences: Stop
-await page.getByRole('link', { name: 'Sequences' }).click(); await page.waitForURL('**/outreach/sequences'); await settle();
+// (Sequences lives in Prospects → In outreach since 2026-10-23.)
+await page.getByRole('link', { name: /In outreach/ }).click(); await page.waitForURL('**/prospects?step=outreach'); await settle();
 await act(page.locator('tr', { hasText: 'Firm C FU1' }).getByRole('button', { name: 'Stop' }));
 check('Stop ends a sequence', prospect('firmc').status === 'stopped', prospect('firmc').status);
 
@@ -146,7 +147,7 @@ await go('/dashboard/content');
 await page.getByRole('button', { name: '+ New post' }).click();
 await page.waitForURL(/\/dashboard\/content\/p\d{8}-/, { timeout: 60000 }).catch(() => {});
 check('+ New post opens the editor', /\/dashboard\/content\/p\d{8}-/.test(page.url()), page.url());
-for (const [label, url] of [['Performance', '/content/performance'], ['Newsletter', '/content/newsletter'], ['Keyword DMs', '/content/keywords'], ['Plan', '/content']]) {
+for (const [label, url] of [['Performance', '/content/performance'], ['Email', '/content/newsletter'], ['Keyword DMs', '/content/keywords'], ['Plan', '/content']]) {
   await go('/dashboard/content/performance');
   await page.getByRole('link', { name: label, exact: true }).first().click();
   await page.waitForURL(`**/dashboard${url}`, { timeout: 60000 }).catch(() => {});
@@ -163,22 +164,22 @@ await act(page.getByRole('button', { name: /Refresh Instagram stats/ }));
 check('Refresh Instagram stats returns', page.url().endsWith('/content/performance'));
 
 // Pipeline + System tabs, sidebar
-// Calls tab only exists once CAL_API_KEY is set; locally it isn't, so the tab must be absent and the page still reachable.
+// Calls is always a tab (2026-10-23); without CAL_API_KEY it says how to connect Cal.com.
 await go('/dashboard/pipeline');
-check('Calls tab hidden without CAL_API_KEY', (await page.getByRole('link', { name: 'Calls', exact: true }).count()) === 0);
+check('Pipeline tabs: Deals, Proposals, Calls', (await page.getByRole('link', { name: 'Proposals', exact: true }).count()) === 1 && (await page.getByRole('link', { name: 'Calls', exact: true }).count()) === 1);
 await go('/dashboard/pipeline/calls');
-check('Calls page still reachable by URL', (await page.locator('main').innerText()).includes('Connect Cal.com'));
-for (const [from, label, url] of [['/dashboard/system', 'Connections', '/system/connections'], ['/dashboard/system', 'Automations', '/system/automations']]) {
-  await go(from);
-  await page.getByRole('link', { name: label, exact: true }).first().click();
-  await page.waitForURL(`**/dashboard${url}`, { timeout: 60000 }).catch(() => {});
-  check(`Tab: ${label}`, page.url().endsWith(url));
-}
+check('Calls tab explains how to connect', (await page.locator('main').innerText()).includes('Connect Cal.com'));
+// System = Health & connections (one page since 2026-10-23) + Activity.
+await go('/dashboard/system');
+await page.getByRole('link', { name: 'Activity', exact: true }).first().click();
+await page.waitForURL('**/dashboard/system/automations', { timeout: 60000 }).catch(() => {});
+check('Tab: Activity', page.url().endsWith('/system/automations'));
 await go('/dashboard/system/connections');
+check('Old Connections URL lands on System', new URL(page.url()).pathname === '/dashboard/system' && /all tools/i.test(await page.locator('main').innerText()));
 await page.getByRole('link', { name: /LinkedIn/ }).first().click(); await page.waitForURL('**/dashboard/linkedin', { timeout: 60000 }).catch(() => {});
 check('Connections → LinkedIn page', page.url().endsWith('/dashboard/linkedin'));
-await page.getByRole('link', { name: '← Connections' }).click(); await page.waitForURL('**/system/connections', { timeout: 60000 }).catch(() => {});
-check('LinkedIn page ← back link', page.url().endsWith('/system/connections'));
+await page.getByRole('link', { name: '← System' }).click(); await page.waitForURL('**/dashboard/system', { timeout: 60000 }).catch(() => {});
+check('LinkedIn page ← back link', new URL(page.url()).pathname === '/dashboard/system');
 await go('/dashboard');
 check('Money hidden from the sidebar without STRIPE_READ_KEY', (await page.locator('aside').getByRole('link', { name: /^Money/ }).count()) === 0);
 for (const label of ['Today', 'Leads', 'Outreach', 'Pipeline', 'Content', 'System']) {

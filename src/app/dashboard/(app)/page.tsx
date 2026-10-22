@@ -126,7 +126,7 @@ export default async function Today() {
                   );
                 })}
               </ul>
-            ) : <Empty>{d.agenda ? 'No calls booked.' : <>Connect Cal.com to see call times here. <a href="/dashboard/system/connections" className="text-[#ff8a6d] hover:underline">Connections →</a></>}</Empty>}
+            ) : <Empty>{d.agenda ? 'No calls booked.' : <>Connect Cal.com to see call times here. <a href="/dashboard/system#connections" className="text-[#ff8a6d] hover:underline">Connections →</a></>}</Empty>}
           </Card>
         </div>
       </div>
