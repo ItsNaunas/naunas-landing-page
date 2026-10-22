@@ -12,6 +12,15 @@ import { demo, demoOn } from './demo';
 import { getReps, repDay, MANUAL_REPS, AUTO_TARGETS } from '@/lib/reps';
 import { getIndex, type IndexRow } from '@/lib/content';
 import { channelBoard } from '@/lib/channels';
+import { after } from 'next/server';
+
+/** Approved firms with no research started yet (auto-approved at import): queue them, in the background. */
+async function queuePendingResearch(prospects: Prospect[]) {
+  const ids = prospects.filter((p) => p.status === 'approved' && !p.researchAt && !p.researchError).map((p) => p.id);
+  if (!ids.length) return;
+  const { queueResearch } = await import('@/lib/research');
+  await queueResearch(ids, (fn) => after(fn));
+}
 
 /** Today's reps + the last 7 days, from the rep log, the activity log and the content index. */
 function repsView(log: Awaited<ReturnType<typeof getReps>>, events: OpsEvent[], posts: IndexRow[], prospects: Prospect[]) {
@@ -172,6 +181,7 @@ export async function outreachData() {
     safe('HubSpot', crmSearch('contacts', [{ propertyName: 'naunas_lead_source', operator: 'EQ', value: 'cold_email' }], ['email', 'firstname', 'naunas_outreach_status', 'num_associated_deals', 'createdate', 'website']), { total: 0, results: [] }),
     inboxReady() ? safe('Inbox', src.recentInbound(14, 80), [] as Mail[]) : Promise.resolve([] as Mail[]),
   ]);
+  await safe('Research', queuePendingResearch(prospects), undefined);
   const [repLog, contentRows] = await Promise.all([safe('Reps', getReps(), {}), safe('Content', getIndex(), [] as IndexRow[])]);
   const today = new Date(nowish()).toISOString().slice(0, 10);
   const todays = events.filter((e) => e.at.slice(0, 10) === today);

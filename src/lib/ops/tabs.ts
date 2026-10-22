@@ -3,7 +3,7 @@ import { isTest } from '@/lib/scoreboard';
 import { listEvents, type OpsEvent } from '@/lib/events';
 import { getCampaigns, getStats } from '@/lib/campaigns';
 import { runChecks, type Check } from '@/lib/health';
-import { getJSON } from '@/lib/store';
+import { getJSON, storeKind } from '@/lib/store';
 import { FUNNEL } from '@/config/funnel';
 import { DAY, num, ts, tally, monthStart, OPEN_STAGES, collector, connected, nowish, type RoutineReport } from './common';
 import { src } from './cache';
@@ -352,7 +352,7 @@ export function integrations() {
       { name: 'LinkedIn app', role: 'Post to your profile (connect under Connections, renew every 60 days)', ok: has('LINKEDIN_CLIENT_ID') && has('LINKEDIN_CLIENT_SECRET'), env: 'LINKEDIN_CLIENT_ID + LINKEDIN_CLIENT_SECRET' },
       { name: 'QStash', role: 'Exact-time scheduled posts', ok: has('QSTASH_TOKEN') && has('QSTASH_CURRENT_SIGNING_KEY'), env: 'QSTASH_TOKEN + QSTASH_*_SIGNING_KEY' },
       { name: 'Telegram', role: 'Alerts to your phone', ok: has('TELEGRAM_BOT_TOKEN'), env: 'TELEGRAM_BOT_TOKEN' },
-      { name: 'Vercel Blob', role: 'Campaigns, stats, activity feed', ok: has('BLOB_READ_WRITE_TOKEN'), env: 'BLOB_READ_WRITE_TOKEN' },
+      { name: 'Store', role: `Prospects, content, proposals, counters, activity (${storeKind() === 'postgres' ? 'Postgres' : storeKind() === 'blob' ? 'Vercel Blob; set DATABASE_URL to move to Postgres' : 'not connected'})`, ok: storeKind() !== 'none', env: 'DATABASE_URL (Neon) or BLOB_READ_WRITE_TOKEN' },
       { name: 'Fathom API', role: 'Call recordings + recaps', ok: has('FATHOM_API_KEY'), env: 'FATHOM_API_KEY' },
       { name: 'Fathom webhook', role: 'Same-day recap on Telegram + HubSpot', ok: has('FATHOM_WEBHOOK_SECRET'), env: 'FATHOM_WEBHOOK_SECRET' },
       { name: 'Apify', role: 'Find prospects (Google Maps)', ok: has('APIFY_TOKEN'), env: 'APIFY_TOKEN' },

@@ -4,12 +4,12 @@ import { demoOn } from '@/lib/ops/demo';
 import { Card, Kpi, Delta, Badge, Empty, Errors, compactGbp, linkProps } from '@/components/dashboard/ui';
 import { Feed, SectionTitle, when, untilOrAgo, OWNER_TZ, SectionError, errFor } from '@/components/dashboard/kit';
 import { Sparkline } from '@/components/dashboard/charts';
-import { Plan } from './StartOfDay';
 
 export const dynamic = 'force-dynamic';
 
-// Home = one list of what needs Naufal (calls, failing checks, promises, replies, stale deals, the outreach
-// engine, content), the written plan beside it, four numbers, then what's happening. Nothing is listed twice.
+// Overview = one list of what needs Naufal (calls, failing checks, promises, replies, stale deals, the outreach
+// engine, content), four numbers, then what's happening. The day's written plan sits on Outreach → Today, which
+// is where login lands. Nothing is listed twice.
 
 type Tone = 'accent' | 'neutral' | 'bad' | 'good' | 'muted';
 type Item = { rank: number; badge: string; tone: Tone; title: string; sub?: string; href?: string };
@@ -38,7 +38,6 @@ export default async function Today() {
     ...m.flags.map((f) => ({ ...LEVEL[f.level], badge: f.area, title: f.title, sub: f.detail, href: f.href })),
   ].sort((a, b) => a.rank - b.rank);
   const top = items.slice(0, 8);
-  const plan = demoOn() ? null : <Plan />;
 
   return (
     <>
@@ -51,8 +50,7 @@ export default async function Today() {
       </div>
       <Errors errors={d.errors} />
 
-      <div className={`grid gap-3 md:gap-4 ${plan ? 'lg:grid-cols-[1fr_1.2fr]' : ''}`}>
-        {plan}
+      <div className="grid gap-3 md:gap-4">
         <Card title="Needs you" action={items.length ? <Badge tone="accent">{items.length}</Badge> : undefined} pad={false}>
           <div className="px-5"><SectionError errors={errFor(d.errors, 'Pipeline', 'Routine', 'Cal.com')} /></div>
           {items.length ? (

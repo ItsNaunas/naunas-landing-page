@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { getAttribution } from '@/lib/attribution';
 import { motion, useInView } from 'framer-motion';
 
+const CLIENT_VALUE = ['Under $5k', '$5k-25k', '$25k-100k', '$100k+'];
+const REVENUE = ['Under $20k', '$20k-75k', '$75k-250k', '$250k+'];
 const BUSINESS_TYPES = [
   'Agency',
   'Coaching / Consulting',
@@ -36,6 +38,7 @@ export function Contact() {
   const isInView = useInView(sectionRef, { once: true, amount: 0.15 });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -45,13 +48,21 @@ export function Contact() {
       name:         (form.elements.namedItem('name')         as HTMLInputElement).value,
       email:        (form.elements.namedItem('email')        as HTMLInputElement).value,
       business:     (form.elements.namedItem('businessType') as HTMLSelectElement).value,
+      clientValue:  (form.elements.namedItem('clientValue')  as HTMLSelectElement).value,
+      revenue:      (form.elements.namedItem('revenue')      as HTMLSelectElement).value,
       message:      (form.elements.namedItem('message')      as HTMLTextAreaElement).value,
     };
-    await fetch('/api/enquiry', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, src: 'contact-section', attribution: getAttribution() }),
-    });
+    setError('');
+    try {
+      const res = await fetch('/api/enquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, src: 'contact-section', attribution: getAttribution() }),
+      });
+      if (!res.ok) { setError(((await res.json().catch(() => ({}))) as { error?: string }).error || 'Could not send. Please try again, or email contact@naunas.co.uk.'); setLoading(false); return; }
+    } catch {
+      setError('Could not send. Please try again, or email contact@naunas.co.uk.'); setLoading(false); return;
+    }
     setLoading(false);
     setSubmitted(true);
   }
@@ -212,14 +223,28 @@ export function Contact() {
                   </select>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  {([['clientValue', 'A new client is worth', CLIENT_VALUE], ['revenue', 'Monthly revenue', REVENUE]] as const).map(([name, label, opts]) => (
+                    <div key={name} className="flex flex-col gap-1.5">
+                      <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>{label}</label>
+                      <select name={name} required defaultValue="" className={inputClass} style={{ ...inputStyle, appearance: 'none' as const }}
+                        onFocus={(e) => (e.target.style.borderColor = '#F2613F')} onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}>
+                        <option value="" disabled style={{ background: '#111' }}>Select</option>
+                        {opts.map((o) => <option key={o} value={o} style={{ background: '#111' }}>{o}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    Current setup <span style={{ color: 'rgba(255,255,255,0.25)' }}>(optional)</span>
+                    What&apos;s not working right now?
                   </label>
                   <textarea
                     name="message"
                     rows={4}
-                    placeholder="Describe your current tools and where things break down"
+                    required
+                    placeholder="e.g. enquiries going cold, chasing deposits, clients asking for updates"
                     className={`${inputClass} resize-none`}
                     style={inputStyle}
                     onFocus={(e) => (e.target.style.borderColor = '#F2613F')}
@@ -227,6 +252,7 @@ export function Contact() {
                   />
                 </div>
 
+                {error && <p className="text-sm" style={{ color: '#ff8a6d' }} role="alert">{error}</p>}
                 <button
                   type="submit"
                   disabled={loading}

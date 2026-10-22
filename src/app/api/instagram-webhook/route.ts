@@ -75,18 +75,7 @@ async function onComment(accountId: string, v: Change['value']) {
       await alertError('Instagram: comment → HubSpot', err, 'The DM went out; only the HubSpot record is missing.');
     }
   }
-  await notify({
-    level: 'lead',
-    title: `Instagram comment → ${campaign.name}`,
-    lines: [line('📸', 'From', handle ? `@${handle}` : v.from.id)],
-    quote: v.text,
-    next: 'If they reply to the DM, it lands in your Instagram inbox as normal.',
-    buttons: [
-      ...(handle ? [{ text: 'Profile', url: `https://instagram.com/${handle}` }] : []),
-      ...(postUrl ? [{ text: 'Post', url: postUrl }] : []),
-      ...(contactUrl ? [{ text: 'HubSpot', url: contactUrl }] : []),
-    ],
-  });
+  // Logged and noted on the contact; no Telegram for keyword DMs (only replies from cold prospects ping).
 }
 
 async function onMessage(accountId: string, m: Messaging) {
@@ -127,14 +116,6 @@ async function onMessage(accountId: string, m: Messaging) {
     if (!c.isNew && !campaign) return; // only the first DM (or a keyword) is news; the chat lives in Instagram
     await logEvent('ig_dm', campaign ? `DM keyword → ${campaign.name} · @${profile.username}` : `New Instagram DM · @${profile.username}`, hubspotUrl.contact(c.id));
     if (text) await addNote(c.id, `<p>${campaign ? `DM'd keyword → sent the "${campaign.name.replace(/</g, '&lt;')}" reply.` : 'First Instagram DM:'}</p><blockquote>${text.replace(/</g, '&lt;')}</blockquote>`);
-    await notify({
-      level: 'lead',
-      title: campaign ? `Instagram DM → ${campaign.name}` : 'New Instagram DM',
-      lines: [line('📸', 'From', `@${profile.username}${profile.name ? ` (${profile.name})` : ''}`)],
-      quote: text,
-      next: campaign ? 'They got the campaign reply. Follow up in Instagram if they answer.' : 'Reply in Instagram. Once they share an email, the site joins it to this contact.',
-      buttons: [{ text: 'Profile', url: `https://instagram.com/${profile.username}` }, { text: 'HubSpot', url: hubspotUrl.contact(c.id) }],
-    });
   } catch (err) {
     await alertError('Instagram: DM → HubSpot', err, 'A new DM may not be in HubSpot. Check your Instagram inbox.');
   }

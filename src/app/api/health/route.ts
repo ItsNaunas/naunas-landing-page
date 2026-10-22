@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       next: 'Leads may be slipping through until this is fixed.',
       buttons: [{ text: 'Open logs', url: FUNNEL.logsUrl }],
     });
-  } else if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('ping') === '1') {
+  } else if (req.nextUrl.searchParams.get('ping') === '1') {
     await notify({ level: 'ok', title: 'Daily health check: all green', lines: checklist });
   }
   // Mondays (or ?scoreboard=1): the weekly scoreboard rides on this cron instead of needing its own.

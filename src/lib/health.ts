@@ -2,7 +2,7 @@ import { getMailer } from '@/lib/mailer';
 import { checkHubSpot } from '@/lib/hubspot';
 import { listAutomations, EXPECTED_AUTOMATIONS } from '@/lib/mailerlite';
 import { igMe, checkIgPublish } from '@/lib/instagram';
-import { storeReady } from '@/lib/store';
+import { storeReady, checkStore } from '@/lib/store';
 import { checkInbox } from '@/lib/inbox';
 import { checkFathom } from '@/lib/fathom';
 import { checkApify } from '@/lib/apify';
@@ -62,6 +62,6 @@ export async function runChecks(): Promise<Check[]> {
       const late = (await getIndex()).filter((r) => r.status === 'scheduled' && Date.parse(r.when) < Date.now() - 10 * 60_000);
       if (late.length) throw new Error(`${late.length} scheduled post${late.length > 1 ? 's' : ''} didn't go out (${late.slice(0, 3).map((r) => r.idea.slice(0, 40) || r.id).join(' · ')}). Open Content and press Publish now.`);
     })] : []),
-    ...(storeReady() ? [] : [run('Blob store', async () => { throw new Error('not connected: campaigns can\'t be edited, stats aren\'t kept'); })]),
+    run('Store', () => checkStore()),
   ]);
 }

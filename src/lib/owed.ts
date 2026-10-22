@@ -1,6 +1,6 @@
 // "Asset owed" (Outreach Playbook, 2026-10-18): the biggest leak in the LinkedIn audit was saying yes to a
-// Loom / PDF / teardown and never sending it. When someone says yes, it goes here: due in 24 hours, with a
-// Telegram reminder at 20h (QStash). Once sent, a nudge is due after 5 quiet days. Any channel, any person.
+// Loom / PDF / teardown and never sending it. When someone says yes, it goes here: due in 24 hours (overdue ones
+// show on Overview and in the morning brief). Once sent, a nudge is due after 5 quiet days. Any channel, any person.
 
 import { getJSON, updateJSON } from '@/lib/store';
 

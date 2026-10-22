@@ -14,6 +14,7 @@ import { FUNNEL } from '@/config/funnel';
 import { getOwed, needsYou } from '@/lib/owed';
 import { demoOn } from '@/lib/ops/demo';
 import { addOwedAsset } from '@/app/dashboard/actions';
+import { Plan } from '@/app/dashboard/(app)/StartOfDay';
 export default async function OutreachToday() {
   const d = await outreachData();
   const owedAll = demoOn() ? [{ id: 'o1', who: 'Laurence Grant', what: 'Loom teardown', channel: 'LinkedIn', owedAt: new Date(Date.now() - 18 * 3_600_000).toISOString() }] : await getOwed().catch(() => []);
@@ -44,6 +45,7 @@ export default async function OutreachToday() {
           {emailWaiting} firm{emailWaiting > 1 ? 's are' : ' is'} waiting for their first email, but {!d.connected.inbox ? 'the ZOHO_SMTP_* keys aren’t set (replies can’t be read, so cold email is blocked)' : 'Sending is OFF'}. {!d.connected.inbox ? 'Add them in Vercel, then check System → Health.' : 'Fix it in ⚙ Settings above.'}
         </div>
       )}
+      <Plan />
       <ChannelBoard channels={d.channels} />
 
       <TodayList owed={owed} replies={d.replies} checkins={checkins} drafts={drafts} ig={d.ig} posts={igPosts} doneToday={doneToday} asks={asks} />
@@ -69,7 +71,7 @@ export default async function OutreachToday() {
           </label>
           <button className="rounded-lg bg-white text-black text-sm font-medium px-4 py-2">Add</button>
         </ActionForm>
-        <p className="px-5 pb-3 text-[11px] text-white/35">It goes to the top of the list with a 24-hour clock. Telegram reminds you at 20 hours, and a nudge comes back 5 days after you send it.</p>
+        <p className="px-5 pb-3 text-[11px] text-white/35">It goes to the top of the list with a 24-hour clock. Overdue ones go to Overview and the morning brief; a nudge comes back 5 days after you send it.</p>
       </details>
 
     </>

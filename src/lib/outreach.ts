@@ -7,6 +7,10 @@ import { logEvent } from '@/lib/events';
 import { notify, line } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
 import { hasPlaceholder } from '@/lib/dmLint';
+import { aiReady } from '@/lib/ai';
+
+/** Fit 5+ (a design practice with an email and Instagram) skips Review: approved at import and researched at once. */
+const autoApprove = (fit: number) => fit >= 5 && aiReady();
 
 // Cold outreach, run from /dashboard/outreach. Replaces the vault email engine for NEW prospects.
 //   find (Apify Google Maps) → you approve → the Claude routine drafts (research line, E1–E4, IG DM) →
@@ -161,13 +165,13 @@ export async function syncSearches(): Promise<Search[]> {
         firm: pl.title, website: pl.website, domain, email, instagram: igHandle(pl.instagrams?.[0]), phone: pl.phone,
         city: pl.city ?? undefined, state: pl.state ?? undefined, country: pl.countryCode ?? undefined, tz: tzFor(pl),
         rating: pl.totalScore ?? undefined, reviews: pl.reviewsCount ?? undefined, category: pl.categoryName ?? undefined, mapsUrl: pl.url,
-        fit, fitWhy: why, searchId: s.id, createdAt: new Date().toISOString(), status: fit === 0 ? 'rejected' : 'new',
+        fit, fitWhy: why, searchId: s.id, createdAt: new Date().toISOString(), status: fit === 0 ? 'rejected' : autoApprove(fit) ? 'approved' : 'new',
       });
       if (domain) known.add(domain);
       if (email) known.add(email);
     }
     s.found = places.length;
-    s.added = fresh.filter((p) => p.status === 'new').length;
+    s.added = fresh.filter((p) => p.status !== 'rejected').length;
     await updateJSON<Prospect[]>(P, [], (list) => [...list, ...fresh]);
     await logEvent('lead', `Prospect search done · ${s.term} in ${s.location}: ${s.added} to review`, '/dashboard/outreach');
   }
@@ -329,7 +333,7 @@ export async function importSeeds(seeds: Seed[], source: string): Promise<number
       fresh.push({
         id: `${source}-${slug(s.firm)}`, firm: s.firm, website: s.website, domain, email: s.email?.toLowerCase(), instagram: s.instagram,
         city: s.city, state: s.state, country: 'US', tz: US_TZ[s.state] ?? 'America/Chicago', rating: s.rating, reviews: s.reviews, category: 'Interior designer',
-        fit, fitWhy, searchId: source, createdAt: new Date().toISOString(), status: 'new',
+        fit, fitWhy, searchId: source, createdAt: new Date().toISOString(), status: autoApprove(fit) ? 'approved' : 'new',
       });
     }
     added = fresh.length;

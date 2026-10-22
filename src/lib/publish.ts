@@ -130,19 +130,6 @@ export async function runPost(id: string, opts: { only?: ChannelKey[]; expectSch
   const posted = results.filter((r) => r.status === 'posted').length;
   const icon = { posted: '✅', failed: '❌', held: '⏳' } as Record<string, string>;
   await logEvent('content', `Posted ${posted}/${results.length}: ${p.master.idea.slice(0, 60) || p.id}`, `/dashboard/content/${p.id}`);
-  await notify({
-    level: results.some((r) => r.status === 'failed') ? 'error' : 'ok',
-    title: `Posted ${posted}/${results.length}${results.some((r) => r.status === 'held') ? ' · TikTok held' : ''}`,
-    lines: results.map((r) => line(icon[r.status] ?? '•', CHANNEL_LABEL[r.c], r.status === 'held' ? 'waiting for TikTok approval' : r.error ?? (r.url ? 'live' : r.status))),
-    quote: p.master.idea.slice(0, 200) || undefined,
-    buttons: [
-      ...results.filter((r) => r.url).map((r) => ({ text: `Open on ${CHANNEL_LABEL[r.c]}`, url: r.url! })),
-      { text: 'Open in dashboard', url: `${FUNNEL.site}/dashboard/content/${p.id}` },
-    ],
-  });
-  // A while after it goes live: nudge to answer comments (early replies are what the algorithms reward).
-  if (results.some((r) => r.status === 'posted' && r.c !== 'tiktok') && qstashReady()) {
-    await scheduleAt(new Date(Date.now() + FUNNEL.content.replyReminderMin * 60_000), { remind: p.id }).catch((err) => console.error('[publish] reminder', err));
-  }
+  // Failures alert through alertError in runPost's callers; a clean post is visible on Content and Overview, no Telegram.
   return { skipped: false as const, post: p };
 }

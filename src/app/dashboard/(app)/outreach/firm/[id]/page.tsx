@@ -165,7 +165,7 @@ export default async function FirmPage({ params }: PageProps<'/dashboard/outreac
                   <Fragment key={k}><dt className="text-white/40">{k}</dt><dd className="text-white/80">{v}</dd></Fragment>
                 ))}
               </dl>
-            ) : <p className="text-sm text-white/45">{p.fitWhy.join(' · ')}</p>}
+            ) : <><p className="text-sm text-white/45">{p.fitWhy.join(' · ')}</p><p className="text-xs text-white/35 mt-2">{p.status === 'new' ? 'Research starts when you approve the firm.' : p.status === 'approved' ? (researching ? 'Research is running now.' : p.researchError ? 'Research failed; try again above.' : 'Waiting for research.') : p.status === 'rejected' ? 'Skipped, so no research was done.' : 'No research on file for this firm.'}</p></>}
             {p.drafts?.dossier && <p className="text-xs text-white/45 mt-3 border-t border-white/[0.05] pt-3">{p.drafts.dossier}</p>}
           </Card>
 

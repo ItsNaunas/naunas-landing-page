@@ -34,7 +34,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
   const replied = q.replied.filter((p) => !p.bookedAt);
 
   const steps: { key: Step; label: string; count: number; hint: string }[] = [
-    { key: 'review', label: 'Review', count: q.review.length, hint: 'Approve the ones that look right' },
+    { key: 'review', label: 'Review', count: q.review.length, hint: 'Weaker fits wait here; 5+ go straight to research' },
     { key: 'researching', label: 'Researching', count: q.approved.length, hint: 'About a minute per firm' },
     { key: 'ready', label: 'Ready to start', count: q.drafted.length, hint: 'Pick a channel, press Start' },
     { key: 'outreach', label: 'In outreach', count: outreach.length, hint: 'Working through the cadence' },
@@ -78,7 +78,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
             <div className="px-5 pb-5">
               {!d.connected.apify ? <ConnectCard title="Connect Apify" why="Searches Google Maps for firms with a website, email and Instagram." steps={['Apify → Settings → Integrations → API token']} env="APIFY_TOKEN" /> : <>
                 <SearchForm />
-                <p className="mt-3 text-xs text-white/40">About $0.007 per firm. Skips stores, stagers, trades and anyone already in HubSpot. New firms land in this list.</p>
+                <p className="mt-3 text-xs text-white/40">About $0.007 per firm. Skips stores, stagers, trades and anyone already in HubSpot. Firms scoring 5+ are approved and researched straight away; weaker fits land here for you to decide.</p>
                 {d.searches.length > 0 && (
                   <ul className="mt-3 flex flex-col divide-y divide-white/[0.05] border-t border-white/[0.06]">
                     {d.searches.map((s) => (

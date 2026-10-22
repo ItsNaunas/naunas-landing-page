@@ -20,7 +20,7 @@ export async function login(_prev: string | null, form: FormData): Promise<strin
   (await cookies()).set(DASH_COOKIE, (await sessionToken())!, {
     httpOnly: true, secure: true, sameSite: 'lax', path: '/dashboard', maxAge: DASH_MAX_AGE,
   });
-  redirect('/dashboard');
+  redirect('/dashboard/outreach');
 }
 
 export async function logout() {
@@ -677,8 +677,6 @@ export async function addOwedAsset(form: FormData) {
     const { patchOwed } = await import('@/lib/owed');
     await patchOwed(o.id, { taskId });
   }, 'Said yes');
-  const { qstashReady, scheduleAt } = await import('@/lib/qstash');
-  if (qstashReady()) await scheduleAt(new Date(Date.now() + (DUE_H - 4) * 3_600_000), { owed: o.id }).catch(() => {});
   changed();
 }
 
@@ -687,8 +685,6 @@ export async function markOwedSent(form: FormData) {
   const { patchOwed, NUDGE_D } = await import('@/lib/owed');
   const o = await patchOwed(str(form, 'id'), { sentAt: new Date().toISOString() });
   if (o?.taskId) await crmAfter(o.firmId ?? o.id, (m) => m.completeTask(o.taskId!), 'Complete task');
-  const { qstashReady, scheduleAt } = await import('@/lib/qstash');
-  if (o && qstashReady()) await scheduleAt(new Date(Date.now() + NUDGE_D * 86_400_000), { nudge: o.id }).catch(() => {});
   changed();
 }
 
@@ -764,6 +760,11 @@ export async function importWave1() {
   const [{ importSeeds }, { WAVE1 }] = await Promise.all([import('@/lib/outreach'), import('@/config/wave1')]);
   const n = await importSeeds(WAVE1, 'w1');
   await logEvent('lead', `Imported ${n} wave-1 firms from the vault list`, '/dashboard/outreach/prospects');
+  // Good fits were approved at import; research them now (QStash, else in the background of this request).
+  const { queueResearch } = await import('@/lib/research');
+  const { after } = await import('next/server');
+  const pending = (await getProspects()).filter((p) => p.status === 'approved' && !p.researchAt && !p.researchError).map((p) => p.id);
+  if (pending.length) await queueResearch(pending, (fn) => after(fn));
   changed();
 }
 
@@ -1037,4 +1038,15 @@ export async function markBooked(form: FormData) {
   if (ids.dealId && process.env.HUBSPOT_TOKEN) await setDealStage(ids.dealId, (await import('@/lib/hubspot')).STAGE.auditBooked).catch(() => {});
   await logEvent('booking', `Audit booked (linked by hand) · ${p.firm}`, `/dashboard/outreach/firm/${encodeURIComponent(p.id)}`);
   changed();
+}
+
+/** System → Health: one-time copy of every JSON file from Vercel Blob into the Postgres store (lib/store). */
+export async function migrateStore() {
+  await requireSession();
+  const { copyBlobToPostgres, putJSON } = await import('@/lib/store');
+  let r: { copied: number; skipped: number; failed: string[] };
+  try { r = await copyBlobToPostgres(); } catch (err) { r = { copied: 0, skipped: 0, failed: [String((err as Error).message ?? err)] }; }
+  await putJSON('meta/store-migration.json', { at: new Date().toISOString(), ...r }).catch(() => {});
+  await logEvent('alert', `Store copy: ${r.copied} copied, ${r.skipped} skipped${r.failed.length ? `, ${r.failed.length} failed` : ''}`, '/dashboard/system');
+  await done();
 }

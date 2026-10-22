@@ -5,13 +5,13 @@ import { usePathname } from 'next/navigation';
 import { track } from '@vercel/analytics';
 import { LeakMapForm, signedUp } from './LeakMapForm';
 
-// Free-resource pop-up: offers the Leak Map ~10s after landing (after Dot's hero intro has played), once per
-// visitor, and waits while the landing video is playing. Buttons anywhere on the site can open it:
+// Free-resource pop-up: offers the Leak Map once per visitor, when they have read 45% of the page or move to leave
+// (45 s at the latest, never while the landing video is playing). Buttons anywhere on the site can open it:
 //   window.dispatchEvent(new CustomEvent('open-leak-map', { detail: { src: 'video_end', variant: 'scorecard' } }))
 // The 'scorecard' variant (end of the video, 2026-10-22) frames the same sign-up as "find your weakest step".
 // Not auto-shown on /audit (they're already mid-enquiry), /links or /scorecard (they have their own form).
 const SEEN_KEY = 'leakmap_popup_seen_v1';
-const HIDDEN_ON = ['/audit', '/links', '/dashboard', '/privacy', '/terms', '/scorecard', '/r/'];
+const HIDDEN_ON = ['/audit', '/links', '/dashboard', '/privacy', '/terms', '/scorecard', '/r/', '/p/'];
 
 function seen(): boolean {
   try { return localStorage.getItem(SEEN_KEY) === '1'; } catch { return false; }
@@ -33,17 +33,25 @@ export function LeadMagnetPopup() {
   useEffect(() => {
     if (HIDDEN_ON.some((p) => pathname?.startsWith(p)) || seen() || signedUp()) return;
     let t = 0;
-    const tryShow = () => {
+    let shown = false;
+    function cleanup() { clearTimeout(t); window.removeEventListener('scroll', onScroll); document.removeEventListener('mouseleave', onLeave); }
+    function tryShow() {
+      if (shown) return;
       // Don't stack on top of another open dialog (e.g. the audit pop-up); don't interrupt the video.
       if (document.querySelector('[role="dialog"]')) return;
-      if (videoPlaying()) { t = window.setTimeout(tryShow, 5000); return; }
+      if (videoPlaying()) { clearTimeout(t); t = window.setTimeout(tryShow, 5000); return; }
+      shown = true; cleanup();
       setVariant('leakmap'); setSrc(`popup${pathname ?? ''}`);
       setOpen(true);
       markSeen();
       track('leakmap_popup_shown');
-    };
-    t = window.setTimeout(tryShow, 10000);
-    return () => clearTimeout(t);
+    }
+    function onScroll() { const d = document.documentElement; if ((d.scrollTop + window.innerHeight) / Math.max(1, d.scrollHeight) >= 0.45) tryShow(); }
+    function onLeave(e: MouseEvent) { if (e.clientY <= 0) tryShow(); }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('mouseleave', onLeave);
+    t = window.setTimeout(tryShow, 45000);
+    return cleanup;
   }, [pathname]);
 
   useEffect(() => {

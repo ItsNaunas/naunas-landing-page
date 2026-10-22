@@ -41,12 +41,7 @@ export async function preCallResearch(b: { name: string; website?: string; busin
 <p><b>Ask on the call</b></p><ol>${out.questions.slice(0, 3).map((q) => li(escapeHtml(q))).join('')}</ol>
 <p><b>Quick win to mention:</b> ${escapeHtml(out.quickWin)}</p>`;
     if (b.contactId) await addNote(b.contactId, html, b.dealId);
-    await notify({
-      level: 'ok', title: `Research brief ready: ${b.name}`,
-      lines: [`${out.sells}`, `Enquiries: ${out.enquiryPath}`, ...out.leaks.slice(0, 3).map((l) => `• ${LAYERS[l.layer - 1] ?? 'Leak'}: ${l.leak}`)],
-      next: b.callTime ? `Call ${b.callTime}. The full brief is on the HubSpot deal.` : 'The full brief is on the HubSpot deal.',
-      buttons: [{ text: 'Open in HubSpot', url: b.dealId ? hubspotUrl.deal(b.dealId) : b.contactId ? hubspotUrl.contact(b.contactId) : hubspotUrl.contacts() }],
-    });
+    // Shown on the lead page and pinned to the deal; the booking itself already pinged Telegram.
   } catch (err) {
     await alertError('Pre-call research', err, 'The booking is fine; only the website research brief failed. The instant brief is still on the deal.');
   }

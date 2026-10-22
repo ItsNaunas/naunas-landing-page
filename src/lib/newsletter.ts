@@ -64,7 +64,7 @@ export async function buildWeeklyDraft(opts: { force?: boolean } = {}): Promise<
   const { rows } = await postPerformance(7);
   const posts = (await Promise.all(rows.slice(0, 5).map((r) => getPost(r.id)))).filter((p): p is ContentPost => !!p && !!body(p));
   if (!posts.length) {
-    await notify({ level: 'ok', title: 'Newsletter: nothing to send this week', lines: ['No posts went out in the last 7 days, so there is no draft. Post this week and next Monday’s draft builds itself.'] });
+    // Nothing went out, so no draft; the Newsletter tab says so. (No Telegram: only the brief and money events ping.)
     return { empty: true };
   }
 
@@ -92,20 +92,6 @@ export async function buildWeeklyDraft(opts: { force?: boolean } = {}): Promise<
   await putJSON(`content/newsletter/${week}.json`, d);
   await putJSON(LATEST, d);
 
-  await notify({
-    level: d.campaignId ? 'ok' : 'error',
-    title: d.campaignId ? 'Newsletter draft ready (not sent)' : 'Newsletter draft failed',
-    lines: [
-      `Subject: ${subject}`,
-      `${posts.length} post${posts.length > 1 ? 's' : ''}, best one first.`,
-      d.campaignId && !d.contentIncluded ? 'MailerLite didn’t take the email body through the API. Copy it from the dashboard (Content → Newsletter) into the editor.' : '',
-      d.campaignId ? '' : (d.error ?? ''),
-    ].filter(Boolean),
-    next: d.campaignId ? 'Read it, tweak it, then press Send in MailerLite. Nothing goes out on its own.' : 'Open the dashboard and press Build draft again.',
-    buttons: [
-      ...(d.editUrl ? [{ text: 'Open in MailerLite', url: d.editUrl }] : []),
-      { text: 'Dashboard', url: `${FUNNEL.site}/dashboard/content/newsletter` },
-    ],
-  });
+  // The draft is announced on Content → Newsletter and in the morning brief, not on Telegram.
   return d;
 }

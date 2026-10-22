@@ -23,7 +23,7 @@ const ICONS: Record<string, React.ReactNode> = {
 
 export const NAV_GROUPS: { label: string; items: { href: string; label: string; icon: string }[] }[] = [
   { label: 'Run the day', items: [
-    { href: '/dashboard', label: 'Today', icon: 'today' },
+    { href: '/dashboard', label: 'Overview', icon: 'today' },
     { href: '/dashboard/leads', label: 'Leads', icon: 'leads' },
     { href: '/dashboard/outreach', label: 'Outreach', icon: 'outreach' },
     { href: '/dashboard/pipeline', label: 'Pipeline', icon: 'pipeline' },
