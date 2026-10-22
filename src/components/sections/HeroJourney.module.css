@@ -1,99 +1,35 @@
-﻿.scene { position: relative; width: 100%; aspect-ratio: 700 / 650; isolation: isolate; --eye-x: 0px; --eye-y: 0px; }
-.grid { position: absolute; inset: 0 -10% -8% -6%; background-image: linear-gradient(#ede9e6 1px,transparent 1px),linear-gradient(90deg,#ede9e6 1px,transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse, #000 20%,transparent 72%); }
+﻿/* Interactive client journey (HeroJourney.tsx): a sculpted track, Dot travelling along it, and three stage
+   cards. Rewritten 2026-10-22 from layered patches into one pass; the rendered result was checked identical
+   at 9 screen sizes. Moods and the Dot character follow the video Dot (naunas-studio docs/dot.md). */
+
+.scene { position: relative; width: 100%; aspect-ratio: 700 / 650; isolation: isolate; --eye-x: 0px; --eye-y: 0px; }
+.grid { position: absolute; inset: 0 -10% -8% -6%; opacity: .55; background-image: linear-gradient(#ede9e6 1px,transparent 1px),linear-gradient(90deg,#ede9e6 1px,transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse, #000 20%,transparent 72%); }
 .track { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .lit { filter: drop-shadow(0 0 7px #ffc05f); }
-.dotPosition { position: absolute; width: 25%; aspect-ratio: 1; z-index: 1; }
-.dot { display: block; width: 100%; height: 100%; border: 0; border-radius: 50%; cursor: pointer; position: relative; background: radial-gradient(ellipse at 63% 18%,#fff7da 0%,#ffe6b3 3%,#ffffff00 11%),radial-gradient(circle at 34% 17%,#ffbb74 0%,#ff9b46 26%,#ff7728 49%,#ef5915 76%,#ce3e0a 100%); box-shadow: inset 3px 5px 8px #ffe6ca99,inset -6px -9px 13px #b343252e,0 15px 13px -8px #87340f66; }
-.dot::after { content: ''; position: absolute; inset: 5% 7% 9%; border-radius: 50%; background: linear-gradient(125deg,#fff7dd3d,transparent 35%); filter: blur(4px); pointer-events: none; }
-.eyes { position: absolute; left: 55%; top: 36%; display: flex; gap: 18px; transform: translate(var(--eye-x),var(--eye-y)) rotate(-14deg); transition: transform .18s ease-out; }
-.eyes > span { position: relative; width: 12px; height: 28px; background: #161311; border-radius: 50%; box-shadow: inset 2px 1px 2px #544134,1px 2px 2px #c9531b; }
-.eyes > span::after { content: ''; position: absolute; width: 4px; height: 7px; left: 3px; top: 4px; border-radius: 50%; background: #fffdf0; transform: translate(calc(var(--eye-x) * .12), calc(var(--eye-y) * .3)); transition: transform .18s ease-out; }
-.card { position: absolute; z-index: 2; width: 35%; display: flex; align-items: center; gap: 12px; padding: 16px 14px; border: 1px solid #f0ebe6; border-radius: 19px; background: #fffffffa; box-shadow: 0 15px 25px -8px #68351524; cursor: pointer; text-align: left; transition: box-shadow .2s,border-color .2s; }
-.card:hover { border-color: #ffd0b4; box-shadow: 0 18px 30px -8px #b0522a35; }
-.card0 { left: 17%; top: 6%; }
-.card1 { left: 54%; top: 42%; }
-.card2 { left: 76%; top: 65%; }
-.icon { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; background: #faf3ef; display: grid; place-items: center; color: #17191e; }
-.icon svg { width: 22px; height: 22px; }
-.cardCopy { min-width: 0; }
-.card strong { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: clamp(10px,.95vw,14px); font-weight: 700; color: #101116; letter-spacing: -.035em; }
-.check { display: inline-grid; place-items: center; flex-shrink: 0; width: 14px; height: 14px; border-radius: 50%; background: #35a25a; color: white; font-size: 10px; }
-.card small { display: table; margin: 7px auto 0; padding: 2px 9px; border-radius: 20px; background: #e0f5e9; color: #153c2b; font-size: 10px; line-height: 1.4; }
-.card:focus-visible,.dot:focus-visible { outline: 2px solid #ed682e; outline-offset: 4px; }
-@media(min-width:768px) { .scene { width: 96%; margin-left: -3%; } }
-@media(max-width:1100px) { .card { padding: 11px 9px; gap: 7px; } .icon { flex-basis: 28px; width: 28px; height: 28px; } .icon svg { width: 18px; height: 18px; } .eyes { gap: 12px; } .eyes > span { width: 9px; height: 23px; } }
-@media(max-width:767px) { .scene { width: 87%; height: clamp(175px,calc(100svh - 490px),280px); aspect-ratio: auto; } .track { height: 100%; } .card { width: 44%; padding: 8px 6px; gap: 5px; border-radius: 12px; } .card0 { left: 12%; top: 0; } .card1 { left: 57%; top: 40%; } .card2 { left: 72%; top: 76%; } .card strong { font-size: 8px; gap: 3px; } .check { width: 10px; height: 10px; font-size: 7px; } .icon { flex-basis: 23px; width: 23px; height: 23px; } .icon svg { width: 15px; height: 15px; } .card small { font-size: 8px; margin-top: 3px; padding: 1px 6px; } .eyes { gap: 8px; } .eyes > span { width: 6px; height: 16px; } .eyes > span::after { width: 2px; height: 4px; left: 2px; top: 3px; } }
-@media(prefers-reduced-motion:reduce) { .eyes,.card { transition: none; } }
-@media(max-width:767px) { .track { overflow: hidden; mask-image: linear-gradient(transparent,#000 10%,#000 86%,transparent); } }
-.grid { opacity: .55; }
-.dotPosition { transform: translate(-50%,-50%); }
-.dot { box-shadow: inset 3px 5px 8px #ffe6ca99,inset -6px -9px 13px #b343252e,0 17px 11px -7px #87340f80; }
-.card { width: 38%; transition: transform .25s ease,box-shadow .25s ease,border-color .25s ease; }
-.card:hover,.card:focus-visible { transform: translateY(-4px); }
-.card0 { left: 24%; top: 5%; }
-.card1 { left: 56%; top: 42%; }
-.card2 { left: 72%; top: 68%; }
-.card strong { font-size: clamp(11px,1vw,14px); letter-spacing: -.02em; }
 .pulse { filter: drop-shadow(0 0 9px #ffad32); }
-.card0[data-active='true'] .icon svg { animation: enquiryArrives .5s ease both; }
-.card1[data-active='true'] .signature { stroke-dasharray: 1; animation: drawMark .7s ease both; }
-.card2[data-active='true'] .checklist { stroke-dasharray: 1; animation: drawMark .8s ease both; }
-.card[data-active='true'] .check { animation: completeStage .45s ease both; }
-.scene[data-stage='0'] .eyes { margin-left: -5px; }
-.scene[data-stage='2'] .eyes { margin-top: 4px; }
-@keyframes enquiryArrives { from { opacity: 0; transform: translateY(-8px) rotate(-10deg); } to { opacity: 1; transform: none; } }
-@keyframes drawMark { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-@keyframes completeStage { from { transform: scale(.6); opacity: .5; } to { transform: scale(1); opacity: 1; } }
-@media(max-width:767px) { .card { width: 46%; } .card0 { left: 20%; top: 0; } .card1 { left: 57%; top: 42%; } .card2 { left: 70%; top: 76%; } .card strong { font-size: 8px; } }
-@media(prefers-reduced-motion:reduce) { .card,.eyes { transition: none; } .card .icon svg,.card .signature,.card .checklist,.card .check { animation: none !important; } .card:hover { transform: none; } }
 
-/* Personality layers keep travel, idle gestures and direct input independent. */
-.personality { width: 100%; height: 100%; animation: dotRest 5s ease-in-out infinite; transform-origin: 50% 90%; }
+/* Dot: position on the track (set from JS), personality layer (idle gestures, lean, mood tilt), the body, the eyes. */
+.dotPosition { position: absolute; width: 25%; aspect-ratio: 1; z-index: 1; transform: translate(-50%,-50%); }
+.personality { width: 100%; height: 100%; animation: dotRest 5s ease-in-out infinite; transform-origin: 50% 90%; rotate: var(--tilt, 0deg); transition: rotate .45s cubic-bezier(.3,.7,.3,1); }
 .scene[data-moving='true'] .personality,.scene[data-scrolling='true'] .personality { animation: none; transform: rotate(var(--lean,0deg)); transition: transform .2s; }
 .personality[data-reaction='2'] { animation: satisfiedTilt 1s ease, dotRest 5s 1s ease-in-out infinite; }
-.eyes > span { animation: blink 7s infinite; }
-.scene[data-intro-done='true']:not(:hover):not([data-tracking='true']) .eyes { animation: curiousLook 11s ease-in-out infinite; }
 .contactShadow { position: absolute; left: 13%; right: 13%; bottom: -8%; height: 13%; border-radius: 50%; background: #82340740; filter: blur(6px); animation: shadowRest 5s ease-in-out infinite; }
 .dotPosition:hover .contactShadow { transform: scale(.8); opacity: .6; }
-.card:hover,.card:focus-visible { transform: none; }
-@keyframes dotRest { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.015,.99); } }
-@keyframes shadowRest { 0%,100% { opacity: .8; transform: scale(1); } 50% { opacity: .55; transform: scale(.9); } }
-@keyframes blink { 0%,43%,47%,100% { transform: scaleY(1); } 45% { transform: scaleY(.12); } }
-@keyframes curiousLook { 0%,65%,100% { translate: 0 0; } 72%,80% { translate: -4px -2px; } 86%,92% { translate: 3px 1px; } }
-@keyframes satisfiedTilt { 0%,100% { transform: rotate(0); } 35% { transform: rotate(8deg) scale(1.03,.97); } 70% { transform: rotate(-3deg); } }
-@media(prefers-reduced-motion:reduce) { .personality,.eyes,.eyes > span,.contactShadow { animation: none !important; transition: none !important; } }
-
 .dotPosition[data-bouncing="true"] .contactShadow { animation: shadowHop .6s ease; }
-@keyframes shadowHop { 0%,100% { transform: scale(1); opacity: .8; } 40% { transform: scale(.65); opacity: .3; } 70% { transform: scale(1.08); opacity: .9; } }
-
-/* Compact working previews, with one completion badge per card. */
-.card { align-items: flex-start; width: 38%; padding: 14px; gap: 10px; border-radius: 17px; }
-.icon { flex-basis: 29px; width: 29px; height: 29px; background: #faf5f1; border-radius: 9px; }
-.icon svg { width: 19px; height: 19px; }
-.card strong { font-size: clamp(12px,1.05vw,15px); letter-spacing: -.025em; }
-.card small { margin: 7px 0 0; font-size: 10px; padding: 2px 8px; }
-.preview { display: block; margin-top: 6px; min-height: 21px; color: #737078; font-size: 10px; }
-.signaturePreview { width: 100px; height: 21px; color: #e2693f; }
-.checkItems { display: flex; flex-direction: column; gap: 3px; color: #496d57; }
-.card0[data-active='true'] .message { display: block; animation: enquiryArrives .5s ease both; }
-.card2[data-active='true'] .checkItems > span { animation: completeStage .35s ease both; }
-.card2[data-active='true'] .checkItems > span:nth-child(2) { animation-delay: .2s; }
-.explanation { position: absolute; top: calc(100% + 7px); left: 0; right: 0; padding: 10px 12px; border-radius: 10px; background: #171717; color: #fff; box-shadow: 0 8px 20px #0002; font-size: 11px; line-height: 1.4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s; }
-.card:hover,.card:focus-visible { border-color: #f2a183; }
-.card:hover .explanation,.card:focus .explanation { opacity: 1; visibility: visible; }
-.card:hover,.card:focus { z-index: 4; }
-@media(max-width:767px) { .card { width: 46%; padding: 7px; gap: 5px; border-radius: 11px; }.card strong { font-size: 8px; }.icon { flex-basis: 19px; width: 19px; height: 19px; }.icon svg { width: 13px; height: 13px; }.preview { font-size: 7px; min-height: 12px; margin-top: 3px; }.signaturePreview { width: 62px; height: 12px; }.card small { font-size: 7px; margin-top: 3px; padding: 1px 5px; }.checkItems { gap: 1px; }.explanation { font-size: 9px; padding: 7px; }.card2 { top: 78%; } }
-@media(prefers-reduced-motion:reduce) { .message,.checkItems > span { animation: none !important; }.explanation { transition: none; } }
-
-/* Moods (from the video Dot, naunas-studio docs/dot.md). Lids are clipped inside each eye so they never show against the gradient body. */
-.personality { rotate: var(--tilt, 0deg); transition: rotate .45s cubic-bezier(.3,.7,.3,1); }
-.eyes > span { overflow: hidden; transition: height .25s ease, width .25s ease, margin .25s ease, background-color .2s, border-color .2s; }
+.dot { display: block; width: 100%; height: 100%; border: 0; border-radius: 50%; cursor: pointer; position: relative; background: radial-gradient(ellipse at 63% 18%,#fff7da 0%,#ffe6b3 3%,#ffffff00 11%),radial-gradient(circle at 34% 17%,#ffbb74 0%,#ff9b46 26%,#ff7728 49%,#ef5915 76%,#ce3e0a 100%); box-shadow: inset 3px 5px 8px #ffe6ca99,inset -6px -9px 13px #b343252e,0 17px 11px -7px #87340f80; transition: scale .3s cubic-bezier(.3,1.6,.5,1); }
+.dot::after { content: ''; position: absolute; inset: 5% 7% 9%; border-radius: 50%; background: linear-gradient(125deg,#fff7dd3d,transparent 35%); filter: blur(4px); pointer-events: none; }
+.eyes { position: absolute; left: 55%; top: 36%; display: flex; gap: 18px; transform: translate(var(--eye-x),var(--eye-y)) rotate(-14deg); transition: transform .18s ease-out; }
+.eyes > span { position: relative; width: 12px; height: 28px; overflow: hidden; background: #161311; border-radius: 50%; box-shadow: inset 2px 1px 2px #544134,1px 2px 2px #c9531b; animation: blink 7s infinite; transition: height .25s ease, width .25s ease, margin .25s ease, background-color .2s, border-color .2s; }
+.eyes > span::after { content: ''; position: absolute; width: 4px; height: 7px; left: 3px; top: 4px; border-radius: 50%; background: #fffdf0; transform: translate(calc(var(--eye-x) * .12), calc(var(--eye-y) * .3)); transition: transform .18s ease-out; }
+/* Lids are clipped inside each eye so they never show against the gradient body. */
 .eyes > span::before { content: ''; position: absolute; z-index: 2; left: -40%; right: -40%; top: -30%; height: calc(var(--lid, 0) * 100% + 30%); background: #f97a32; transform: rotate(var(--lid-angle, 0deg)); transform-origin: 50% 100%; transition: height .25s ease, transform .25s ease; }
 .eyes > span:last-child::before { transform: rotate(calc(var(--lid-angle, 0deg) * -1)); }
+.scene[data-stage='0'] .eyes { margin-left: -5px; }
+.scene[data-stage='2'] .eyes { margin-top: 4px; }
+.scene[data-intro-done='true']:not(:hover):not([data-tracking='true']) .eyes { animation: curiousLook 11s ease-in-out infinite; }
+/* Moods */
 .scene[data-mood='focused'] .eyes > span { --lid: .46; }
 .scene[data-mood='determined'] .eyes > span { --lid: .42; --lid-angle: 24deg; }
-/* Delighted: happy arcs, blush, a little wider. */
-.dot { transition: scale .3s cubic-bezier(.3,1.6,.5,1); }
 .scene[data-mood='delighted'] .dot { scale: 1.05 .97; }
 .scene[data-mood='delighted'] .eyes > span { height: 12px; margin-top: 5px; background-color: transparent; border: 3px solid #161311; border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; box-shadow: none; overflow: visible; }
 .scene[data-mood='delighted'] .eyes > span::before, .scene[data-mood='delighted'] .eyes > span::after { opacity: 0; }
@@ -101,17 +37,53 @@
 .eyes::before { left: -26%; }
 .eyes::after { right: -26%; }
 .scene[data-mood='delighted'] .eyes::before, .scene[data-mood='delighted'] .eyes::after { opacity: .6; }
-@media(max-width:1100px) { .scene[data-mood='delighted'] .eyes > span { height: 10px; border-width: 2.5px; } }
-@media(max-width:767px) { .scene[data-mood='delighted'] .eyes > span { height: 8px; margin-top: 4px; border-width: 2px; } }
-@media(prefers-reduced-motion:reduce) { .personality { rotate: 0deg; } .dot, .eyes > span, .eyes > span::before, .eyes::before, .eyes::after { transition: none !important; } }
+@keyframes dotRest { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-3px) scale(1.015,.99); } }
+@keyframes shadowRest { 0%,100% { opacity: .8; transform: scale(1); } 50% { opacity: .55; transform: scale(.9); } }
+@keyframes shadowHop { 0%,100% { transform: scale(1); opacity: .8; } 40% { transform: scale(.65); opacity: .3; } 70% { transform: scale(1.08); opacity: .9; } }
+@keyframes blink { 0%,43%,47%,100% { transform: scaleY(1); } 45% { transform: scaleY(.12); } }
+@keyframes curiousLook { 0%,65%,100% { translate: 0 0; } 72%,80% { translate: -4px -2px; } 86%,92% { translate: 3px 1px; } }
+@keyframes satisfiedTilt { 0%,100% { transform: rotate(0); } 35% { transform: rotate(8deg) scale(1.03,.97); } 70% { transform: rotate(-3deg); } }
 
-/* Phone layout (2026-10-22). The scene keeps the track's real proportions instead of being squashed into a
-   masked strip, Dot is a little smaller, and the cards are readable and sit clear of Dot (right-anchored so
-   nothing spills past the screen edge). Desktop and tablet rules above are untouched. */
-@media(max-width:767px) {
-  .scene { width: 100%; height: auto; aspect-ratio: 700 / 660; margin: 0; }
-  /* The track starts far above the scene (it enters from the top on desktop); on a phone the scene sits under the
-     copy, so clip it to the scene with a soft fade at the top so it never runs over the headline or the button. */
+/* Stage cards: compact working previews, one completion badge each, an explanation on hover. */
+.card { position: absolute; z-index: 2; width: 38%; display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 1px solid #f0ebe6; border-radius: 17px; background: #fffffffa; box-shadow: 0 15px 25px -8px #68351524; cursor: pointer; text-align: left; transition: transform .25s ease,box-shadow .25s ease,border-color .25s ease; }
+.card:hover,.card:focus-visible { border-color: #f2a183; box-shadow: 0 18px 30px -8px #b0522a35; }
+.card:hover,.card:focus { z-index: 4; }
+.card:focus-visible,.dot:focus-visible { outline: 2px solid #ed682e; outline-offset: 4px; }
+.card0 { left: 24%; top: 5%; }
+.card1 { left: 56%; top: 42%; }
+.card2 { left: 72%; top: 68%; }
+.icon { flex: 0 0 29px; width: 29px; height: 29px; border-radius: 9px; background: #faf5f1; display: grid; place-items: center; color: #17191e; }
+.icon svg { width: 19px; height: 19px; }
+.cardCopy { min-width: 0; }
+.card strong { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: clamp(12px,1.05vw,15px); font-weight: 700; color: #101116; letter-spacing: -.025em; }
+.card small { display: table; margin: 7px 0 0; padding: 2px 8px; border-radius: 20px; background: #e0f5e9; color: #153c2b; font-size: 10px; line-height: 1.4; }
+.preview { display: block; margin-top: 6px; min-height: 21px; color: #737078; font-size: 10px; }
+.signaturePreview { width: 100px; height: 21px; color: #e2693f; }
+.checkItems { display: flex; flex-direction: column; gap: 3px; color: #496d57; }
+.explanation { position: absolute; top: calc(100% + 7px); left: 0; right: 0; padding: 10px 12px; border-radius: 10px; background: #171717; color: #fff; box-shadow: 0 8px 20px #0002; font-size: 11px; line-height: 1.4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s; }
+.card:hover .explanation,.card:focus .explanation { opacity: 1; visibility: visible; }
+/* Each card plays its action when Dot arrives. */
+.card0[data-active='true'] .icon svg { animation: enquiryArrives .5s ease both; }
+.card0[data-active='true'] .message { display: block; animation: enquiryArrives .5s ease both; }
+.card1[data-active='true'] .signature { stroke-dasharray: 1; animation: drawMark .7s ease both; }
+.card2[data-active='true'] .checklist { stroke-dasharray: 1; animation: drawMark .8s ease both; }
+.card2[data-active='true'] .checkItems > span { animation: completeStage .35s ease both; }
+.card2[data-active='true'] .checkItems > span:nth-child(2) { animation-delay: .2s; }
+@keyframes enquiryArrives { from { opacity: 0; transform: translateY(-8px) rotate(-10deg); } to { opacity: 1; transform: none; } }
+@keyframes drawMark { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes completeStage { from { transform: scale(.6); opacity: .5; } to { transform: scale(1); opacity: 1; } }
+
+@media (min-width: 768px) { .scene { width: 96%; margin-left: -3%; } }
+@media (max-width: 1100px) {
+  .eyes { gap: 12px; }
+  .eyes > span { width: 9px; height: 23px; }
+  .scene[data-mood='delighted'] .eyes > span { height: 10px; border-width: 2.5px; }
+}
+
+/* Phones: the scene keeps the track's proportions under the copy (clipped with a soft fade at the top so the
+   track never runs over the headline or button), Dot a little smaller, cards readable and right-anchored. */
+@media (max-width: 767px) {
+  .scene { aspect-ratio: 700 / 660; }
   .track { overflow: hidden; mask-image: linear-gradient(transparent, #000 14%); }
   .grid { inset: 0 -6% -4% -6%; background-size: 44px 44px; }
   .dotPosition { width: 24%; }
@@ -124,7 +96,6 @@
   .card1 { left: auto; right: 0; top: 30%; }
   .card2 { left: auto; right: 0; top: auto; bottom: 0; }
   .card strong { font-size: 11.5px; gap: 4px; white-space: normal; line-height: 1.15; }
-  .check { width: 12px; height: 12px; font-size: 8px; }
   .icon { flex-basis: 26px; width: 26px; height: 26px; border-radius: 8px; }
   .icon svg { width: 17px; height: 17px; }
   .preview { font-size: 9.5px; min-height: 16px; margin-top: 4px; }
@@ -132,4 +103,14 @@
   .card small { font-size: 9px; margin-top: 5px; padding: 2px 7px; }
   .checkItems { gap: 2px; }
   .explanation { font-size: 10px; padding: 8px 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .personality,.eyes,.eyes > span,.contactShadow { animation: none !important; transition: none !important; }
+  .personality { rotate: 0deg; }
+  .dot, .eyes > span::before, .eyes::before, .eyes::after { transition: none !important; }
+  .card { transition: none; }
+  .card .icon svg,.card .signature,.card .checklist { animation: none !important; }
+  .message,.checkItems > span { animation: none !important; }
+  .explanation { transition: none; }
 }
