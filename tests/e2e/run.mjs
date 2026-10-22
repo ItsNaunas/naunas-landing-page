@@ -18,7 +18,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 // Order matters inside a group: later suites build on the store the earlier ones leave.
 const GROUPS = [
-  { name: 'dashboard', suites: ['e2e', 'e2e2', 'e2e3', 'e2e4', 'e2e5', 'e2e6', 'e2e7', 'e2e8', 'e2e12', 'e2e13', 'e2e14', 'e2e15'], env: {} },
+  { name: 'dashboard', suites: ['e2e', 'e2e2', 'e2e3', 'e2e4', 'e2e5', 'e2e6', 'e2e7', 'e2e8', 'e2e12', 'e2e13', 'e2e14', 'e2e15', 'e2e16'], env: {} },
   { name: 'hubspot (mock)', suites: ['e2e9', 'e2e10'], env: { HUBSPOT_TOKEN: 'mock', HUBSPOT_API_BASE: 'http://localhost:4010', CAL_WEBHOOK_SECRET: 'testsecret' }, mock: ['mockhs.mjs', 'CALLS'] },
   { name: 'openai (mock)', suites: ['e2e11'], env: { OPENAI_API_KEY: 'mock', OPENAI_API_BASE: 'http://localhost:4011' }, mock: ['mockoai.mjs', 'OAILOG'] },
 ];

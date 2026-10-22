@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { DASH_COOKIE, validSession } from '@/lib/dashAuth';
 import { FUNNEL } from '@/config/funnel';
 import { SideNav, BottomNav } from '@/components/dashboard/Nav';
-import { SearchBox, RefreshButton } from '@/components/dashboard/client';
+import { RefreshButton } from '@/components/dashboard/client';
+import { CommandPalette } from '@/components/dashboard/CommandPalette';
 import { linkProps } from '@/components/dashboard/ui';
 import { logout } from '../actions';
 import { attention } from '@/lib/ops/attention';
@@ -45,7 +46,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
         <header className="sticky top-0 z-30 bg-[#0C0C0C]/90 backdrop-blur border-b border-white/[0.06]">
           <div className="max-w-[1320px] px-4 md:px-8 py-3 flex items-center gap-3">
             <div className="md:hidden"><Logo /></div>
-            <div className="flex-1 max-w-md ml-auto md:ml-0"><SearchBox /></div>
+            <div className="flex-1 max-w-md ml-auto md:ml-0"><CommandPalette /></div>
             <div className="hidden md:flex items-center gap-2 ml-auto"><RefreshButton /><AskButton /></div>
           </div>
         </header>
