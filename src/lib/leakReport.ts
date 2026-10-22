@@ -17,6 +17,8 @@ export type LeakReport = {
   token: string; prospectId: string; firm: string; firstName?: string; site: string;
   createdAt: string; updatedAt: string; published: boolean; publishedAt?: string;
   intro: string; findings: Finding[]; quickWin: string; askOnCall: string[]; loom: string;
+  /** Visits to the public page (counted at most every 30 minutes). */
+  opens?: number; openedAt?: string; lastOpenAt?: string;
 };
 
 const path = (token: string) => `reports/${token}.json`;
@@ -83,4 +85,33 @@ export async function buildLeakReport(prospectId: string): Promise<LeakReport> {
   await putJSON(path(report.token), report);
   if (!p.reportToken) await updateProspect(prospectId, { reportToken: report.token });
   return report;
+}
+
+// ---------------------------------------------------------------- Opens (the best moment to message a cold prospect)
+
+const OPENS = 'reports/opens.json';
+export type ReportOpen = { token: string; prospectId: string; opens: number; lastOpenAt: string };
+export const reportOpens = () => getJSON<ReportOpen[]>(OPENS, []);
+
+/** A visit to /r/<token>. First open pings Telegram; every open shows on Overview for 3 days. */
+export async function recordReportOpen(token: string): Promise<void> {
+  const r = await getReport(token);
+  if (!r?.published) return;
+  if (r.lastOpenAt && Date.now() - Date.parse(r.lastOpenAt) < 30 * 60_000) return;
+  const now = new Date().toISOString();
+  const first = !r.openedAt;
+  const opens = (r.opens ?? 0) + 1;
+  await putJSON(path(token), { ...r, opens, openedAt: r.openedAt ?? now, lastOpenAt: now });
+  const { updateJSON } = await import('@/lib/store');
+  await updateJSON<ReportOpen[]>(OPENS, [], (list) => [{ token, prospectId: r.prospectId, opens, lastOpenAt: now }, ...list.filter((x) => x.token !== token)].slice(0, 200));
+  const { logEvent } = await import('@/lib/events');
+  await logEvent('lead', `Leak report opened · ${r.firm}`, `/dashboard/outreach/firm/${encodeURIComponent(r.prospectId)}`);
+  if (!first) return;
+  const { notify, line } = await import('@/lib/alert');
+  const { FUNNEL } = await import('@/config/funnel');
+  await notify({
+    level: 'lead', title: `${r.firm} opened your leak report`, lines: [line('📄', 'Findings', String(r.findings.length))],
+    next: 'Best moment to message them: ask which finding rang truest.',
+    buttons: [{ text: 'Firm page', url: `${FUNNEL.site}/dashboard/outreach/firm/${encodeURIComponent(r.prospectId)}` }],
+  });
 }

@@ -66,6 +66,10 @@ export async function GET(req: NextRequest) {
   await pullDealStages().catch((err) => console.error('[health] deal stages', err));
   // Start-of-day plan for the home page (Ask Naunas), from the fixed flags + numbers.
   if (aiReady()) await writeBriefing().catch((err) => console.error('[health] briefing', err));
+  // Nightly copy of the Postgres store to Blob (14 kept), so a bad write is recoverable.
+  await import('@/lib/store').then((m) => m.backupStore()).catch((err) => alertError('Health: store backup', err, 'Nothing is broken; only last night’s backup is missing.'));
+  // Prospect list low: start the next city's search (results land by the time the dashboard is opened).
+  await import('@/lib/outreach').then((m) => m.topUpProspects()).catch((err) => console.error('[health] top-up', err));
   // Reply triage before the brief, so the brief can count them.
   await import('@/lib/triage').then((m) => m.triageInbox({ force: true })).catch((err) => console.error('[health] triage', err));
   // Morning outreach brief (this cron runs 06:00 UTC = 09:00 Zanzibar).

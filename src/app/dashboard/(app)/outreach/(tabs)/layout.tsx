@@ -6,7 +6,7 @@ import { demoOn } from '@/lib/ops/demo';
 import { attention } from '@/lib/ops/attention';
 import { FUNNEL } from '@/config/funnel';
 
-const DEMO = { sending: false, igNew: 7, liNew: 7, dailyNew: 6 };
+const DEMO = { sending: false, igNew: 7, liNew: 7, dailyNew: 6, cities: [] as string[] };
 
 export default async function OutreachLayout({ children }: { children: React.ReactNode }) {
   const [settings, a] = await Promise.all([demoOn() ? Promise.resolve(DEMO) : getSettings().catch(() => DEMO), attention()]);
@@ -36,6 +36,9 @@ export default async function OutreachLayout({ children }: { children: React.Rea
                     </label>
                   ))}
                 </div>
+                <label className="flex flex-col gap-1 text-[11px] text-white/45">When the list runs low, search these cities in turn (one per line)
+                  <textarea name="cities" rows={3} defaultValue={(settings.cities ?? []).join('\n')} placeholder={'Austin, TX\nNashville, TN\nScottsdale, AZ'} className="rounded-lg bg-white/[0.05] border border-white/10 px-2 py-1.5 text-xs text-white placeholder:text-white/25" />
+                </label>
                 <button className="self-start rounded-lg bg-white text-black text-xs font-medium px-3 py-1.5">Save targets</button>
                 <p className="text-[11px] text-white/35">Each channel gets different firms. Week one: 7 / 7 / 6, then 10 / 10 / 10.</p>
               </ActionForm>

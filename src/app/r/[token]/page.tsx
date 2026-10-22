@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getReport } from '@/lib/leakReport';
+import { after } from 'next/server';
+import { getReport, recordReportOpen } from '@/lib/leakReport';
 import { ReportView } from '@/components/report/ReportView';
 
 // A firm's leak report (lib/leakReport). Only reachable by its unguessable link, never indexed, and 404 until
@@ -11,5 +12,7 @@ export const metadata: Metadata = { title: 'Leak report | Naunas', robots: { ind
 export default async function ReportPage({ params }: PageProps<'/r/[token]'>) {
   const r = await getReport((await params).token);
   if (!r?.published) notFound();
+  const { token } = await params;
+  after(() => recordReportOpen(token).catch(() => undefined));
   return <ReportView r={r} />;
 }

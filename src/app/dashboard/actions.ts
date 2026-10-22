@@ -800,7 +800,8 @@ export async function setChannelTargets(form: FormData) {
   await requireSession();
   const s = await getSettings();
   const n = (k: string, fallback: number, max: number) => Math.min(max, Math.max(0, Math.round(Number(form.get(k))))) || (form.get(k) === '0' ? 0 : fallback);
-  await saveSettings({ ...s, igNew: n('igNew', s.igNew, 40), liNew: n('liNew', s.liNew, 20), dailyNew: n('dailyNew', s.dailyNew, 30) });
+  const cities = form.has('cities') ? String(form.get('cities') ?? '').split('\n').map((c) => c.trim()).filter(Boolean).slice(0, 30) : s.cities;
+  await saveSettings({ ...s, igNew: n('igNew', s.igNew, 40), liNew: n('liNew', s.liNew, 20), dailyNew: n('dailyNew', s.dailyNew, 30), cities });
   changed();
 }
 
@@ -946,6 +947,13 @@ export async function saveProposalEdits(_prev: ReportState, form: FormData): Pro
   if (intent === 'publish' && !p.published) {
     const fresh = await getProposal(p.token);
     if (!fresh?.intro || !fresh.blocks.length || !fresh.price) return { error: 'Add an intro, at least one block and the price before publishing.' };
+    // No deposit link pasted: make one in Stripe from the deposit amount (needs STRIPE_LINKS_KEY).
+    const { stripeLinksReady, createDepositLink } = await import('@/lib/stripeLink');
+    if (!fresh.paymentLink && fresh.deposit && stripeLinksReady()) {
+      const { proposalUrl } = await import('@/lib/proposal');
+      try { await saveProposal({ ...fresh, paymentLink: await createDepositLink({ deposit: fresh.deposit, client: fresh.client, proposalUrl: proposalUrl(fresh.token), dealId: fresh.dealId }) }); }
+      catch (err) { return { error: `Saved, not published: the Stripe deposit link failed (${(err as Error).message}). Paste a link by hand or fix the deposit amount.` }; }
+    }
     await setPublished(p.token, true);
   }
   if (intent === 'unpublish' && p.published && !locked) await setPublished(p.token, false);

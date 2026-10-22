@@ -6,6 +6,7 @@ import { ProposalEditor } from './ProposalEditor';
 import { Badge } from '@/components/dashboard/ui';
 import { hubspotUrl } from '@/lib/hubspot';
 import { aiReady } from '@/lib/ai';
+import { stripeLinksReady } from '@/lib/stripeLink';
 
 // Edit, draft with AI, publish and preview one proposal. The (app) layout already requires the session.
 export const dynamic = 'force-dynamic';
@@ -37,7 +38,7 @@ export default async function ProposalEditPage({ params, searchParams }: PagePro
           {p.dealId && <a href={hubspotUrl.deal(p.dealId)} target="_blank" rel="noopener noreferrer" className="text-[#ff8a6d] hover:underline self-center">Deal in HubSpot ↗</a>}
         </div>
       </div>
-      <ProposalEditor p={p} url={proposalUrl(p.token)} ai={aiReady()} />
+      <ProposalEditor p={p} url={proposalUrl(p.token)} ai={aiReady()} autoLink={stripeLinksReady()} />
     </>
   );
 }

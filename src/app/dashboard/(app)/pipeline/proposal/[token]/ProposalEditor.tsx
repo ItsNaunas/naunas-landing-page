@@ -14,7 +14,7 @@ function useReloadOn(state: ReportState) {
   useEffect(() => { if (first.current) { first.current = false; return; } if (state?.savedAt) window.location.reload(); }, [state]);
 }
 
-export function ProposalEditor({ p, url, ai }: { p: Proposal; url: string; ai: boolean }) {
+export function ProposalEditor({ p, url, ai, autoLink = false }: { p: Proposal; url: string; ai: boolean; autoLink?: boolean }) {
   const [saved, save, saving] = useActionState<ReportState, FormData>(saveProposalEdits, {});
   const [drafted, draft, drafting] = useActionState<ReportState, FormData>(draftProposalAI, {});
   useReloadOn(saved); useReloadOn(drafted);
@@ -42,7 +42,7 @@ export function ProposalEditor({ p, url, ai }: { p: Proposal; url: string; ai: b
           <label className={label}>Price (you write this, never the AI)<input name="price" defaultValue={p.price} placeholder="Leak-Fix Sprint £750 · Growth Pack from £5,000" className={field} disabled={locked} /></label>
           <label className={label}>Deposit to start<input name="deposit" defaultValue={p.deposit} placeholder="e.g. £1,500" className={field} disabled={locked} /></label>
         </div>
-        <label className={label}>Stripe Payment Link for the deposit (buy.stripe.com/…; the deal id and their email are added automatically)<input name="paymentLink" defaultValue={p.paymentLink ?? ''} placeholder="https://buy.stripe.com/…" className={field} /></label>
+        <label className={label}>Stripe Payment Link for the deposit (buy.stripe.com/…; the deal id and their email are added automatically){autoLink ? '. Leave empty and one is made from the deposit amount when you publish.' : ''}<input name="paymentLink" defaultValue={p.paymentLink ?? ''} placeholder="https://buy.stripe.com/…" className={field} /></label>
         <div className="grid sm:grid-cols-2 gap-3">
           <label className={label}>Next steps line<input name="nextSteps" defaultValue={p.nextSteps} className={field} disabled={locked} /></label>
           <label className={label}>Open until (optional, free text)<input name="validUntil" defaultValue={p.validUntil ?? ''} placeholder="e.g. 7 November" className={field} disabled={locked} /></label>
@@ -58,6 +58,16 @@ export function ProposalEditor({ p, url, ai }: { p: Proposal; url: string; ai: b
       </form>
 
       <aside className="flex flex-col gap-3">
+        {p.openedAt && !p.acceptedAt && Date.now() - Date.parse(p.openedAt) > 2 * 86_400_000 && (() => {
+          const text = `Hi ${p.firstName ?? 'there'}, did the proposal answer what you needed? If anything in the scope or timing doesn’t fit, tell me and I’ll adjust it. Happy to talk it through for 15 minutes this week.\n\nNaufal`;
+          return (
+            <div className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.05] p-4 flex flex-col gap-2">
+              <p className="font-medium text-sm">Opened, not accepted: follow up</p>
+              <p className="text-[12.5px] text-white/75 whitespace-pre-wrap">{text}</p>
+              <CopyText text={text} label="Copy follow-up" />
+            </div>
+          );
+        })()}
         {p.recap && (
           <div className="rounded-2xl border border-[#F2613F]/25 bg-[#F2613F]/[0.05] p-4 flex flex-col gap-2">
             <p className="font-medium text-sm">Same-day recap email (draft)</p>

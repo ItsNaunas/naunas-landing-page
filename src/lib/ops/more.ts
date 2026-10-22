@@ -174,6 +174,7 @@ export async function outreachData() {
   if (demoOn()) { const o = demo.outreach() as { queue: Record<string, Prospect[]> }; return { ...o, reps2: demoReps(), ig: igSequence(Object.values(o.queue).flat(), true), channels: channelBoard(Object.values(o.queue).flat(), { sending: false, dailyNew: 10, dailyTotal: 25, monthlyCapUsd: 10, igNew: 10, liNew: 10 }) } as never; }
   const { errors, safe } = collector();
   if (apifyReady()) await safe('Apify', syncSearches(), [] as Search[]);
+  if (apifyReady()) after(() => import('@/lib/outreach').then((m) => m.topUpProspects()).then(() => undefined).catch(() => undefined));
   await safe('Drafts', ingestDrafts(), 0);
   const [prospects, searches, settings, events, coldContacts, inbox] = await Promise.all([
     getProspects(), getSearches(), getSettings(),

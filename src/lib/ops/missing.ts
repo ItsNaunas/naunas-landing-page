@@ -12,6 +12,8 @@ import { channelBoard } from '@/lib/channels';
 import { igSequence } from '@/lib/ops/more';
 import { crmSearch, STAGE } from '@/lib/hubspot';
 import { FUNNEL } from '@/config/funnel';
+import { listProposals, getProposal } from '@/lib/proposal';
+import { reportOpens } from '@/lib/leakReport';
 
 export type Flag = {
   id: string; level: 'high' | 'medium' | 'low'; area: 'Outreach' | 'Pipeline' | 'Content' | 'System';
@@ -54,6 +56,23 @@ export async function missing(): Promise<{ flags: Flag[]; deals: Deal[]; errors:
   const quietReplies = prospects.filter((p) => p.status === 'replied' && !p.bookedAt && !p.wonAt && !p.lostAt && daysSince(p.igRepliedAt ?? p.repliedAt) >= 2 && !owed.some((x) => x.firmId === p.id));
   for (const p of quietReplies.slice(0, 5)) add({ id: `reply-${p.id}`, level: 'high', area: 'Outreach', title: `${p.firm} replied ${daysSince(p.igRepliedAt ?? p.repliedAt)} days ago with no next step`, detail: 'No call booked and nothing promised. Move it towards a call, or offer the leak report.', href: firmHref(p), label: 'Open firm' });
 
+  // ---- Proposals opened but not accepted (2+ days), and published but never opened (3+ days)
+  const rows = await listProposals().catch(() => []);
+  for (const r of rows.filter((x) => x.status === 'opened' || x.status === 'sent')) {
+    const pr = await getProposal(r.token).catch(() => null);
+    if (!pr) continue;
+    if (r.status === 'opened' && pr.openedAt && daysSince(pr.openedAt) >= 2) add({ id: `prop-${r.token}`, level: 'high', area: 'Pipeline', title: `${pr.client} opened the proposal ${daysSince(pr.openedAt)} days ago and hasn’t accepted`, detail: `Opened ${pr.opens} time${pr.opens === 1 ? '' : 's'}. A follow-up message is drafted on the proposal page.`, href: `/dashboard/pipeline/proposal/${r.token}`, label: 'Follow up' });
+    else if (r.status === 'sent' && pr.publishedAt && daysSince(pr.publishedAt) >= 3) add({ id: `prop-${r.token}`, level: 'medium', area: 'Pipeline', title: `${pr.client} hasn’t opened the proposal (sent ${daysSince(pr.publishedAt)} days ago)`, detail: 'Check they got the link, or send it again another way.', href: `/dashboard/pipeline/proposal/${r.token}`, label: 'Open' });
+  }
+
+  // ---- Leak reports opened by a firm that hasn't replied since: the best moment to message them
+  for (const o of await reportOpens().catch(() => [])) {
+    const p = prospects.find((x) => x.id === o.prospectId);
+    if (!p || p.bookedAt || p.wonAt || p.lostAt || daysSince(o.lastOpenAt) > 3) continue;
+    if ((p.igRepliedAt ?? p.repliedAt ?? '') > o.lastOpenAt) continue;
+    add({ id: `report-${o.token}`, level: 'high', area: 'Outreach', title: `${p.firm} opened your leak report ${daysSince(o.lastOpenAt) === 0 ? 'today' : `${daysSince(o.lastOpenAt)} days ago`}`, detail: `Opened ${o.opens} time${o.opens === 1 ? '' : 's'}. Message them now while it’s fresh; Draft my reply is on the firm page.`, href: firmHref(p), label: 'Message them' });
+  }
+
   // ---- HubSpot pipeline going stale
   const nameOf = (s: string) => Object.entries(STAGE).find(([, v]) => v === s)?.[0];
   for (const d of deals) {
@@ -77,7 +96,7 @@ export async function missing(): Promise<{ flags: Flag[]; deals: Deal[]; errors:
     if (due) add({ id: 'followups', level: 'medium', area: 'Outreach', title: `${plural(due, 'follow-up')} due on Instagram and LinkedIn`, href: '/dashboard/outreach', label: 'Open Today' });
     const pipe = prospects.filter((p) => ['new', 'approved', 'drafted'].includes(p.status)).length;
     const daily = settings.igNew + settings.liNew + settings.dailyNew;
-    if (pipe < daily) add({ id: 'dry', level: 'medium', area: 'Outreach', title: `Prospect list running dry: ${pipe} firms left to review or start`, detail: `Your targets add up to ${daily} new firms a day. Find new firms on Google Maps.`, href: '/dashboard/outreach/prospects?step=review', label: 'Find firms' });
+    if (pipe < daily) add({ id: 'dry', level: 'medium', area: 'Outreach', title: `Prospect list running dry: ${pipe} firms left to review or start`, detail: settings.cities?.length ? `Your targets add up to ${daily} new firms a day. The next city search starts automatically.` : `Your targets add up to ${daily} new firms a day. Add cities in ⚙ Settings and searches start on their own.`, href: '/dashboard/outreach/prospects?step=review', label: 'Find firms' });
     const ready = prospects.filter((p) => p.status === 'drafted').length;
     if (ready >= daily) add({ id: 'ready', level: 'low', area: 'Outreach', title: `${plural(ready, 'firm')} researched and ready to start`, href: '/dashboard/outreach/prospects?step=ready', label: 'Start them' });
   }

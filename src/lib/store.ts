@@ -7,7 +7,7 @@
 // Never holds plaintext secrets (TikTok tokens are AES-GCM encrypted, see lib/tiktok) or lead data (HubSpot stays
 // the source of truth for people). Reads never throw: callers get the fallback.
 
-import { get, put, list } from '@vercel/blob';
+import { get, put, list, del } from '@vercel/blob';
 
 const LOCAL = process.env.LOCAL_STORE_DIR;
 const PG = () => process.env.DATABASE_URL;
@@ -135,4 +135,16 @@ export async function updateJSON<T>(path: string, fallback: T, fn: (current: T) 
   const next = fn(await getJSON(path, fallback));
   await putJSON(path, next);
   return next;
+}
+
+/** Nightly: every record in the Postgres store as one private Blob file, keeping the last 14. */
+export async function backupStore(): Promise<string | null> {
+  if (storeKind() !== 'postgres' || !BLOB()) return null;
+  await ensureTable();
+  const rows = await pg('select path, data, updated_at from kv order by path');
+  const name = `backups/store-${new Date().toISOString().slice(0, 10)}.json`;
+  await put(name, JSON.stringify({ at: new Date().toISOString(), rows }), { access: 'private', contentType: 'application/json', addRandomSuffix: false, allowOverwrite: true });
+  const old = (await list({ prefix: 'backups/store-', limit: 1000 })).blobs.sort((a, b) => b.pathname.localeCompare(a.pathname)).slice(14);
+  if (old.length) await del(old.map((b) => b.url));
+  return `${name} (${rows.length} records)`;
 }

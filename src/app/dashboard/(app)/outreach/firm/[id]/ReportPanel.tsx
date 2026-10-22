@@ -43,7 +43,7 @@ export function ReportPanel({ id, report, site }: { id: string; report: LeakRepo
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className={`rounded-full px-2.5 py-1 text-[11px] ${report.published ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.06] text-white/55'}`}>{report.published ? 'Published' : 'Draft, only you can see it'}</span>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] ${report.published ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/[0.06] text-white/55'}`}>{report.published ? (report.opens ? `Published · opened ${report.opens} time${report.opens === 1 ? '' : 's'}` : 'Published · not opened yet') : 'Draft, only you can see it'}</span>
         <a href={report.published ? `/r/${report.token}` : `/dashboard/outreach/report/${report.token}`} target="_blank" rel="noopener noreferrer" className="rounded-full border border-white/15 px-3 py-1.5 text-xs hover:border-white/30">{report.published ? 'Open ↗' : 'Preview ↗'}</a>
         {report.published && <CopyText text={url} label="Copy link" />}
         <CopyText text={report.loom} label="Copy Loom script" />

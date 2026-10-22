@@ -57,7 +57,9 @@ export type Prospect = {
 };
 export type Search = { id: string; term: string; location: string; max: number; runId: string; datasetId: string; status: string; createdAt: string; found?: number; added?: number; costUsd?: number };
 /** dailyNew = new firms per day by EMAIL (first emails); igNew / liNew = new firms per day started on Instagram / LinkedIn. */
-export type OutreachSettings = { sending: boolean; dailyNew: number; dailyTotal: number; monthlyCapUsd: number; igNew: number; liNew: number };
+export type OutreachSettings = { sending: boolean; dailyNew: number; dailyTotal: number; monthlyCapUsd: number; igNew: number; liNew: number;
+  /** Cities searched in turn when the list runs low (auto top-up), and where the rotation is. */
+  cities?: string[]; nextCity?: number };
 
 const P = 'outreach/prospects.json';
 const S = 'outreach/searches.json';
@@ -385,4 +387,29 @@ export function suggestChannel(p: Prospect, all: Prospect[], targets: Record<Out
   const assignedToday = (c: OutreachChannel) => all.filter((x) => x.channel === c && (x.scheduledAt ?? '').slice(0, 10) === today).length;
   const order: OutreachChannel[] = ['linkedin', 'instagram', 'email'];
   return options.sort((a, b) => (targets[b] - assignedToday(b)) - (targets[a] - assignedToday(a)) || order.indexOf(a) - order.indexOf(b))[0];
+}
+
+// ---------------------------------------------------------------- Auto top-up (2026-10-23)
+
+/**
+ * When fewer firms are waiting than a day's targets add up to, start a Google Maps search for the next city in
+ * settings.cities (one at a time, nothing while a search is running, within the monthly Apify cap).
+ * Returns the search started, or null.
+ */
+export async function topUpProspects(): Promise<Search | null> {
+  if (!process.env.APIFY_TOKEN) return null;
+  const s = await getSettings();
+  const cities = (s.cities ?? []).filter(Boolean);
+  if (!cities.length) return null;
+  const [list, searches] = await Promise.all([getProspects(), getSearches()]);
+  if (searches.some((x) => x.status === 'READY' || x.status === 'RUNNING')) return null;
+  const waiting = list.filter((p) => ['new', 'approved', 'drafted'].includes(p.status)).length;
+  if (waiting >= s.igNew + s.liNew + s.dailyNew) return null;
+  const i = (s.nextCity ?? 0) % cities.length;
+  const started = await startSearch('interior designer', cities[i], 40).catch((err) => { console.warn('[topUp]', err instanceof Error ? err.message : err); return null; });
+  if (started) {
+    await saveSettings({ ...s, nextCity: (i + 1) % cities.length });
+    await logEvent('lead', `Prospect list low (${waiting} waiting): searching ${cities[i]}`, '/dashboard/outreach/prospects');
+  }
+  return started;
 }
