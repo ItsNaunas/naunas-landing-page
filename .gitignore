@@ -44,3 +44,6 @@ next-env.d.ts
 
 # design iteration screenshots
 /output/
+
+# e2e test output
+/tests/e2e/.out/

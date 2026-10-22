@@ -10,7 +10,7 @@ export default function DashboardNotFound() {
         <Link href="/dashboard/outreach/prospects" className="rounded-full border border-white/15 px-4 py-2 hover:border-white/30">Prospects</Link>
         <Link href="/dashboard/leads" className="rounded-full border border-white/15 px-4 py-2 hover:border-white/30">Leads</Link>
         <Link href="/dashboard/content" className="rounded-full border border-white/15 px-4 py-2 hover:border-white/30">Content</Link>
-        <Link href="/dashboard" className="rounded-full bg-white text-black px-4 py-2 font-medium">Today</Link>
+        <Link href="/dashboard" className="rounded-full bg-white text-black px-4 py-2 font-medium">Overview</Link>
       </div>
     </div>
   );

@@ -1,0 +1,32 @@
+// Triaged replies with drafts on Outreach → Today, "Answered" clears them; firm page points to the lead page.
+import { chromium } from 'playwright-core';
+import fs from 'node:fs';
+import path from 'node:path';
+const STORE = process.env.STORE;
+const BASE = process.env.BASE || 'http://localhost:3000';
+const read = (p) => { try { return JSON.parse(fs.readFileSync(path.join(STORE, p), 'utf8')); } catch { return null; } };
+const write = (p, v) => { fs.mkdirSync(path.dirname(path.join(STORE, p)), { recursive: true }); fs.writeFileSync(path.join(STORE, p), JSON.stringify(v, null, 2)); };
+const results = [];
+const check = (n, ok, d = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${n}${d ? `  (${d})` : ''}`); };
+const now = new Date().toISOString();
+write('inbox/triage.json', [{ messageId: '<t1@x>', at: now, from: 'mia@oakline.example', who: 'Mia · Oakline Interiors', subject: 'Re: the 5-day reply', text: 'Ha, capacity honestly. What would you suggest?', contactId: '123', cold: true, kind: 'interested', summary: 'Asks what to do about slow replies', draft: 'Hi Mia,\n\nHappy to show you on a quick call.\n\nNaufal', needsYou: false }]);
+write('meta/triage-run.json', { at: now });
+const list = read('outreach/prospects.json') ?? [];
+write('outreach/prospects.json', [...list.filter((p) => p.id !== 'firmlead'), { id: 'firmlead', firm: 'Lead Firm', website: 'https://lead.example', tz: 'America/Chicago', fit: 6, fitWhy: ['Design practice'], searchId: 's', createdAt: now, status: 'replied', channel: 'instagram', contactId: '999', repliedAt: now, igRepliedAt: now }]);
+
+const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
+const page = await (await b.newContext({ viewport: { width: 1366, height: 900 } })).newPage();
+const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+await page.goto(`${BASE}/dashboard/login`); await page.fill('input[name=password]', 'localtest'); await page.click('button'); await page.waitForURL(/\/dashboard(?!\/login)(\/|\?|$)/);
+check('Login lands on Outreach → Today', page.url().endsWith('/dashboard/outreach'));
+await page.waitForLoadState('networkidle').catch(() => {});
+const t = await page.locator('main').innerText();
+check('Reply with a drafted answer on Today', t.includes('Mia · Oakline Interiors') && t.includes('Happy to show you on a quick call'), t.slice(0, 100));
+await page.locator('li', { hasText: 'Mia · Oakline Interiors' }).getByRole('button', { name: 'Answered' }).click();
+await page.waitForTimeout(2500); await page.waitForLoadState('load'); await page.waitForLoadState('networkidle').catch(() => {});
+check('Answered clears it', !!read('inbox/triage.json')?.[0]?.doneAt && !(await page.locator('main').innerText()).includes('Happy to show you on a quick call'));
+await page.goto(`${BASE}/dashboard/outreach/firm/firmlead`, { waitUntil: 'load' }); await page.waitForLoadState('networkidle').catch(() => {});
+check('Firm page points to the lead page', (await page.locator('a[href="/dashboard/leads/999"]', { hasText: 'They’re a lead now' }).count()) === 1);
+console.log('errors:', errors.length ? errors.join(' | ') : 'none');
+console.log(`${results.filter(Boolean).length}/${results.length} passed`);
+await b.close();

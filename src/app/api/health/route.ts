@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runChecks } from '@/lib/health';
 import { putJSON } from '@/lib/store';
-import { notify, esc, alertError } from '@/lib/alert';
-import { weeklyScoreboard } from '@/lib/scoreboard';
+import { notify, esc } from '@/lib/alert';
 import { FUNNEL } from '@/config/funnel';
-import { refreshIgToken } from '@/lib/instagram';
-import { buildWeeklyDraft } from '@/lib/newsletter';
-import { refreshInsights } from '@/lib/performance';
-import { sendTodayBrief } from '@/lib/ops/todayBrief';
-import { buildAsks } from '@/lib/asks';
-import { pullDealStages } from '@/lib/crmSync';
-import { writeBriefing } from '@/lib/assistant';
-import { aiReady } from '@/lib/ai';
+import { dispatchDailyJobs, runJob } from '@/lib/dailyJobs';
 
 // Daily funnel health check (Vercel cron, see vercel.json). Read-only: it never creates leads or sends
 // email to anyone, it just proves every service the funnel depends on still accepts our keys and that
@@ -19,7 +11,7 @@ import { aiReady } from '@/lib/ai';
 // (as does any manual run with ?ping=1, to test the alert path).
 // Vercel cron calls it with `Authorization: Bearer $CRON_SECRET`.
 
-export const maxDuration = 300; // checks + newsletter + briefing (one AI call)
+export const maxDuration = 120; // the checks; every other job runs in its own call (lib/dailyJobs)
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -44,53 +36,10 @@ export async function GET(req: NextRequest) {
   } else if (req.nextUrl.searchParams.get('ping') === '1') {
     await notify({ level: 'ok', title: 'Daily health check: all green', lines: checklist });
   }
-  // Mondays (or ?scoreboard=1): the weekly scoreboard rides on this cron instead of needing its own.
-  if (new Date().getUTCDay() === 1 || req.nextUrl.searchParams.get('scoreboard') === '1') {
-    try {
-      await notify(await weeklyScoreboard());
-    } catch (err) {
-      await alertError('Health: weekly scoreboard', err, 'Nothing is broken for leads; only this week’s scoreboard is missing.');
-    }
-  }
-  // Newsletter day (Monday): build the weekly draft in MailerLite from last week's posts. Never sends.
-  if (new Date().getUTCDay() === FUNNEL.content.newsletterDay || req.nextUrl.searchParams.get('newsletter') === '1') {
-    try {
-      await buildWeeklyDraft();
-    } catch (err) {
-      await alertError('Health: newsletter draft', err, 'Only the weekly draft is missing. Build it from Content → Newsletter.');
-    }
-  }
-  // Review (21 days after Won) and referral (60 days) asks for Outreach → Today. Was the routine's job 4.
-  await buildAsks().catch((err) => alertError('Health: review/referral asks', err, 'Only today’s review or referral asks are missing.'));
-  // Won/Lost set in HubSpot closes the firm in the dashboard too (also refreshed when Prospects opens).
-  await pullDealStages().catch((err) => console.error('[health] deal stages', err));
-  // Start-of-day plan for the home page (Ask Naunas), from the fixed flags + numbers.
-  if (aiReady()) await writeBriefing().catch((err) => console.error('[health] briefing', err));
-  // Nightly copy of the Postgres store to Blob (14 kept), so a bad write is recoverable.
-  await import('@/lib/store').then((m) => m.backupStore()).catch((err) => alertError('Health: store backup', err, 'Nothing is broken; only last night’s backup is missing.'));
-  // Prospect list low: start the next city's search (results land by the time the dashboard is opened).
-  await import('@/lib/outreach').then((m) => m.topUpProspects()).catch((err) => console.error('[health] top-up', err));
-  // Reply triage before the brief, so the brief can count them.
-  await import('@/lib/triage').then((m) => m.triageInbox({ force: true })).catch((err) => console.error('[health] triage', err));
-  // Morning outreach brief (this cron runs 06:00 UTC = 09:00 Zanzibar).
-  await sendTodayBrief().catch((err) => console.error('[health] today brief', err));
-  // Instagram insights for recent posts (the Content leaderboard). Quiet on failure: stats only.
-  await refreshInsights().catch((err) => console.error('[health] insights', err));
-  // 1st of the month: extend the Instagram token (it dies after 60 days unused-refresh).
-  if (process.env.IG_ACCESS_TOKEN && new Date().getUTCDate() === 1) {
-    try {
-      const r = await refreshIgToken();
-      if (r.changed) {
-        await notify({
-          level: 'error',
-          title: 'Instagram token: new value issued',
-          lines: [`Instagram returned a new token (valid ${r.expiresInDays} days). The old one keeps working until it expires.`],
-          next: 'Generate a fresh long-lived token in the Meta app and replace IG_ACCESS_TOKEN in Vercel + Bitwarden.',
-        });
-      }
-    } catch (err) {
-      await alertError('Health: Instagram token refresh', err, 'Comment DMs and DM capture stop when the token expires.');
-    }
-  }
-  return NextResponse.json({ ok: failed.length === 0, checks }, { status: failed.length ? 503 : 200 });
+  // Everything else (deal sync, asks, triage, top-up, backup, stats, Monday scoreboard + newsletter, the plan and the
+  // brief) runs as separate jobs (lib/dailyJobs), each in its own function call, so one slow service can't stop the rest.
+  // ?job=<name> runs a single job now (manual testing).
+  const one = req.nextUrl.searchParams.get('job');
+  const jobs = one ? { queued: [], ran: [one], result: await runJob(one) } : await dispatchDailyJobs();
+  return NextResponse.json({ ok: failed.length === 0, checks, jobs }, { status: failed.length ? 503 : 200 });
 }

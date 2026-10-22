@@ -6,7 +6,7 @@ import { syncProspect } from '@/lib/crmSync';
 // Daily outreach cron (vercel.json, 14:00 UTC = US morning): import finished prospect searches, pull in
 // the routine's drafts, stop sequences that got replies, then send what's due within the caps.
 // Vercel cron calls it with `Authorization: Bearer $CRON_SECRET`. ?dry=1 reports without sending.
-export const maxDuration = 60;
+export const maxDuration = 300; // the inbox check + up to 25 sends one by one
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;

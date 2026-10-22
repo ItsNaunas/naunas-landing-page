@@ -19,7 +19,14 @@ export async function POST(req: Request) {
   let owed = '';
   let nudge = '';
   let research = '';
-  try { ({ postId = '', ping = '', remind = '', owed = '', nudge = '', research = '' } = JSON.parse(body) as Record<string, string>); } catch { /* handled below */ }
+  let job = '';
+  try { ({ postId = '', ping = '', remind = '', owed = '', nudge = '', research = '', job = '' } = JSON.parse(body) as Record<string, string>); } catch { /* handled below */ }
+
+  // One of the 09:00 jobs (lib/dailyJobs), queued by the health cron.
+  if (job) {
+    const { runJob } = await import('@/lib/dailyJobs');
+    return NextResponse.json({ ok: true, job, result: await runJob(job) });
+  }
 
   // Prospect research, queued from Prospects (Approve / Research now), one firm per call.
   if (research) {
