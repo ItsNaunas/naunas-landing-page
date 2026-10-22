@@ -42,7 +42,7 @@ export function DraftEditor({ p, options = [], suggested = null, defaultOpen = f
         <span className="min-w-0">
           <span className="block font-medium">{p.firm} <span className="text-white/55 text-xs font-normal">· {[p.city, p.state].filter(Boolean).join(', ')}</span></span>
           {d?.dossier && <span className="block text-xs text-white/65 mt-1">{d.dossier}</span>}
-          {d?.subject && <span className="block text-xs text-[#ff8a6d] mt-1">Subject: {d.subject}</span>}
+          {d?.subject && <span className="block text-xs text-white/70 mt-1"><span className="text-white/55">Subject:</span> {d.subject}</span>}
           {d?.research && (
             <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-white/60">
               {d.research.owner && <span>Owner: <b className="text-white/70 font-normal">{d.research.owner}</b></span>}

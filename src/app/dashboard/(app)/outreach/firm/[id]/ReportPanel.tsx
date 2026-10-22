@@ -24,7 +24,7 @@ export function ReportPanel({ id, report, site }: { id: string; report: LeakRepo
   const buildButton = (label: string, quiet = false) => (
     <form action={build}>
       <input type="hidden" name="id" value={id} />
-      <button disabled={building} className={quiet ? 'text-xs text-white/60 hover:text-white disabled:opacity-50' : 'rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553] disabled:opacity-60'}>
+      <button disabled={building} className={quiet ? 'text-xs text-white/60 hover:text-white disabled:opacity-50' : 'rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-60'}>
         {building ? 'Looking at their site… (about 30 seconds)' : label}
       </button>
     </form>

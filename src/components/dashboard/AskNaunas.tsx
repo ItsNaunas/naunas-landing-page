@@ -47,7 +47,7 @@ export const openAsk = (question?: string) => window.dispatchEvent(new CustomEve
 export function AskButton() {
   return (
     <button type="button" onClick={() => openAsk()} title="Ask Naunas (Ctrl+J)" aria-label="Ask Naunas"
-      className="hidden md:flex items-center gap-2 rounded-xl bg-[#F2613F] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">
+      className="hidden md:flex items-center gap-2 rounded-xl bg-[#F2613F] px-3.5 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553]">
       <span aria-hidden>✦</span> Ask <kbd className="rounded border border-white/30 px-1 text-[11px] font-mono text-white/80">Ctrl J</kbd>
     </button>
   );
@@ -90,7 +90,7 @@ export function AskNaunas() {
     <>
       {/* Phones only: on desktop the button sits in the top bar (AskButton) so it never covers content. */}
       <button onClick={() => setOpen(true)} aria-label="Ask Naunas"
-        className={`md:hidden fixed right-4 bottom-24 z-30 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-white shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
+        className={`md:hidden fixed right-4 bottom-24 z-30 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-[#0C0C0C] shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
         <span aria-hidden>✦</span> Ask
       </button>
       {open && (
@@ -134,7 +134,7 @@ export function AskNaunas() {
             <form onSubmit={(e) => { e.preventDefault(); send(text); }} className="border-t border-white/[0.07] p-3 flex gap-2">
               <input value={text} onChange={(e) => setText(e.target.value)} placeholder="What am I missing this week?" aria-label="Your question" maxLength={1000}
                 className="flex-1 min-w-0 rounded-xl bg-white/[0.05] border border-white/10 px-3 py-2.5 text-[16px] sm:text-sm text-white placeholder:text-white/50" />
-              <button disabled={busy || !text.trim()} className="rounded-xl bg-[#F2613F] px-4 text-sm font-medium text-white disabled:opacity-40">Ask</button>
+              <button disabled={busy || !text.trim()} className="rounded-xl bg-[#F2613F] px-4 text-sm font-medium text-[#0C0C0C] disabled:opacity-40">Ask</button>
             </form>
           </div>
         </div>

@@ -222,7 +222,7 @@ export const demo = {
       profile: {
         ...base,
         stageLabel: 'Audit booked', idle: 1, waiting: true,
-        next: { title: 'Reply to them', why: 'They emailed 0d ago and haven’t had an answer.', tone: 'bad' as const },
+        next: { title: 'Reply to them', why: 'They emailed today and haven’t had an answer.', tone: 'bad' as const },
         journey: [
           { label: 'Came in', done: true, at: ago(22) }, { label: 'Email course', done: true, at: ago(22) },
           { label: 'Booked a call', done: true, at: ago(20) }, { label: 'Call held', done: false }, { label: 'Proposal sent', done: false }, { label: 'Paid', done: false },

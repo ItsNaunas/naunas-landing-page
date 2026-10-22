@@ -108,7 +108,7 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
         <Kpi label="Owed to you" value={compactGbp(k.outstanding)} foot={<span className="text-xs text-white/60">{d.invoices.length} open invoice{d.invoices.length === 1 ? '' : 's'}</span>} />
       </div>
 
-      <Card title="Revenue by month" action={<span className="text-xs text-white/55">green = hit the {compactGbp(k.goal)} goal</span>}>
+      <Card title="Revenue by month" action={<span className="flex flex-wrap gap-x-3 text-xs text-white/60"><span><span className="inline-block size-2 rounded-sm bg-emerald-400/80 mr-1" aria-hidden />hit the {compactGbp(k.goal)} goal</span><span><span className="inline-block size-2 rounded-sm bg-[#F2613F] mr-1" aria-hidden />this month so far</span></span>}>
         <div className="relative flex items-end gap-3 md:gap-6 h-52 pt-4">
           {d.months.map((m, i) => (
             <div key={m.label} className="flex-1 flex flex-col items-center justify-end gap-2 h-full">

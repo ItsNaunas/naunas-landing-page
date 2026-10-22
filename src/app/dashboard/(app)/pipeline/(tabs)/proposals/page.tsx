@@ -45,7 +45,7 @@ export default async function Proposals() {
         <form id="new-proposal" action={newProposal} className="px-5 py-4 flex flex-wrap items-end gap-2 scroll-mt-24">
           <label className="flex flex-col gap-1 text-[11px] text-white/60 flex-1 min-w-[160px]">Client or firm<input name="client" required placeholder="e.g. Oakline Interiors" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" /></label>
           <label className="flex flex-col gap-1 text-[11px] text-white/60 flex-1 min-w-[160px]">Their email (for the deposit link)<input name="email" type="email" placeholder="optional" className="rounded-lg bg-white/[0.05] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" /></label>
-          <button className="rounded-lg bg-[#F2613F] hover:bg-[#ff7553] text-white text-sm font-medium px-4 py-2">New proposal</button>
+          <button className="rounded-lg bg-[#F2613F] hover:bg-[#ff7553] text-[#0C0C0C] text-sm font-medium px-4 py-2">New proposal</button>
         </form>
       </Card>
 

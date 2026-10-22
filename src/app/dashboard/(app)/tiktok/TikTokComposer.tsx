@@ -143,7 +143,7 @@ export function TikTokComposer({ creator }: { creator: CreatorInfo }) {
         </p>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button disabled={!ready} className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
+          <button disabled={!ready} className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
             {pending ? 'Publishing…' : 'Publish to TikTok'}
           </button>
           {state?.error && <p className="text-xs text-rose-300">{state.error}</p>}

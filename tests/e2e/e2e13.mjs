@@ -30,7 +30,7 @@ await Promise.all([page.waitForURL('**/dashboard/pipeline/proposal/*', { timeout
 const token = page.url().split('/proposal/')[1].split('?')[0];
 check('New proposal opens the editor', /^[a-f0-9]{24}$/.test(token), token);
 await settle();
-check('Editor shows Draft + AI needs key', (await page.locator('main').innerText()).includes('Draft') && (await page.getByRole('button', { name: /Needs OPENAI_API_KEY/ }).count()) === 1);
+check('Editor shows Draft + AI needs key', (await page.locator('main').innerText()).includes('Draft') && (await page.getByRole('button', { name: /Connect OpenAI to draft/ }).count()) === 1);
 
 // 2. Publish needs intro, block and price
 await page.getByRole('button', { name: 'Save and publish link' }).click();
@@ -79,7 +79,7 @@ check('Home activity shows proposal events', /Proposal (sent|opened|accepted)/.t
 console.log('firmd before:', JSON.stringify((read('outreach/prospects.json') ?? []).find((p) => p.id === 'firmd') ?? null)?.slice(0, 200));
 await page.goto(`${BASE}/dashboard/outreach/firm/firmd`, { waitUntil: 'load' }); await settle();
 const firm = await page.locator('main').innerText();
-check('Replied firm shows the reply panel', /reply to them/i.test(firm) && (await page.getByRole('button', { name: /Needs OPENAI_API_KEY/ }).count()) === 1, firm.replace(/\s+/g, ' ').slice(0, 260));
+check('Replied firm shows the reply panel', /reply to them/i.test(firm) && (await page.getByRole('button', { name: /Connect OpenAI to draft/ }).count()) === 1, firm.replace(/\s+/g, ' ').slice(0, 260));
 await page.locator('summary', { hasText: 'They booked the audit' }).click();
 await page.fill('input[name=deal]', 'https://app.hubspot.com/contacts/149523755/record/0-3/528211158212');
 await page.getByRole('button', { name: 'They booked', exact: true }).click();

@@ -244,7 +244,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
 
                   {c === 'linkedin' && (
                     <>
-                      <select disabled={chLocked} value={post.channels.linkedin.visibility} onChange={(e) => setCh('linkedin', { visibility: e.target.value as 'PUBLIC' | 'CONNECTIONS' })} className={`${field} [&>option]:bg-[#161616]`}>
+                      <select aria-label="Who can see the LinkedIn post" disabled={chLocked} value={post.channels.linkedin.visibility} onChange={(e) => setCh('linkedin', { visibility: e.target.value as 'PUBLIC' | 'CONNECTIONS' })} className={`${field} [&>option]:bg-[#161616]`}>
                         <option value="PUBLIC">Anyone can see it</option><option value="CONNECTIONS">Connections only</option>
                       </select>
                       <label className="flex flex-col gap-1.5">
@@ -256,7 +256,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
 
                   {c === 'instagram' && (
                     <>
-                      <select disabled={chLocked} value={post.channels.instagram.campaignId ?? ''} onChange={(e) => setCh('instagram', { campaignId: e.target.value || undefined })} className={`${field} [&>option]:bg-[#161616]`}>
+                      <select aria-label="Instagram keyword campaign" disabled={chLocked} value={post.channels.instagram.campaignId ?? ''} onChange={(e) => setCh('instagram', { campaignId: e.target.value || undefined })} className={`${field} [&>option]:bg-[#161616]`}>
                         <option value="">Keyword campaign: default (all posts)</option>
                         {ctx.campaigns.map((k) => <option key={k.id} value={k.id}>{k.name} · {k.keywords.join(', ')}</option>)}
                       </select>
@@ -268,7 +268,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
 
                   {c === 'tiktok' && (
                     <>
-                      <select disabled={chLocked} value={post.channels.tiktok.privacy} onChange={(e) => setCh('tiktok', { privacy: e.target.value })} className={`${field} [&>option]:bg-[#161616]`}>
+                      <select aria-label="Who can see the TikTok post" disabled={chLocked} value={post.channels.tiktok.privacy} onChange={(e) => setCh('tiktok', { privacy: e.target.value })} className={`${field} [&>option]:bg-[#161616]`}>
                         <option value="" disabled>Who can see this video…</option>
                         {(ctx.tiktokApproved && ctx.creator ? ctx.creator.privacyOptions : Object.keys(PRIVACY)).map((p) => (
                           <option key={p} value={p} disabled={post.channels.tiktok.brandedContent && p === 'SELF_ONLY'}>{PRIVACY[p] ?? p}</option>
@@ -352,7 +352,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
         ) : (
           <>
             <button disabled={!canGo || busy} onClick={() => act(() => publishContentNow(post.id), 'Done. Results are on each channel above.')}
-              className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
+              className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
               {busy ? 'Working…' : ran ? 'Publish remaining' : 'Publish now'}
             </button>
             {ctx.qstash ? (
@@ -362,7 +362,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                   <button key={d.toISOString()} type="button" disabled={!canGo || busy} onClick={() => setWhen(localInput(d))}
                     className="text-xs rounded-full border border-white/10 px-2.5 py-1 hover:border-white/30 disabled:opacity-35">{fmt(d, ctx.usTz)} ET</button>
                 ))}
-                <input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} className="rounded-lg bg-white/[0.04] border border-white/10 px-2 py-1 text-xs [color-scheme:dark]" />
+                <input type="datetime-local" aria-label="Schedule for (your local time)" value={when} onChange={(e) => setWhen(e.target.value)} className="rounded-lg bg-white/[0.04] border border-white/10 px-2 py-1 text-xs [color-scheme:dark]" />
                 <button disabled={!canGo || busy || !when} onClick={() => act(() => scheduleContent(post.id, new Date(when).toISOString()), 'Scheduled.')}
                   className="rounded-lg border border-white/15 px-3 py-1.5 text-sm hover:border-white/40 disabled:opacity-35">Schedule</button>
                 {when && <span className="text-[11px] text-white/60">= {fmt(new Date(when), ctx.usTz)} US East</span>}

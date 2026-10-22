@@ -55,22 +55,25 @@ export function BarSeries({ data, height = 180 }: { data: { day: string; count: 
 /** Horizontal funnel: each step's bar relative to the first, with step-to-step conversion. */
 export function Funnel({ steps }: { steps: { label: string; value: number }[] }) {
   const top = Math.max(1, steps[0]?.value ?? 1);
+  const convs = steps.map((s, i) => (i && steps[i - 1]?.value ? Math.round((s.value / steps[i - 1].value) * 100) : null));
+  // Bars are neutral; the accent marks the step that loses the most people (the leak worth fixing).
+  const worst = convs.reduce<number>((w, c, i) => (c !== null && (convs[w] === null || c < convs[w]!) ? i : w), 0);
   return (
     <div className="flex flex-col gap-3">
       {steps.map((s, i) => {
-        const prev = steps[i - 1]?.value;
-        const conv = i && prev ? Math.round((s.value / prev) * 100) : null;
+        const conv = convs[i];
+        const leak = i === worst && conv !== null && conv < 100;
         return (
           <div key={s.label} className="flex flex-col gap-1.5">
             <div className="flex items-baseline justify-between text-[13px]">
               <span className="text-white/70">{s.label}</span>
               <span className="tabular-nums">
                 <b className="font-semibold">{s.value}</b>
-                {conv !== null && <span className="text-white/55 text-xs ml-2">{conv}%</span>}
+                {conv !== null && <span className={`text-xs ml-2 ${leak ? 'text-[#ff8a6d]' : 'text-white/60'}`}>{conv}%{leak ? ' · biggest drop' : ''}</span>}
               </span>
             </div>
             <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
-              <div className="h-full rounded-full" style={{ width: `${Math.max(s.value ? 3 : 0, (s.value / top) * 100)}%`, background: `color-mix(in srgb, ${ACCENT} ${100 - i * 14}%, #ffffff ${i * 4}%)` }} />
+              <div className="h-full rounded-full" style={{ width: `${Math.max(s.value ? 3 : 0, (s.value / top) * 100)}%`, background: leak ? ACCENT : 'rgba(255,255,255,0.35)' }} />
             </div>
           </div>
         );

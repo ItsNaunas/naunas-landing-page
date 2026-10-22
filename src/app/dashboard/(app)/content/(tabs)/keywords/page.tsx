@@ -41,14 +41,14 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
       <SectionError errors={errFor(d.errors, 'Instagram leads')} />
       {!ready && <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.06] px-4 py-3 text-sm text-amber-200/90">Storage isn’t connected, so campaigns can’t be edited. The default Leak Map campaign still runs.</div>}
       <Card pad={false}>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full text-[13px] min-w-[780px]">
             <thead>
               <tr className="text-left text-xs text-white/55">
                 <th className="font-normal px-5 py-3">Campaign</th><th className="font-normal px-3 py-3">Keywords</th>
                 <th className="font-normal px-3 py-3 text-right">Triggers</th><th className="font-normal px-3 py-3 text-right">DMs</th>
                 <th className="font-normal px-3 py-3 text-right">Clicks</th><th className="font-normal px-3 py-3 text-right">Leads</th>
-                <th className="font-normal px-3 py-3 text-right">With deal</th><th className="px-5 py-3" />
+                <th className="font-normal px-3 py-3 text-right">With deal</th><th className="px-5 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody>
@@ -74,14 +74,14 @@ export default async function Instagram({ searchParams }: { searchParams: Promis
                     <td className="px-3 py-3.5 text-right tabular-nums font-medium">{c.stats.leads}</td>
                     <td className="px-3 py-3.5 text-right tabular-nums">{c.stats.deals}</td>
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center justify-end gap-4">
+                      <div className="flex items-center justify-end gap-1">
                         <CampaignEditor campaign={c} site={FUNNEL.site} disabled={!ready} />
                         <form action={toggleCampaign}><input type="hidden" name="id" value={c.id} />
-                          <button disabled={!ready} className="text-xs text-white/55 hover:text-white disabled:opacity-30">{c.active ? 'Pause' : 'Go live'}</button>
+                          <button disabled={!ready} className="min-h-7 rounded-lg px-2 text-xs text-white/65 hover:text-white hover:bg-white/[0.05] disabled:opacity-30">{c.active ? 'Pause' : 'Go live'}</button>
                         </form>
                         {c.id !== DEFAULT_CAMPAIGN.id && (
                           <form action={deleteCampaign}><input type="hidden" name="id" value={c.id} />
-                            <button disabled={!ready} className="text-xs text-white/55 hover:text-rose-300 disabled:opacity-30">Delete</button>
+                            <button disabled={!ready} className="min-h-7 rounded-lg px-2 text-xs text-white/65 hover:text-rose-300 hover:bg-white/[0.05] disabled:opacity-30">Delete</button>
                           </form>
                         )}
                       </div>

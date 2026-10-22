@@ -70,7 +70,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
             <Card>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <p className="text-sm"><b>{wave1Left} firms from your wave-1 list</b> <span className="text-white/65">(Austin, Nashville, Scottsdale) aren’t in here yet.</span></p>
-                <ActionForm action={importWave1}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Import {wave1Left} firms</button></ActionForm>
+                <ActionForm action={importWave1}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553]">Import {wave1Left} firms</button></ActionForm>
               </div>
             </Card>
           )}
@@ -153,7 +153,7 @@ export default async function OutreachProspects({ searchParams }: { searchParams
             <Card>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <p className="text-sm text-white/65">Happy with these? Start them all, each on the suggested channel (the one with most room left today). Drafts with placeholder text are left for you to fix.</p>
-                <ActionForm action={startAllReady}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Start all {q.drafted.length}</button></ActionForm>
+                <ActionForm action={startAllReady}><button className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553]">Start all {q.drafted.length}</button></ActionForm>
               </div>
             </Card>
           )}

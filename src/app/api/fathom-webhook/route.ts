@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
           + (summary ? `<p>${md(summary)}</p>` : '') + (actions ? `<p><strong>Action items</strong><br/>${md(actions)}</p>` : ''));
         proposalPath ??= await afterCall({ contactId: id, name: g.name ?? undefined, email: g.email!.toLowerCase() }, { title: m.meeting_title ?? m.title, summary, actions: (m.action_items ?? []).map((a) => a.description) }).catch(() => null);
       }
-      const who = guests.map((g) => g.name || g.email).join(', ') || 'a call';
+      // No outside guest (an internal or solo recording): name it by the meeting instead of "a call".
+      const who = guests.map((g) => g.name || g.email).join(', ') || m.meeting_title || m.title || 'a call';
       await logEvent('call_recorded', `Call recorded · ${who}`, m.share_url ?? m.url);
       await notify({
         level: 'lead', title: `Call processed: ${who}`,

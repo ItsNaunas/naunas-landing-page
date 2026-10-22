@@ -22,7 +22,7 @@ export function SequencesTable({ inFlight, replied }: { inFlight: Prospect[]; re
                   <tr key={p.id} className="border-t border-white/[0.04] first:border-t-0">
                     <td className="px-5 py-3"><p className="font-medium"><a href={`/dashboard/outreach/firm/${encodeURIComponent(p.id)}`} className="hover:text-[#ff8a6d]">{p.firm}</a>{p.channel && <span className="ml-2 rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-normal text-white/60">{CHANNEL_LABEL[p.channel]}</span>}</p><p className="text-xs text-white/60">{p.email ?? (p.instagram ? `@${p.instagram}` : '')}</p><div className="mt-1.5"><Timeline p={p} /></div></td>
                     <td className="px-3 py-3">{(!p.channel || p.channel === 'email') && (
-                      <div className="flex gap-1" aria-label={`${step} of 4 emails sent`}>
+                      <div className="flex gap-1" role="img" aria-label={`${step} of 4 emails sent`}>
                         {EMAIL_STEPS.map((label, i) => <span key={label} className={`rounded px-1.5 py-0.5 text-[11px] tabular-nums ${i < step ? 'bg-emerald-400/15 text-emerald-300' : 'bg-white/[0.06] text-white/55'}`}>{label}{i < step ? ' ✓' : ''}</span>)}
                       </div>
                     )}</td>

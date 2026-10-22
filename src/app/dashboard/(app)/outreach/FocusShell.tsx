@@ -44,7 +44,7 @@ export function FocusShell({ children }: { children: React.ReactNode }) {
     <div>
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <button type="button" onClick={toggle} aria-pressed={focus}
-          className={`rounded-full px-3 py-1.5 text-xs border ${focus ? 'bg-[#F2613F] border-[#F2613F] text-white' : 'border-white/15 text-white/70 hover:border-white/30'}`}>
+          className={`rounded-full px-3 py-1.5 text-xs border ${focus ? 'bg-[#F2613F] border-[#F2613F] text-[#0C0C0C]' : 'border-white/15 text-white/70 hover:border-white/30'}`}>
           {focus ? 'Focus mode on' : 'Focus mode: one at a time'}
         </button>
         {focus && pos.total > 1 && <button type="button" onClick={skip} className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/70 hover:border-white/30">Skip for now ›</button>}
@@ -61,7 +61,7 @@ export function OpenCopy({ href, text, label }: { href: string; text: string; la
   return (
     <a href={href} target="_blank" rel="noopener noreferrer"
       onClick={() => { navigator.clipboard?.writeText(text).catch(() => {}); setDone(true); setTimeout(() => setDone(false), 2500); }}
-      className="shrink-0 rounded-full bg-[#F2613F] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#ff7553]">
+      className="shrink-0 rounded-full bg-[#F2613F] px-3 py-1.5 text-xs font-medium text-[#0C0C0C] hover:bg-[#ff7553]">
       {done ? 'Copied, paste it ↗' : `${label} ↗`}
     </a>
   );

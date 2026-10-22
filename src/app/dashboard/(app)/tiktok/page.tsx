@@ -57,7 +57,7 @@ export default async function TikTok({ searchParams }: { searchParams: Promise<{
               <p className="text-sm text-white/65 mt-1 max-w-xl">You’ll log in on TikTok and approve access. Naunas can then read your profile stats and videos, and post videos only when you press Publish here.</p>
               <div className="flex flex-wrap gap-1 mt-2.5">{SCOPES.map((s) => <Badge key={s} tone="muted">{s}</Badge>)}</div>
             </div>
-            <a href="/dashboard/tiktok/connect" className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">Connect TikTok</a>
+            <a href="/dashboard/tiktok/connect" className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553]">Connect TikTok</a>
           </div>
         </Card>
       )}

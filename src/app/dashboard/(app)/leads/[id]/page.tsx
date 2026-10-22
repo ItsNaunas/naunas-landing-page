@@ -5,6 +5,7 @@ import { hubspotUrl } from '@/lib/hubspot';
 import { FUNNEL } from '@/config/funnel';
 import { Card, Badge, Empty, Errors, gbp, ago, linkProps } from '@/components/dashboard/ui';
 import { Field, when, SectionError, errFor } from '@/components/dashboard/kit';
+import { CopyButton } from '@/components/dashboard/client';
 import { setLeadOutreachStatus, leadSequence } from '../../../actions';
 import { ReplyBox, NoteBox, StageControl } from './LeadClient';
 import { getProspects, CHANNEL_LABEL, type Prospect } from '@/lib/outreach';
@@ -26,8 +27,8 @@ const TONE: Record<string, string> = {
   good: 'border-emerald-400/25 bg-emerald-400/[0.06]', neutral: 'border-white/10 bg-white/[0.03]',
 };
 const OUTREACH = [['emailed', 'Emailed'], ['followed_up', 'Followed up'], ['replied', 'Replied'], ['interested', 'Interested'], ['audit_booked', 'Audit booked'], ['not_interested', 'Not interested'], ['out_of_office', 'Out of office'], ['bounced', 'Bounced'], ['finished', 'Sequence finished']];
-const PRIORITY: Record<string, { label: string; tone: 'accent' | 'neutral' | 'muted' }> = {
-  high: { label: 'High value', tone: 'accent' }, normal: { label: 'Normal', tone: 'neutral' }, small: { label: 'Small', tone: 'muted' },
+const PRIORITY: Record<string, { label: string; tone: 'neutral' | 'muted' }> = {
+  high: { label: '★ High value', tone: 'neutral' }, normal: { label: 'Normal', tone: 'muted' }, small: { label: 'Small', tone: 'muted' },
 };
 
 function Prose({ text }: { text: string }) {
@@ -83,7 +84,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
             <h1 className="text-2xl md:text-[28px] font-semibold tracking-tight truncate" style={{ fontFamily: 'var(--font-display)' }}>{p.name}</h1>
             <p className="text-sm text-white/65 truncate">{[p.business, p.website?.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')].filter(Boolean).join(' · ') || p.email}</p>
             <div className="flex flex-wrap gap-1.5 mt-2">
-              <Badge tone={p.deal?.stage === '6213348572' ? 'good' : p.deal ? 'accent' : 'muted'}>{p.stageLabel}{p.deal?.amount ? ` · ${gbp(p.deal.amount)}` : ''}</Badge>
+              <Badge tone={p.deal?.stage === '6213348572' ? 'good' : p.deal ? 'info' : 'muted'}>{p.stageLabel}{p.deal?.amount ? ` · ${gbp(p.deal.amount)}` : ''}</Badge>
               {p.priority && PRIORITY[p.priority] && <Badge tone={PRIORITY[p.priority].tone}>{PRIORITY[p.priority].label}</Badge>}
               {p.source && <Badge>{SOURCE_LABEL[p.source] ?? p.source}</Badge>}
               {p.idle > 0 && <Badge tone={p.idle >= 7 ? 'bad' : 'muted'}>Quiet {p.idle}d</Badge>}
@@ -101,8 +102,8 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
       {/* Journey */}
       <ol className="grid grid-cols-3 sm:grid-cols-6 gap-2" aria-label="Journey">
         {p.journey.map((j, i) => (
-          <li key={j.label} className={`rounded-xl border px-3 py-2.5 ${j.done ? 'border-[#F2613F]/30 bg-[#F2613F]/[0.07]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
-            <p className={`text-[11px] ${j.done ? 'text-[#ff8a6d]' : 'text-white/55'}`}>{j.done ? '✓' : i + 1} · {j.done ? 'Done' : 'Not yet'}</p>
+          <li key={j.label} className={`rounded-xl border px-3 py-2.5 ${j.done ? 'border-emerald-400/25 bg-emerald-400/[0.05]' : 'border-white/[0.06] bg-white/[0.02]'}`}>
+            <p className={`text-[11px] ${j.done ? 'text-emerald-300' : 'text-white/60'}`}>{j.done ? '✓' : i + 1} · {j.done ? 'Done' : 'Not yet'}</p>
             <p className={`text-[13px] font-medium ${j.done ? 'text-white' : 'text-white/60'}`}>{j.label}</p>
             {j.at && <p className="text-[11px] text-white/55">{when(j.at).split(',')[0]}</p>}
           </li>
@@ -155,7 +156,8 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                 </Card>
               )}
               <Card title="Research brief" action={!p.brief ? <Badge tone="muted">Written the minute they book</Badge> : undefined}>
-                {p.brief ? <Prose text={p.brief} /> : <Empty>When they book, their website is researched and the brief (leaks, questions, quick win) lands here and on the deal.</Empty>}
+                {/* The brief opens with its own "Research brief" heading; the card title already says it. */}
+                {p.brief ? <Prose text={p.brief.replace(/^\s*#*\s*\**research brief\**:?\s*\n/i, '')} /> : <Empty>When they book, their website is researched and the brief (leaks, questions, quick win) lands here and on the deal.</Empty>}
               </Card>
               {p.meetings[0] && (
                 <Card title={`Last call · ${when(p.meetings[0].at)}`} action={<a href={p.meetings[0].url} {...linkProps} className="text-xs text-white/65 hover:text-white">Watch ↗</a>}>
@@ -174,7 +176,8 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                   <Field label="Deal">{p.deal && <a href={hubspotUrl.deal(p.deal.id)} {...linkProps} className="hover:text-[#F2613F]">{p.deal.name} ↗</a>}</Field>
                 </dl>
               </Card>
-              {p.answers && (
+              {/* Skipped when the questionnaire only repeats the "In their words" quote above. */}
+              {p.answers && !(p.notWorking && p.answers.replace(p.notWorking, '').replace(/[^a-z]/gi, '').length < 40) && (
                 <Card title="What they told us"><Prose text={p.answers} /></Card>
               )}
             </>
@@ -282,7 +285,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
                     <form key={g} action={leadSequence} className="flex items-center justify-between gap-2 text-[13px]">
                       <input type="hidden" name="email" value={p.email} /><input type="hidden" name="group" value={g} /><input type="hidden" name="op" value="remove" />
                       <span className="text-white/80">{g}</span>
-                      <button className="text-xs text-white/60 hover:text-rose-300">Take out</button>
+                      <button className="min-h-7 rounded-lg px-2 text-xs text-white/65 hover:text-rose-300 hover:bg-white/[0.05]">Take out</button>
                     </form>
                   )) : <p className="text-[13px] text-white/60">Not in any sequence.</p>}
                   {!groups.includes(FUNNEL.mailerlite.groups.newsletter) && (
@@ -297,7 +300,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
             </Card>
           )}
 
-          <Card title="Proposal" action={proposals.length ? <Badge tone={proposals[0].status === 'paid' || proposals[0].status === 'accepted' ? 'good' : proposals[0].status === 'draft' ? 'muted' : 'accent'}>{STATUS_LABEL[proposals[0].status]}</Badge> : undefined}>
+          <Card title="Proposal" action={proposals.length ? <Badge tone={proposals[0].status === 'paid' || proposals[0].status === 'accepted' ? 'good' : proposals[0].status === 'draft' ? 'muted' : 'info'}>{STATUS_LABEL[proposals[0].status]}</Badge> : undefined}>
             {proposals.length > 0 && (
               <ul className="flex flex-col gap-1.5 text-[13px] mb-3">
                 {proposals.map((r) => <li key={r.token} className="flex items-center justify-between gap-2"><a href={`/dashboard/pipeline/proposal/${r.token}`} className="truncate hover:text-[#F2613F]">{r.title}</a><span className="text-xs text-white/60 shrink-0">{STATUS_LABEL[r.status]}</span></li>)}
@@ -316,8 +319,11 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
 
           {p.email && (
             <Card title="Booking link">
-              <p className="text-xs text-white/60 break-all">{`cal.com/${FUNNEL.cal.link}?email=${p.email}`}</p>
-              <a href={`https://cal.com/${FUNNEL.cal.link}?email=${encodeURIComponent(p.email)}&name=${encodeURIComponent(p.name)}`} {...linkProps} className="text-xs text-[#ff8a6d] hover:text-white">Open pre-filled ↗</a>
+              <p className="text-xs text-white/60">Their name and email are filled in, so booking takes one click.</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <CopyButton text={`https://cal.com/${FUNNEL.cal.link}?email=${encodeURIComponent(p.email)}&name=${encodeURIComponent(p.name)}`} label="Copy link" />
+                <a href={`https://cal.com/${FUNNEL.cal.link}?email=${encodeURIComponent(p.email)}&name=${encodeURIComponent(p.name)}`} {...linkProps} className="text-xs text-[#ff8a6d] hover:text-white">Open ↗</a>
+              </div>
             </Card>
           )}
         </aside>

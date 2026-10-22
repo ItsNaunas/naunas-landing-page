@@ -33,7 +33,7 @@ export default async function LinkedIn({ searchParams }: { searchParams: Promise
               <p className="text-sm text-white/65 mt-1 max-w-xl">You’ll log in on LinkedIn and approve access. Naunas can then post to your profile, only when you press Publish here. LinkedIn makes you reconnect every 60 days.</p>
               <div className="flex flex-wrap gap-1 mt-2.5">{SCOPES.map((s) => <Badge key={s} tone="muted">{s}</Badge>)}</div>
             </div>
-            <a href="/dashboard/linkedin/connect" className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">{account ? 'Reconnect LinkedIn' : 'Connect LinkedIn'}</a>
+            <a href="/dashboard/linkedin/connect" className="shrink-0 rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553]">{account ? 'Reconnect LinkedIn' : 'Connect LinkedIn'}</a>
           </div>
         </Card>
       )}

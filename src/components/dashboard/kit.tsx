@@ -24,7 +24,8 @@ export const pct = (f: number) => `${Math.round(f * 100)}%`;
 export function SectionTitle({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 -mb-1 mt-2">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-white/60" style={{ fontFamily: 'var(--font-body)' }}>{children}</h2>
+      {/* Sentence case, like card titles: uppercase is kept for 11px meta labels only. */}
+      <h2 className="text-sm font-semibold text-white/80" style={{ fontFamily: 'var(--font-body)' }}>{children}</h2>
       {action}
     </div>
   );
@@ -85,6 +86,11 @@ export const EVENT_META: Record<string, { icon: string; label: string; tone: Ton
   linkedin: { icon: 'in', label: 'LinkedIn', tone: 'accent' },
   content: { icon: '▶', label: 'Content', tone: 'good' },
   proposal: { icon: '✍', label: 'Proposal', tone: 'good' },
+  call_recorded: { icon: '●', label: 'Call recorded', tone: 'good' },
+  email_sent: { icon: '✉', label: 'Email sent', tone: 'neutral' },
+  outreach_email: { icon: '✉', label: 'Outreach email', tone: 'neutral' },
+  outreach_dm: { icon: '◎', label: 'Outreach DM', tone: 'neutral' },
+  outreach_reply: { icon: '↩', label: 'Reply', tone: 'good' },
 };
 const TONE: Record<Tone, string> = {
   good: 'bg-emerald-400/15 text-emerald-300', bad: 'bg-rose-400/15 text-rose-300',
@@ -93,15 +99,21 @@ const TONE: Record<Tone, string> = {
 
 export function Feed({ events }: { events: { at: string; kind: string; title: string; href?: string }[] }) {
   if (!events.length) return <Empty>Nothing yet. Every sign-up, booking, payment, Instagram keyword and click appears here as it happens.</Empty>;
+  // The same event back to back (four "TikTok connected" in a row) shows once with a count.
+  const rows = events.reduce<(typeof events[number] & { n: number })[]>((acc, e) => {
+    const last = acc[acc.length - 1];
+    if (last && last.kind === e.kind && last.title === e.title) last.n += 1; else acc.push({ ...e, n: 1 });
+    return acc;
+  }, []);
   return (
     <ol className="flex flex-col">
-      {events.map((e, i) => {
-        const m = EVENT_META[e.kind] ?? { icon: '•', label: e.kind, tone: 'neutral' as Tone };
+      {rows.map((e, i) => {
+        const m = EVENT_META[e.kind] ?? { icon: '•', label: e.kind.replace(/_/g, ' '), tone: 'neutral' as Tone };
         const body = (
           <>
             <span className={`size-7 shrink-0 rounded-lg grid place-items-center text-[13px] ${TONE[m.tone]}`} aria-hidden>{m.icon}</span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[13px] text-white/85 truncate">{e.title}</span>
+              <span className="block text-[13px] text-white/85 truncate">{e.title}{e.n > 1 && <span className="ml-1.5 rounded bg-white/[0.08] px-1.5 text-[11px] text-white/70 tabular-nums">×{e.n}</span>}</span>
               <span className="block text-[11px] text-white/55">{m.label} · {when(e.at)}</span>
             </span>
             <span className="text-[11px] text-white/55 whitespace-nowrap tabular-nums">{ago(e.at)}</span>

@@ -32,7 +32,8 @@ export async function todayData(lastVisit: number) {
     runChecks().catch(() => [] as Check[]),
     connected.cal() ? safe('Cal.com', src.calBookings('upcoming', 10), [] as CalBooking[]) : Promise.resolve(null),
   ]);
-  const leads = contacts.results.filter((c) => !isTest(c.properties.email));
+  // Imported LinkedIn connections aren't new leads (Leads shows them under Network), so they don't count here.
+  const leads = contacts.results.filter((c) => !isTest(c.properties.email) && c.properties.naunas_lead_source !== 'linkedin');
   const inRange = (a: number, b: number) => leads.filter((c) => ts(c.properties.createdate) >= a && ts(c.properties.createdate) < b).length;
   const wonMonth = won.results.reduce((s, d) => s + num(d.properties.amount), 0);
   const openValue = open.results.reduce((s, d) => s + num(d.properties.amount), 0);

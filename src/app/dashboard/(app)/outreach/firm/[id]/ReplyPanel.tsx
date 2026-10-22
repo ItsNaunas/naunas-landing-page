@@ -14,7 +14,7 @@ export function ReplyPanel({ id, channel, ai }: { id: string; channel: string; a
       <input type="hidden" name="id" value={id} />
       <textarea name="theirMessage" rows={3} required placeholder={`Paste what they said on ${channel}…`} className={field} aria-label="What they said" defaultValue={state?.theirMessage ?? ''} />
       <div className="flex flex-wrap items-center gap-3">
-        <button disabled={pending || !ai} className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium disabled:opacity-50">{pending ? 'Writing…' : ai ? 'Draft my reply' : 'Needs OPENAI_API_KEY'}</button>
+        <button disabled={pending || !ai} className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium disabled:opacity-50">{pending ? 'Writing…' : ai ? 'Draft my reply' : 'Connect OpenAI to draft'}</button>
         <span className="text-[11px] text-white/60">Answers what they said, then one small step towards the call. You send it.</span>
       </div>
       {state?.error && <p className="text-xs text-rose-300" role="alert">{state.error}</p>}

@@ -7,7 +7,7 @@ export default async function ContentLayout({ children }: { children: React.Reac
   return (
     <>
       <SectionHeader title="Content"
-        action={<form action={newContentPost}><button className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553]">+ New post</button></form>}
+        action={<form action={newContentPost}><button className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553]">+ New post</button></form>}
         tabs={[
           { href: '/dashboard/content', label: 'Plan', badge: a.content },
           { href: '/dashboard/content/performance', label: 'Performance' },

@@ -84,7 +84,7 @@ export function ProposalEditor({ p, url, ai, autoLink = false }: { p: Proposal; 
           <p className="text-xs text-white/65">Writes the title, intro, blocks and timeline from this lead’s research brief, booking answers and call notes. Never the price. Replaces what’s in the form.</p>
           <form action={draft}>
             <input type="hidden" name="token" value={p.token} />
-            <button disabled={drafting || !ai || locked} className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-white hover:bg-[#ff7553] disabled:opacity-50">{drafting ? 'Writing… (about 20 seconds)' : ai ? 'Draft the scope' : 'Needs OPENAI_API_KEY'}</button>
+            <button disabled={drafting || !ai || locked} className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-50">{drafting ? 'Writing… (about 20 seconds)' : ai ? 'Draft the scope' : 'Connect OpenAI to draft'}</button>
           </form>
           {drafted.error && <p className="text-xs text-rose-300">{drafted.error}</p>}
         </div>

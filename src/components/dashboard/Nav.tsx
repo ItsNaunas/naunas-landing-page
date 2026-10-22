@@ -40,7 +40,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
 const ALL = NAV_GROUPS.flatMap((g) => g.items);
 const BOTTOM = ['/dashboard', '/dashboard/leads', '/dashboard/outreach/prospects', '/dashboard/content'];
 export type Badges = Partial<Record<string, number>>;
-const Dot = ({ n }: { n?: number }) => (n ? <span className="ml-auto rounded-full bg-[#F2613F] px-1.5 py-px text-[11px] font-semibold text-white tabular-nums">{n}</span> : null);
+const Dot = ({ n }: { n?: number }) => (n ? <span className="ml-auto rounded-full bg-[#F2613F] px-1.5 py-px text-[11px] font-semibold text-[#0C0C0C] tabular-nums">{n}</span> : null);
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
   return (

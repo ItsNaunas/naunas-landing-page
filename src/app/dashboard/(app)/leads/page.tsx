@@ -7,18 +7,21 @@ import { Chips, Drawer, Field, when, SectionError, errFor } from '@/components/d
 
 export const dynamic = 'force-dynamic';
 
-type SP = Promise<{ q?: string; source?: string; stage?: string; range?: string; person?: string }>;
+type SP = Promise<{ q?: string; source?: string; stage?: string; range?: string; person?: string; view?: string }>;
 const RANGES = [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['0', 'All time']] as const;
-const PRIORITY: Record<string, { label: string; tone: 'accent' | 'neutral' | 'muted' }> = {
-  high: { label: 'High value', tone: 'accent' }, normal: { label: 'Normal', tone: 'neutral' }, small: { label: 'Small', tone: 'muted' },
+const PRIORITY: Record<string, { label: string; tone: 'neutral' | 'muted' }> = {
+  high: { label: '★ High value', tone: 'neutral' }, normal: { label: 'Normal', tone: 'muted' }, small: { label: 'Small', tone: 'muted' },
 };
+// Imported LinkedIn connections are people you know, not enquiries: hidden by default, one click away (Network).
+const NETWORK = 'linkedin';
+const VIEWS = [['', 'Enquiries'], ['network', 'Network (LinkedIn)'], ['all', 'Everyone']] as const;
 const TL_ICON: Record<string, string> = { note: '✎', booking: '◷', payment: '£', created: '✦', email: '✉' };
 
 export default async function Leads({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
   const range = sp.range ?? '30';
   const qs = (patch: Record<string, string | undefined>) => {
-    const p = new URLSearchParams(Object.entries({ q: sp.q, source: sp.source, stage: sp.stage, range, ...patch }).filter(([, v]) => v) as [string, string][]);
+    const p = new URLSearchParams(Object.entries({ q: sp.q, view: sp.view, source: sp.source, stage: sp.stage, range, ...patch }).filter(([, v]) => v) as [string, string][]);
     return `/dashboard/leads${p.size ? `?${p}` : ''}`;
   };
   const [list, detail] = await Promise.all([
@@ -26,6 +29,13 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
     sp.person ? personData(sp.person) : Promise.resolve(null),
   ]);
   const p = detail?.person;
+  // A search or a chosen source shows everything that matches; otherwise the view decides.
+  const view = sp.q || sp.source ? 'all' : sp.view ?? '';
+  const rows = view === 'all' ? list.rows : list.rows.filter((r) => (view === 'network' ? r.source === NETWORK : r.source !== NETWORK));
+  const networkCount = list.rows.filter((r) => r.source === NETWORK).length;
+  // Columns that are empty for every row are dropped rather than shown as a wall of dashes.
+  const show = { priority: rows.some((r) => PRIORITY[r.priority]), stage: rows.some((r) => r.stage), value: rows.some((r) => r.clientValue) };
+  const moreFilters = !!(sp.source || sp.stage);
 
   return (
     <>
@@ -33,55 +43,69 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
       <Errors errors={list.errors} />
 
       <div className="flex flex-col gap-3">
-        {!sp.q && <Chips active={qs({})} items={RANGES.map(([v, l]) => ({ label: l, href: qs({ range: v }) }))} />}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Chips active={qs({})} items={[
-            { label: 'All sources', href: qs({ source: undefined }) },
-            ...Object.entries(list.sources).sort((a, b) => b[1] - a[1]).map(([s, n]) => ({ label: SOURCE_LABEL[s] ?? s, href: qs({ source: s }), count: n })),
-          ]} />
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {!sp.q && !sp.source && <Chips active={qs({})} items={VIEWS.map(([v, l]) => ({ label: l, href: qs({ view: v || undefined }), count: v === 'network' ? networkCount : v === 'all' ? list.rows.length : list.rows.length - networkCount }))} />}
+          {!sp.q && <Chips active={qs({})} items={RANGES.map(([v, l]) => ({ label: l, href: qs({ range: v }) }))} />}
         </div>
-        <Chips active={qs({})} items={[
-          { label: 'Any stage', href: qs({ stage: undefined }) },
-          { label: 'No deal yet', href: qs({ stage: 'none' }) },
-          ...OPEN_STAGES.map(([id, l]) => ({ label: l, href: qs({ stage: id }) })),
-          { label: 'Won', href: qs({ stage: '6213348572' }) },
-        ]} />
+        <details open={moreFilters} className="group">
+          <summary className="cursor-pointer list-none inline-flex items-center gap-1.5 text-xs text-white/65 hover:text-white">
+            <span className="group-open:rotate-90 transition-transform" aria-hidden>›</span> More filters: source and stage{moreFilters ? ' (on)' : ''}
+          </summary>
+          <div className="mt-3 flex flex-col gap-3">
+            <Chips active={qs({})} items={[
+              { label: 'All sources', href: qs({ source: undefined }) },
+              ...Object.entries(list.sources).sort((a, b) => b[1] - a[1]).map(([s, n]) => ({ label: SOURCE_LABEL[s] ?? s, href: qs({ source: s }), count: n })),
+            ]} />
+            <Chips active={qs({})} items={[
+              { label: 'Any stage', href: qs({ stage: undefined }) },
+              { label: 'No deal yet', href: qs({ stage: 'none' }) },
+              ...OPEN_STAGES.map(([id, l]) => ({ label: l, href: qs({ stage: id }) })),
+              { label: 'Won', href: qs({ stage: '6213348572' }) },
+            ]} />
+          </div>
+        </details>
       </div>
 
       <SectionError errors={errFor(list.errors, 'Leads', 'Deals')} />
       <Card pad={false}>
-        {list.rows.length ? (
+        {rows.length ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px] min-w-[820px]">
+            <table className="w-full text-[13px] min-w-[640px]">
               <thead>
-                <tr className="text-left text-xs text-white/55 border-b border-white/[0.05]">
-                  <th className="font-normal px-5 py-3">Person</th><th className="font-normal px-3 py-3">Source</th><th className="font-normal px-3 py-3">Priority</th>
-                  <th className="font-normal px-3 py-3">Stage</th><th className="font-normal px-3 py-3">Client value</th>
+                <tr className="text-left text-xs text-white/60 border-b border-white/[0.05]">
+                  <th className="font-normal px-5 py-3">Person</th><th className="font-normal px-3 py-3">Source</th>
+                  {show.priority && <th className="font-normal px-3 py-3">Priority</th>}
+                  {show.stage && <th className="font-normal px-3 py-3">Stage</th>}
+                  {show.value && <th className="font-normal px-3 py-3">Client value</th>}
                   <th className="font-normal px-3 py-3 text-right">Came in</th><th className="font-normal px-5 py-3 text-right">Last activity</th>
                 </tr>
               </thead>
               <tbody>
-                {list.rows.map((r) => (
+                {rows.map((r) => {
+                  // A handle-only lead is named "@handle" already; don't repeat it underneath.
+                  const sub = r.business || r.email || (r.ig && !r.name.startsWith('@') ? `@${r.ig}` : '');
+                  return (
                   <tr key={r.id} className={`border-t border-white/[0.04] hover:bg-white/[0.025] ${sp.person === r.id ? 'bg-white/[0.04]' : ''}`}>
                     <td className="px-5 py-3">
                       <a href={`/dashboard/leads/${r.id}`} className="block group">
-                        <span className="font-medium group-hover:text-[#F2613F]">{r.name}</span>
-                        <span className="block text-xs text-white/60 truncate max-w-[260px]">{r.business || r.email || (r.ig ? `@${r.ig}` : '')}</span>
+                        <span className="font-medium group-hover:text-[#ff8a6d]">{r.name}</span>
+                        {sub && <span className="block text-xs text-white/60 truncate max-w-[260px]">{sub}</span>}
                       </a>
                     </td>
                     <td className="px-3 py-3"><Badge>{SOURCE_LABEL[r.source] ?? r.source}</Badge></td>
-                    <td className="px-3 py-3">{PRIORITY[r.priority] ? <Badge tone={PRIORITY[r.priority].tone}>{PRIORITY[r.priority].label}</Badge> : <span className="text-white/55">—</span>}</td>
-                    <td className="px-3 py-3">{r.stage ? <span className={r.stage === '6213348572' ? 'text-emerald-300' : 'text-white/80'}>{STAGE_LABEL[r.stage] ?? '—'}{r.amount ? <span className="text-white/60"> · {gbp(r.amount)}</span> : null}</span> : <span className="text-white/55">No deal</span>}</td>
-                    <td className="px-3 py-3 text-white/70">{r.clientValue || <span className="text-white/55">—</span>}</td>
+                    {show.priority && <td className="px-3 py-3">{PRIORITY[r.priority] ? <Badge tone={PRIORITY[r.priority].tone}>{PRIORITY[r.priority].label}</Badge> : null}</td>}
+                    {show.stage && <td className="px-3 py-3">{r.stage ? <span className={r.stage === '6213348572' ? 'text-emerald-300' : 'text-white/80'}>{STAGE_LABEL[r.stage] ?? ''}{r.amount ? <span className="text-white/60"> · {gbp(r.amount)}</span> : null}</span> : <span className="text-white/55">No deal</span>}</td>}
+                    {show.value && <td className="px-3 py-3 text-white/70">{r.clientValue}</td>}
                     <td className="px-3 py-3 text-right text-white/65 tabular-nums whitespace-nowrap">{ago(r.createdAt)}</td>
                     <td className="px-5 py-3 text-right text-white/65 tabular-nums whitespace-nowrap">{ago(r.lastActivity)}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        ) : <Empty>{sp.q ? 'Nobody matches that search.' : 'No leads in this range yet. Try a longer range.'}</Empty>}
-        <p className="px-5 py-3 text-xs text-white/55 border-t border-white/[0.04]">Showing {list.rows.length} of {list.total}. Test sign-ups (its.naunas+…) are hidden unless you search for them.</p>
+        ) : <Empty>{sp.q ? 'Nobody matches that search.' : view === 'network' ? 'No LinkedIn connections imported in this range.' : 'No enquiries in this range yet. Try a longer range, or Everyone.'}</Empty>}
+        <p className="px-5 py-3 text-xs text-white/60 border-t border-white/[0.04]">Showing {rows.length} of {list.total}{view === '' && networkCount ? ` · ${networkCount} LinkedIn connections under Network` : ''}. Test sign-ups (its.naunas+…) are hidden unless you search for them.</p>
       </Card>
 
       {p && (
