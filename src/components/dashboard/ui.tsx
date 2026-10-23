@@ -39,12 +39,16 @@ export function Delta({ now, prev, suffix = 'vs last week' }: { now: number; pre
   );
 }
 
-export function Kpi({ label, value, foot, chart, href }: { label: string; value: React.ReactNode; foot?: React.ReactNode; chart?: React.ReactNode; href?: string }) {
+/** stale: the source behind this number failed to load, so it may be out of date or zero by mistake. */
+export function Kpi({ label, value, foot, chart, href, stale }: { label: string; value: React.ReactNode; foot?: React.ReactNode; chart?: React.ReactNode; href?: string; stale?: string | false }) {
   const body = (
-    <div className="rounded-2xl border border-white/[0.07] bg-[#121212] p-5 flex flex-col gap-3 h-full transition-colors hover:border-white/15">
-      <p className="text-[13px] text-white/55">{label}</p>
+    <div className={`rounded-2xl border bg-[#121212] p-5 flex flex-col gap-3 h-full transition-colors hover:border-white/15 ${stale ? 'border-amber-400/25' : 'border-white/[0.07]'}`}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[13px] text-white/60">{label}</p>
+        {stale && <span title={`${stale} didn’t load, so this may be out of date`} className="shrink-0 rounded-full bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200">Couldn’t refresh</span>}
+      </div>
       <div className="flex items-end justify-between gap-3">
-        <p className="text-[32px] leading-none font-semibold tabular-nums tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>{value}</p>
+        <p className={`text-[32px] leading-none font-semibold tabular-nums tracking-tight ${stale ? 'text-white/60' : ''}`} style={{ fontFamily: 'var(--font-display)' }}>{value}</p>
         {chart}
       </div>
       {foot && <div className="min-h-4">{foot}</div>}

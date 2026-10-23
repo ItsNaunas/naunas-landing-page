@@ -15,6 +15,7 @@ const ICONS: Record<string, React.ReactNode> = {
   linkedin: <path d="M4 9h4v11H4zM6 3.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4zM10 9h4v1.6c.6-1 1.9-1.9 3.6-1.9C20.4 8.7 21 10.5 21 13v7h-4v-6.2c0-1.5-.5-2.4-1.8-2.4-1.4 0-2.2 1-2.2 2.4V20h-3z" />,
   email: <path d="M3 6h18v12H3zM3 7l9 6 9-6" />,
   content: <path d="M4 4h16v16H4zM4 15l4-4 4 4 3-3 5 5M15 8.5h.01" />,
+  review: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   clients: <path d="M4 8h16v11H4zM9 8V5h6v3M4 13h16" />,
   money: <path d="M12 3v18M17 7.5C17 5.6 14.8 4.5 12 4.5S7 5.6 7 7.5s2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3" />,
   automations: <path d="M12 3v3M12 18v3M4.2 6.2l2.1 2.1M17.7 15.7l2.1 2.1M3 12h3M18 12h3M4.2 17.8l2.1-2.1M17.7 8.3l2.1-2.1M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
@@ -29,6 +30,7 @@ export const NAV_GROUPS: { label: string; items: { href: string; label: string; 
     { href: '/dashboard/leads', label: 'Leads', icon: 'leads' },
     { href: '/dashboard/outreach/prospects', label: 'Outreach', icon: 'outreach', match: '/dashboard/outreach' },
     { href: '/dashboard/pipeline', label: 'Pipeline', icon: 'pipeline' },
+    { href: '/dashboard/review', label: 'Weekly review', icon: 'review' },
   ] },
   { label: 'Grow', items: [
     { href: '/dashboard/content', label: 'Content', icon: 'content' },

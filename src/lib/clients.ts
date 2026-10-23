@@ -19,7 +19,7 @@ export const STEPS = [
 ] as const;
 export type StepKey = (typeof STEPS)[number]['key'];
 
-type State = Record<string, { done?: Partial<Record<StepKey, string>>; note?: string }>;
+type State = Record<string, { done?: Partial<Record<StepKey, string>>; note?: string; name?: string; retainer?: number; renewsOn?: string }>;
 const PATH = 'clients/state.json';
 export const getClientState = () => getJSON<State>(PATH, {});
 
@@ -32,13 +32,21 @@ export async function toggleStep(dealId: string, key: StepKey): Promise<void> {
   });
 }
 
-export async function saveNote(dealId: string, note: string): Promise<void> {
-  await updateJSON<State>(PATH, {}, (all) => ({ ...all, [dealId]: { ...(all[dealId] ?? {}), note: note.slice(0, 4000) } }));
+export async function saveDetails(dealId: string, d: { note: string; name: string; retainer?: number; renewsOn?: string }): Promise<void> {
+  await updateJSON<State>(PATH, {}, (all) => ({ ...all, [dealId]: { ...(all[dealId] ?? {}), note: d.note.slice(0, 4000), name: d.name.slice(0, 120), retainer: d.retainer || undefined, renewsOn: d.renewsOn || undefined } }));
+}
+
+/** Retainers renewing in the next `days` days (for Today), from the store only. */
+export async function renewalsDue(days = 7): Promise<{ dealId: string; name: string; retainer?: number; renewsOn: string }[]> {
+  const all = await getClientState();
+  const now = Date.now();
+  return Object.entries(all).filter(([, c]) => c.renewsOn && Date.parse(c.renewsOn) - now < days * DAY && Date.parse(c.renewsOn) > now - DAY)
+    .map(([dealId, c]) => ({ dealId, name: c.name ?? 'A client', retainer: c.retainer, renewsOn: c.renewsOn! }));
 }
 
 export type Client = {
   dealId: string; name: string; amount: number; wonAt: string; days: number; hubspot: string;
-  done: Partial<Record<StepKey, string>>; note: string; progress: number; nextStep?: string;
+  done: Partial<Record<StepKey, string>>; note: string; progress: number; nextStep?: string; retainer?: number; renewsOn?: string;
 };
 
 const DEMO = [
@@ -65,7 +73,7 @@ export async function clientsData() {
     const next = STEPS.find((s) => !done[s.key]);
     return {
       dealId: d.id, name: p.dealname ?? 'Untitled', amount: num(p.amount), wonAt, days: Math.max(0, Math.floor((now - ts(wonAt)) / DAY)),
-      hubspot: hubspotUrl.deal(d.id), done, note: saved.note ?? '',
+      hubspot: hubspotUrl.deal(d.id), done, note: saved.note ?? '', retainer: saved.retainer, renewsOn: saved.renewsOn,
       progress: STEPS.filter((s) => done[s.key]).length, nextStep: next?.label,
     };
   }).sort((a, b) => ts(b.wonAt) - ts(a.wonAt));

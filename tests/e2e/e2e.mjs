@@ -191,7 +191,7 @@ for (const label of ['Today', 'Leads', 'Outreach', 'Pipeline', 'Content', 'Syste
 }
 
 // ---- responsive: every page at 390 / 768 / 1440, no sideways scroll; mobile bottom bar + More sheet
-const pages = ['', '/leads', '/clients', '/pipeline/proposals', '/outreach', '/outreach/prospects', '/outreach/sequences', '/outreach/results', '/pipeline', '/pipeline/calls', '/content', '/content/performance', '/content/newsletter', '/content/keywords', '/money', '/system', '/system/connections', '/system/automations', '/tiktok', '/linkedin'];
+const pages = ['', '/leads', '/clients', '/review', '/pipeline/proposals', '/outreach', '/outreach/prospects', '/outreach/sequences', '/outreach/results', '/pipeline', '/pipeline/calls', '/content', '/content/performance', '/content/newsletter', '/content/keywords', '/money', '/system', '/system/connections', '/system/automations', '/tiktok', '/linkedin'];
 for (const w of [390, 768, 1440]) {
   await page.setViewportSize({ width: w, height: 900 });
   const wide = [];
@@ -213,6 +213,7 @@ const sheet = page.getByRole('dialog', { name: 'More pages' });
 check('Mobile More sheet opens', await sheet.isVisible());
 await sheet.getByRole('link', { name: /System/ }).click(); await page.waitForURL('**/dashboard/system', { timeout: 60000 }).catch(() => {});
 check('More sheet link works', page.url().endsWith('/dashboard/system'));
+await page.locator('nav[aria-label="System sections"]').waitFor({ timeout: 30000 }).catch(() => {});
 const tabsScroll = await page.evaluate(() => { const n = document.querySelector('nav[aria-label="System sections"]'); return n ? n.scrollWidth <= n.clientWidth + 1 || getComputedStyle(n).overflowX === 'auto' : false; });
 check('Mobile tabs fit or scroll sideways inside their bar', tabsScroll);
 const small = await page.evaluate(() => [...document.querySelectorAll('main button, main a')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.height < 24; }).map((e) => (e.textContent || '').trim().slice(0, 30)).slice(0, 12));

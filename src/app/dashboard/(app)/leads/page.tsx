@@ -1,4 +1,5 @@
 import { leadsData, personData } from '@/lib/ops/tabs';
+import { openTriaged, type Triaged } from '@/lib/triage';
 import { SOURCE_LABEL, STAGE_LABEL, OPEN_STAGES } from '@/lib/ops/common';
 import { hubspotUrl } from '@/lib/hubspot';
 import { FUNNEL } from '@/config/funnel';
@@ -14,7 +15,7 @@ const PRIORITY: Record<string, { label: string; tone: 'neutral' | 'muted' }> = {
 };
 // Imported LinkedIn connections are people you know, not enquiries: hidden by default, one click away (Network).
 const NETWORK = 'linkedin';
-const VIEWS = [['', 'Enquiries'], ['network', 'Network (LinkedIn)'], ['all', 'Everyone']] as const;
+const VIEWS = [['', 'Enquiries'], ['reply', 'Needs a reply'], ['network', 'Network (LinkedIn)'], ['all', 'Everyone']] as const;
 const TL_ICON: Record<string, string> = { note: '✎', booking: '◷', payment: '£', created: '✦', email: '✉' };
 
 export default async function Leads({ searchParams }: { searchParams: SP }) {
@@ -24,14 +25,20 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
     const p = new URLSearchParams(Object.entries({ q: sp.q, view: sp.view, source: sp.source, stage: sp.stage, range, ...patch }).filter(([, v]) => v) as [string, string][]);
     return `/dashboard/leads${p.size ? `?${p}` : ''}`;
   };
-  const [list, detail] = await Promise.all([
-    leadsData({ q: sp.q, source: sp.source, stage: sp.stage, range: Number(range) }),
+  const [list, triaged, detail] = await Promise.all([
+    // Needs a reply looks back over all time: an old lead can write in today.
+    leadsData({ q: sp.q, source: sp.source, stage: sp.stage, range: sp.view === 'reply' ? 0 : Number(range) }),
+    openTriaged().catch(() => [] as Triaged[]),
     sp.person ? personData(sp.person) : Promise.resolve(null),
   ]);
   const p = detail?.person;
   // A search or a chosen source shows everything that matches; otherwise the view decides.
   const view = sp.q || sp.source ? 'all' : sp.view ?? '';
-  const rows = view === 'all' ? list.rows : list.rows.filter((r) => (view === 'network' ? r.source === NETWORK : r.source !== NETWORK));
+  // People who emailed and haven't had an answer (reply triage, lib/triage), newest first.
+  const waiting = new Map(triaged.filter((t) => t.contactId).map((t) => [t.contactId!, t]));
+  const rows = view === 'all' ? list.rows
+    : view === 'reply' ? list.rows.filter((r) => waiting.has(r.id)).sort((a, b) => Date.parse(waiting.get(b.id)!.at) - Date.parse(waiting.get(a.id)!.at))
+    : list.rows.filter((r) => (view === 'network' ? r.source === NETWORK : r.source !== NETWORK));
   const networkCount = list.rows.filter((r) => r.source === NETWORK).length;
   // Columns that are empty for every row are dropped rather than shown as a wall of dashes.
   const show = { priority: rows.some((r) => PRIORITY[r.priority]), stage: rows.some((r) => r.stage), value: rows.some((r) => r.clientValue) };
@@ -44,7 +51,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          {!sp.q && !sp.source && <Chips active={qs({})} items={VIEWS.map(([v, l]) => ({ label: l, href: qs({ view: v || undefined }), count: v === 'network' ? networkCount : v === 'all' ? list.rows.length : list.rows.length - networkCount }))} />}
+          {!sp.q && !sp.source && <Chips active={qs({})} items={VIEWS.map(([v, l]) => ({ label: l, href: qs({ view: v || undefined }), count: v === 'network' ? networkCount : v === 'all' ? list.rows.length : v === 'reply' ? waiting.size : list.rows.length - networkCount }))} />}
           {!sp.q && <Chips active={qs({})} items={RANGES.map(([v, l]) => ({ label: l, href: qs({ range: v }) }))} />}
         </div>
         <details open={moreFilters} className="group">
@@ -83,7 +90,8 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
               <tbody>
                 {rows.map((r) => {
                   // A handle-only lead is named "@handle" already; don't repeat it underneath.
-                  const sub = r.business || r.email || (r.ig && !r.name.startsWith('@') ? `@${r.ig}` : '');
+                  const w = view === 'reply' ? waiting.get(r.id) : undefined;
+                  const sub = w ? `Wrote ${ago(w.at)}: ${w.summary || w.subject}` : r.business || r.email || (r.ig && !r.name.startsWith('@') ? `@${r.ig}` : '');
                   return (
                   <tr key={r.id} className={`border-t border-white/[0.04] hover:bg-white/[0.025] ${sp.person === r.id ? 'bg-white/[0.04]' : ''}`}>
                     <td className="px-5 py-3">
@@ -104,7 +112,7 @@ export default async function Leads({ searchParams }: { searchParams: SP }) {
               </tbody>
             </table>
           </div>
-        ) : <Empty>{sp.q ? 'Nobody matches that search.' : view === 'network' ? 'No LinkedIn connections imported in this range.' : 'No enquiries in this range yet. Try a longer range, or Everyone.'}</Empty>}
+        ) : <Empty>{sp.q ? 'Nobody matches that search.' : view === 'reply' ? 'Nobody is waiting on a reply. New emails from people you know land here (and on Today) with a drafted answer.' : view === 'network' ? 'No LinkedIn connections imported in this range.' : 'No enquiries in this range yet. Try a longer range, or Everyone.'}</Empty>}
         <p className="px-5 py-3 text-xs text-white/60 border-t border-white/[0.04]">Showing {rows.length} of {list.total}{view === '' && networkCount ? ` · ${networkCount} LinkedIn connections under Network` : ''}. Test sign-ups (its.naunas+…) are hidden unless you search for them.</p>
       </Card>
 

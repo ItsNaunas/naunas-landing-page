@@ -11,6 +11,7 @@ import { setProspect, refreshProspectSearches, importWave1, startAllReady, resea
 import { SearchForm, DraftEditor } from '@/app/dashboard/(app)/outreach/OutreachClient';
 import { pullDealStagesSoon, outcomeOf } from '@/lib/crmSync';
 import { SequencesTable } from '@/app/dashboard/(app)/outreach/SequencesTable';
+import { BulkBar } from '@/app/dashboard/(app)/outreach/BulkBar';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,10 +102,12 @@ export default async function OutreachProspects({ searchParams }: { searchParams
                   <button className="rounded-lg bg-white text-black text-xs font-medium px-3 py-1.5">Approve all {goodOnes.length} strong fits (5+)</button></ActionForm>
               </div>
             )}
+            {q.review.length > 1 && <BulkBar group="review" />}
             {q.review.length ? (
               <ul className="divide-y divide-white/[0.05]">
                 {q.review.map((p) => (
                   <li key={p.id} data-item={`rv-${p.id}`} className="px-5 py-3 flex flex-wrap items-center gap-3">
+                    {q.review.length > 1 && <input type="checkbox" data-bulk="review" value={p.id} aria-label={`Select ${p.firm}`} className="size-4 shrink-0 accent-[#F2613F]" />}
                     <div className="flex-1 min-w-[200px]">
                       <p className="text-sm">{firmLink(p)} <Badge tone={FIT_TONE(p.fit)}>{p.fit}/7</Badge></p>
                       <p className="text-xs text-white/60">{[p.city, p.state].filter(Boolean).join(', ')}{p.rating ? ` · ${p.rating}★ (${p.reviews})` : ''} · {p.fitWhy.join(' · ')}</p>

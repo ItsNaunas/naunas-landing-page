@@ -8,6 +8,7 @@ import { CopyButton } from '@/components/dashboard/client';
 import { ActionForm } from '@/components/dashboard/ActionForm';
 import { writeOffInvoice } from '@/app/dashboard/actions';
 import { ReminderButton } from './ReminderButton';
+import { listProposals, getProposal, type ProposalRow, type Proposal } from '@/lib/proposal';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,20 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
 
   const [overdue, off] = demoOn() ? [[] as Overdue[], {} as Record<string, WrittenOff>] : await Promise.all([overdueInvoices().catch(() => [] as Overdue[]), writtenOff()]);
   const offList = Object.entries(off);
+  const failed = (src: string) => (d.errors.some((e: string) => e.startsWith(`${src}:`)) ? src : false);
+  // Forecast: retainers + deposits owed on accepted proposals + open invoices (minus written-off ones).
+  const accepted = demoOn() ? [] : (await listProposals().catch(() => [] as ProposalRow[])).filter((p) => p.status === 'accepted');
+  const deposits = (await Promise.all(accepted.map((r) => getProposal(r.token).catch(() => null))))
+    .filter((p): p is Proposal => !!p)
+    .map((p) => ({ client: p.client, amount: Number((p.deposit.match(/£\s?([\d,]+(?:\.\d+)?)/)?.[1] ?? '0').replace(/,/g, '')) }))
+    .filter((x) => x.amount > 0);
+  const openInvoices = d.invoices.filter((i) => !off[i.id]);
+  const forecast = {
+    deposits, depositTotal: deposits.reduce((s, x) => s + x.amount, 0),
+    invoiceCount: openInvoices.length, invoiceTotal: openInvoices.reduce((s, i) => s + i.amount, 0),
+    total: 0,
+  };
+  forecast.total = d.kpis.mrr + forecast.depositTotal + forecast.invoiceTotal;
   const k = d.kpis;
   const range = <RangeChips path="/dashboard/money" param="months" value={months} options={RANGES} />;
   const top = Math.max(1, k.goal, ...d.months.map((m) => m.value));
@@ -102,10 +117,10 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
       )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
-        <Kpi label="Paid this month" value={compactGbp(k.thisMonth)} foot={<span className="text-xs text-white/60">{Math.round((k.thisMonth / k.goal) * 100)}% of {compactGbp(k.goal)}</span>} />
-        <Kpi label="Retainers (MRR)" value={compactGbp(k.mrr)} foot={<span className="text-xs text-white/60">goal {compactGbp(k.mrrGoal)}/mo · {d.subscriptions} active</span>} />
-        <Kpi label="In Stripe" value={compactGbp(k.available)} foot={<span className="text-xs text-white/60">{compactGbp(k.pending)} on the way</span>} />
-        <Kpi label="Owed to you" value={compactGbp(k.outstanding)} foot={<span className="text-xs text-white/60">{d.invoices.length} open invoice{d.invoices.length === 1 ? '' : 's'}</span>} />
+        <Kpi label="Paid this month" value={compactGbp(k.thisMonth)} foot={<span className="text-xs text-white/60">{Math.round((k.thisMonth / k.goal) * 100)}% of {compactGbp(k.goal)}</span>} stale={failed("Charges")} />
+        <Kpi label="Retainers (MRR)" value={compactGbp(k.mrr)} foot={<span className="text-xs text-white/60">goal {compactGbp(k.mrrGoal)}/mo · {d.subscriptions} active</span>} stale={failed("Subscriptions")} />
+        <Kpi label="In Stripe" value={compactGbp(k.available)} foot={<span className="text-xs text-white/60">{compactGbp(k.pending)} on the way</span>} stale={failed("Balance")} />
+        <Kpi label="Owed to you" value={compactGbp(k.outstanding)} foot={<span className="text-xs text-white/60">{d.invoices.length} open invoice{d.invoices.length === 1 ? '' : 's'}</span>} stale={failed("Invoices")} />
       </div>
 
       <Card title="Revenue by month" action={<span className="flex flex-wrap gap-x-3 text-xs text-white/60"><span><span className="inline-block size-2 rounded-sm bg-emerald-400/80 mr-1" aria-hidden />hit the {compactGbp(k.goal)} goal</span><span><span className="inline-block size-2 rounded-sm bg-[#F2613F] mr-1" aria-hidden />this month so far</span></span>}>
@@ -168,6 +183,16 @@ export default async function Money({ searchParams }: { searchParams: Promise<{ 
           <Card title="Retainer goal">
             <p className="text-sm mb-2 tabular-nums">{gbp(k.mrr)} of {gbp(k.mrrGoal)} a month</p>
             <Meter value={k.mrr} max={k.mrrGoal} tone="good" />
+          </Card>
+          <Card title="Next 30 days, if it all lands">
+            <p className="text-3xl font-semibold tabular-nums" style={{ fontFamily: 'var(--font-display)' }}>{gbp(forecast.total)}</p>
+            <ul className="mt-3 flex flex-col gap-1.5 text-[13px]">
+              <li className="flex justify-between gap-3"><span className="text-white/65">Retainers</span><span className="tabular-nums">{gbp(k.mrr)}</span></li>
+              <li className="flex justify-between gap-3"><span className="text-white/65">Deposits on accepted proposals ({forecast.deposits.length})</span><span className="tabular-nums">{gbp(forecast.depositTotal)}</span></li>
+              <li className="flex justify-between gap-3"><span className="text-white/65">Open invoices ({forecast.invoiceCount})</span><span className="tabular-nums">{gbp(forecast.invoiceTotal)}</span></li>
+            </ul>
+            {forecast.deposits.length > 0 && <p className="text-[11px] text-white/60 mt-3">Waiting on: {forecast.deposits.map((x) => `${x.client} (${gbp(x.amount)})`).join(', ')}</p>}
+            <p className="text-[11px] text-white/55 mt-2">Written-off invoices and paid deposits are left out. Proposal deposits are read from the “To start” line.</p>
           </Card>
         </div>
       </div>

@@ -57,6 +57,9 @@ export async function missing(): Promise<{ flags: Flag[]; deals: Deal[]; errors:
   const quietReplies = prospects.filter((p) => p.status === 'replied' && !p.bookedAt && !p.wonAt && !p.lostAt && daysSince(p.igRepliedAt ?? p.repliedAt) >= 2 && !owed.some((x) => x.firmId === p.id));
   for (const p of quietReplies.slice(0, 5)) add({ id: `reply-${p.id}`, level: 'high', area: 'Outreach', title: `${p.firm} replied ${daysSince(p.igRepliedAt ?? p.repliedAt)} days ago with no next step`, detail: 'No call booked and nothing promised. Move it towards a call, or offer the leak report.', href: firmHref(p), label: 'Open firm' });
 
+  // ---- Retainers renewing within a week (Clients page)
+  for (const r of await (await import('@/lib/clients')).renewalsDue(7).catch(() => [])) add({ id: `renew-${r.dealId}`, level: 'medium', area: 'Money', title: `${r.name}: retainer renews ${new Date(r.renewsOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}${r.retainer ? ` (£${r.retainer}/mo)` : ''}`, detail: 'Check in before it renews: what’s working, anything to add.', href: '/dashboard/clients', label: 'Open client' });
+
   // ---- Money owed: open invoices past their due date
   // One row for all of them: seven invoice rows used to push everything else off the list.
   const overdue = await overdueInvoices().catch(() => []);

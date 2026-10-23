@@ -32,6 +32,18 @@ async function requireSession() {
   if (!(await validSession((await cookies()).get(DASH_COOKIE)?.value))) redirect('/dashboard/login');
 }
 
+/** Remember what a one-click action is about to change, for the Undo bar (lib/undo). Never blocks the action. */
+const undoable = (label: string, opts: { prospects?: string[]; files?: string[]; external?: boolean }) =>
+  import('@/lib/undo').then((m) => m.snapshot(label, opts)).catch(() => undefined);
+
+/** The Undo bar: put back what the last one-click action changed (within 60 seconds). */
+export async function undoLastAction() {
+  await requireSession();
+  const { undoLast } = await import('@/lib/undo');
+  await undoLast();
+  changed();
+}
+
 const list = (v: FormDataEntryValue | null) =>
   String(v ?? '').split(/[,\s]+/).map((s) => s.trim()).filter(Boolean);
 
@@ -133,6 +145,7 @@ export async function setProspect(form: FormData) {
   const status = str(form, 'status') as ProspectStatus;
   const ids = str(form, 'ids').split(',').filter(Boolean);
   if (!ids.length || !['approved', 'rejected', 'stopped', 'new'].includes(status)) return;
+  await undoable(`${ids.length > 1 ? `${ids.length} firms` : 'Firm'} marked ${status}`, { prospects: ids });
   const list = await getProspects();
   await saveProspects(list.map((p) => (ids.includes(p.id) ? { ...p, status, ...(status === 'approved' ? {} : { researchAt: undefined }) } : p)));
   // Approving starts research straight away (lib/research), instead of waiting for the 13:00 routine.
@@ -193,6 +206,7 @@ export async function saveProspectDrafts(_prev: SaveState, form: FormData): Prom
 export async function markDmSent(form: FormData) {
   await requireSession();
   const id = str(form, 'id');
+  await undoable('DM marked sent', { prospects: [id] });
   const list = await getProspects();
   const p = list.find((x) => x.id === id);
   if (!p) return;
@@ -607,6 +621,7 @@ export async function bumpRepCount(form: FormData) {
 export async function markWarmed(form: FormData) {
   await requireSession();
   const id = str(form, 'id');
+  await undoable('Warm-up done', { prospects: [id], files: ['outreach/reps.json'] });
   const list = await getProspects();
   if (!list.some((x) => x.id === id)) return;
   await saveProspects(list.map((x) => (x.id === id ? { ...x, warmedAt: new Date().toISOString() } : x)));
@@ -682,6 +697,7 @@ export async function addOwedAsset(form: FormData) {
 
 export async function markOwedSent(form: FormData) {
   await requireSession();
+  await undoable('Promise marked sent', { files: ['outreach/owed.json'], external: true });
   const { patchOwed, NUDGE_D } = await import('@/lib/owed');
   const o = await patchOwed(str(form, 'id'), { sentAt: new Date().toISOString() });
   if (o?.taskId) await crmAfter(o.firmId ?? o.id, (m) => m.completeTask(o.taskId!), 'Complete task');
@@ -692,6 +708,7 @@ export async function closeOwed(form: FormData) {
   await requireSession();
   const outcome = str(form, 'outcome');
   if (!['replied', 'nudged', 'dropped'].includes(outcome)) return;
+  await undoable(`Promise closed (${outcome})`, { files: ['outreach/owed.json'], external: true });
   const { patchOwed } = await import('@/lib/owed');
   const o = await patchOwed(str(form, 'id'), { closedAt: new Date().toISOString(), outcome: outcome as 'replied' | 'nudged' | 'dropped' });
   if (o?.taskId && !o.sentAt) await crmAfter(o.firmId ?? o.id, (m) => m.completeTask(o.taskId!), 'Close task');
@@ -705,6 +722,7 @@ export async function markIgFollowup(form: FormData) {
   await requireSession();
   const id = str(form, 'id');
   const n = str(form, 'n') === '2' ? 'fu2At' : 'fu1At';
+  await undoable('Follow-up marked sent', { prospects: [id], files: ['outreach/reps.json'] });
   const list = await getProspects();
   if (!list.some((x) => x.id === id)) return;
   await saveProspects(list.map((x) => (x.id === id ? { ...x, [n]: new Date().toISOString() } : x)));
@@ -717,6 +735,7 @@ export async function markIgFollowup(form: FormData) {
 export async function markIgReplied(form: FormData) {
   await requireSession();
   const id = str(form, 'id');
+  await undoable('Marked as replied', { prospects: [id], external: true });
   const list = await getProspects();
   const p = list.find((x) => x.id === id);
   if (!p) return;
@@ -748,6 +767,7 @@ export async function markCheckin(form: FormData) {
   const id = str(form, 'id');
   const outcome = str(form, 'outcome');
   if (!/^\d+$/.test(id) || !['sent', 'snoozed', 'dropped'].includes(outcome)) return;
+  await undoable(`Check-in ${outcome}`, { files: ['outreach/touches.json'] });
   const { recordCheckin } = await import('@/lib/checkins');
   await recordCheckin({ id, channel: str(form, 'channel') || 'Instagram' }, outcome as 'sent' | 'snoozed' | 'dropped');
   changed();
@@ -786,6 +806,7 @@ export async function markLiStep(form: FormData) {
   const id = str(form, 'id');
   const step = str(form, 'step');
   const field = { engaged: 'liEngagedAt', connected: 'liAt', dm: 'liDmAt', fu: 'liFuAt' }[step];
+  await undoable('LinkedIn step done', { prospects: [id], files: ['outreach/reps.json'] });
   const list = await getProspects();
   if (!list.some((x) => x.id === id) || (!field && step !== 'notyet')) return;
   const now = new Date();
@@ -865,6 +886,7 @@ export async function saveReportEdits(_prev: ReportState, form: FormData): Promi
 /** Review/referral ask (lib/asks): sent or skipped. */
 export async function markAskDone(form: FormData) {
   await requireSession();
+  await undoable('Ask marked done', { files: ['ops/asks.json'], external: true });
   const { markAsk } = await import('@/lib/asks');
   const outcome = str(form, 'outcome') === 'skipped' ? 'skipped' : 'sent';
   const a = await markAsk(str(form, 'id'), outcome);
@@ -1063,8 +1085,21 @@ export async function migrateStore() {
 /** Outreach → Today: a triaged reply has been answered (or needs nothing). */
 export async function markReplyHandled(form: FormData) {
   await requireSession();
+  await undoable('Reply marked answered', { files: ['inbox/triage.json'] });
   const { markTriaged } = await import('@/lib/triage');
   await markTriaged(str(form, 'id'));
+  changed();
+}
+
+/** Today → Needs you: Done (hide 7 days), Snooze (hide until tomorrow), or bring a hidden row back. */
+export async function dismissNeed(form: FormData) {
+  await requireSession();
+  const { dismiss, restore } = await import('@/lib/dismiss');
+  const key = str(form, 'key');
+  if (!key) return;
+  const how = str(form, 'how');
+  if (how === 'restore') await restore(key);
+  else await dismiss(key, str(form, 'title'), how === 'snoozed' ? 'snoozed' : 'done');
   changed();
 }
 
@@ -1078,11 +1113,11 @@ export async function toggleClientStep(form: FormData) {
   changed();
 }
 
-/** Clients: save the notes for one client (deliverables, logins handed over, what's next). */
+/** Clients: save notes, retainer and renewal date for one client. */
 export async function saveClientNote(form: FormData) {
   await requireSession();
-  const { saveNote } = await import('@/lib/clients');
-  await saveNote(str(form, 'dealId'), str(form, 'note'));
+  const { saveDetails } = await import('@/lib/clients');
+  await saveDetails(str(form, 'dealId'), { note: str(form, 'note'), name: str(form, 'name'), retainer: Number(str(form, 'retainer')) || undefined, renewsOn: str(form, 'renewsOn') || undefined });
   changed();
 }
 

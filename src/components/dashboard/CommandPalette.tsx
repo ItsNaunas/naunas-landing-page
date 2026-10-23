@@ -25,6 +25,7 @@ const PAGES: { title: string; href: string; key?: string; words?: string }[] = [
   { title: 'Content · Performance', href: '/dashboard/content/performance', words: 'leaderboard clicks instagram tiktok video' },
   { title: 'Content · Email', href: '/dashboard/content/newsletter', words: 'newsletter mailerlite sequences' },
   { title: 'Content · Keyword DMs', href: '/dashboard/content/keywords', words: 'campaigns comments instagram' },
+  { title: 'Weekly review', href: '/dashboard/review', key: 'w', words: 'scoreboard this week last week trends monday' },
   { title: 'Clients', href: '/dashboard/clients', key: 'k', words: 'won onboarding checklist handover retainers notes' },
   { title: 'Money', href: '/dashboard/money', key: 'm', words: 'stripe payments invoices revenue retainers' },
   { title: 'System · Health & connections', href: '/dashboard/system', key: 's', words: 'checks problems keys accounts connect' },

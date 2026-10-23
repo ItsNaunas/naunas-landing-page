@@ -52,6 +52,16 @@
 - [ ] Decide whether Navbar/Footer/CtaBanner/RevenueCalculator "Book your free audit" CTAs should also route via /audit (currently still direct Calendly)
 
 ## Recent sessions
+### 2026-10-23 (dashboard round 2: the recommended additions)
+- Done / Snooze on every Today "Needs you" row (lib/dismiss, ops/dismissed.json; Done hides 7 days, Snooze until tomorrow, "N hidden" fold with Bring back).
+- Undo bar for 60 s after the one-click buttons (lib/undo, ops/undo.json): firm-level restore for prospects, whole-file for owed/asks/triage/touches/reps; HubSpot notes/tasks already written stay (the bar says so).
+- Leads "Needs a reply" view from reply triage (all time, newest first, shows what they wrote).
+- Weekly review page /dashboard/review (lib/ops/review): this week vs last for inflow, sales, outreach, content; up/down summary; g w.
+- Money: "Next 30 days, if it all lands" forecast = retainers + deposits on accepted proposals (parsed from the To start line) + open invoices not written off.
+- Clients phase 2: retainer £/mo and renewal date per client (Today flags renewals a week ahead), Copy handover email drafted from the checklist + notes.
+- KPI tiles say "Couldn't refresh" when their source failed (Today + Money), instead of showing a silent zero.
+- Prospects → Review: tick firms, Approve N / Skip N in one go (BulkBar; same setProspect action, so Undo covers it).
+- e2e18 (11 checks) added.
 ### 2026-10-23 (dashboard UX overhaul, from the audit)
 - Audit first: every dashboard page + /p, /r, /scorecard screenshotted on demo, seeded and live (read-only) data at 1440/1280/390, measured (type sizes, contrast, targets, axe). Report + Naufal's 6 decisions in the artifact above.
 - Built on `ux-overhaul`: (1) contrast/type tokens, hydration fix (#418 on Content: client dates now in the owner's zone), overdue invoices as one Money row + Write off with Undo (dashboard-only); (2) one Today page (Overview + Outreach → Today merged, login lands there, /dashboard/outreach redirects), Ask in the top bar (Ctrl+J); (3) Ctrl+K command palette (/dashboard/search route) + g-letter shortcuts; (4) Sequences → Prospects · In outreach, Pipeline tabs Deals/Proposals/Calls, Content Ideas panel + Email tab, System = Health & connections + Activity; (5) Leads views (Enquiries default, Network = LinkedIn imports, Everyone), feed collapses repeats; (6) polish: status colours, funnels highlight the biggest drop, accent buttons use dark text, labels, 28px targets, dashboard 404; (7) /p: no fake numbering, Book-15-minutes, signature, sticky Accept on phones, proof block (off until approved), /r contrast; (8) new Clients page (won deals: onboarding checklist + notes in clients/state.json, review/referral steps tick from sent asks).

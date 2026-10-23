@@ -4,11 +4,26 @@ import { PageHeader, Errors, Card, Kpi, Badge, Empty, gbp, linkProps } from '@/c
 import { SectionTitle, when } from '@/components/dashboard/kit';
 import { ActionForm } from '@/components/dashboard/ActionForm';
 import { toggleClientStep, saveClientNote } from '@/app/dashboard/actions';
+import { CopyButton } from '@/components/dashboard/client';
 
 export const dynamic = 'force-dynamic';
 
 // Clients = won deals after the deposit: what's done for each, what's next, and the notes that would
 // otherwise live in your head. Review and referral steps tick themselves when that ask is sent from Today.
+
+/** A plain handover email from what's ticked and noted. A starting point to edit, never sent from here. */
+function handover(c: Client) {
+  const first = c.name.split(/[\s·]+/)[0];
+  const done = STEPS.filter((s) => c.done[s.key] && !('auto' in s)).map((s) => `- ${s.label}`);
+  return [
+    `Hi ${first},`, '',
+    'Here is a summary of everything we set up together, so you have it in one place.', '',
+    ...(done.length ? ['Done:', ...done, ''] : []),
+    ...(c.note ? ['Notes:', c.note, ''] : []),
+    'Everything lives in your own accounts. If anything stops working or you want something added, reply to this email.', '',
+    'Naufal',
+  ].join('\n');
+}
 
 function ClientCard({ c }: { c: Client }) {
   return (
@@ -16,7 +31,7 @@ function ClientCard({ c }: { c: Client }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-base font-semibold truncate">{c.name}</p>
-          <p className="text-xs text-white/60 mt-0.5">Won {c.wonAt ? when(c.wonAt).split(',').slice(0, 2).join(',') : ''} · {c.days} day{c.days === 1 ? '' : 's'} ago{c.amount ? ` · ${gbp(c.amount)}` : ''}</p>
+          <p className="text-xs text-white/60 mt-0.5">Won {c.wonAt ? when(c.wonAt).split(',').slice(0, 2).join(',') : ''} · {c.days} day{c.days === 1 ? '' : 's'} ago{c.amount ? ` · ${gbp(c.amount)}` : ''}{c.retainer ? ` · retainer ${gbp(c.retainer)}/mo` : ''}{c.renewsOn ? ` · renews ${new Date(c.renewsOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge tone={c.progress === STEPS.length ? 'good' : 'info'}>{c.progress}/{STEPS.length} done</Badge>
@@ -44,10 +59,21 @@ function ClientCard({ c }: { c: Client }) {
         })}
       </ul>
       <ActionForm action={saveClientNote} className="mt-3 flex flex-col gap-2">
-        <input type="hidden" name="dealId" value={c.dealId} />
+        <input type="hidden" name="dealId" value={c.dealId} /><input type="hidden" name="name" value={c.name} />
         <label className="text-[11px] text-white/60" htmlFor={`note-${c.dealId}`}>Notes: deliverables, logins handed over, what they asked for next</label>
         <textarea id={`note-${c.dealId}`} name="note" rows={2} defaultValue={c.note} className="rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/50" placeholder="e.g. Portal live, Airtable shared with Uche, wants a second form in January" />
-        <button className="self-end rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/75 hover:border-white/30 hover:text-white">Save notes</button>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="flex flex-col gap-1 text-[11px] text-white/60">Retainer £/month
+            <input name="retainer" type="number" min={0} step={10} defaultValue={c.retainer ?? ''} placeholder="0" className="w-28 rounded-lg bg-white/[0.04] border border-white/10 px-3 py-1.5 text-sm text-white placeholder:text-white/50" />
+          </label>
+          <label className="flex flex-col gap-1 text-[11px] text-white/60">Renews on (flags on Today a week before)
+            <input name="renewsOn" type="date" defaultValue={c.renewsOn ?? ''} className="rounded-lg bg-white/[0.04] border border-white/10 px-3 py-1.5 text-sm text-white [color-scheme:dark]" />
+          </label>
+          <div className="ml-auto flex items-center gap-2">
+            <CopyButton text={handover(c)} label="Copy handover email" />
+            <button className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-white/75 hover:border-white/30 hover:text-white">Save</button>
+          </div>
+        </div>
       </ActionForm>
     </Card>
   );

@@ -5,6 +5,8 @@ import { FUNNEL } from '@/config/funnel';
 import { SideNav, BottomNav } from '@/components/dashboard/Nav';
 import { RefreshButton } from '@/components/dashboard/client';
 import { CommandPalette } from '@/components/dashboard/CommandPalette';
+import { UndoBar } from '@/components/dashboard/UndoBar';
+import { pendingUndo } from '@/lib/undo';
 import { linkProps } from '@/components/dashboard/ui';
 import { logout } from '../actions';
 import { attention } from '@/lib/ops/attention';
@@ -25,7 +27,7 @@ export const maxDuration = 120;
 
 export default async function OpsLayout({ children }: { children: React.ReactNode }) {
   if (!(await validSession((await cookies()).get(DASH_COOKIE)?.value))) redirect('/dashboard/login');
-  const a = await attention().catch(() => ({ content: 0, outreach: 0 }));
+  const [a, undo] = await Promise.all([attention().catch(() => ({ content: 0, outreach: 0 })), pendingUndo().catch(() => null)]);
   // The contact list lives on Today now, so its count badges Today.
   const badges = { '/dashboard/content': a.content, '/dashboard': a.outreach };
   // Money needs a Stripe read key; until it's set the page is a setup card, so it stays out of the nav.
@@ -54,6 +56,7 @@ export default async function OpsLayout({ children }: { children: React.ReactNod
       </div>
       <BottomNav badges={badges} hide={hide} />
       <AskNaunas />
+      {undo && <UndoBar label={undo.label} at={undo.at} external={undo.external} />}
     </div>
   );
 }
