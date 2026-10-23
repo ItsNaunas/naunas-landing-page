@@ -1,7 +1,7 @@
 # Project Status
 
 **Last updated**: 2026-10-23 (dashboard UX overhaul, branch ux-overhaul, not deployed)
-**State**: Dashboard UX overhaul built on branch `ux-overhaul` (8 commits, 17/17 e2e suites, not pushed or deployed). The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
+**State**: Dashboard UX overhaul built on branch `ux-overhaul` (6 commits covering 8 batches, 17/17 e2e suites, not pushed or deployed). The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
 - [ ] **Ship the dashboard UX overhaul** (branch `ux-overhaul`): Naufal reviews, then merge to master and deploy. Audit + plan: https://claude.ai/artifact/HFUuczFepgxcY7PFzbtDM1.
