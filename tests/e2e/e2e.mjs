@@ -191,7 +191,7 @@ for (const label of ['Today', 'Leads', 'Outreach', 'Pipeline', 'Content', 'Syste
 }
 
 // ---- responsive: every page at 390 / 768 / 1440, no sideways scroll; mobile bottom bar + More sheet
-const pages = ['', '/leads', '/outreach', '/outreach/prospects', '/outreach/sequences', '/outreach/results', '/pipeline', '/pipeline/calls', '/content', '/content/performance', '/content/newsletter', '/content/keywords', '/money', '/system', '/system/connections', '/system/automations', '/tiktok', '/linkedin'];
+const pages = ['', '/leads', '/clients', '/pipeline/proposals', '/outreach', '/outreach/prospects', '/outreach/sequences', '/outreach/results', '/pipeline', '/pipeline/calls', '/content', '/content/performance', '/content/newsletter', '/content/keywords', '/money', '/system', '/system/connections', '/system/automations', '/tiktok', '/linkedin'];
 for (const w of [390, 768, 1440]) {
   await page.setViewportSize({ width: w, height: 900 });
   const wide = [];

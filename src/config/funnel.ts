@@ -16,6 +16,19 @@ export const FUNNEL = {
     link: 'naunas/free-audit',
   },
 
+  /**
+   * Proof shown on proposals (/p) and leak reports (/r). Real work only, no invented numbers.
+   * Drafted 2026-10-23 from the vault; hidden until Naufal approves the wording (set approved: true).
+   */
+  proof: {
+    approved: false,
+    items: [
+      { client: 'Nelia Rose Designs', what: 'Interior design studio, UK', line: 'Website, client portal and enquiry emails built as one system, so every enquiry is answered and tracked from first form to signed client.' },
+      { client: 'Soul in the Horn', what: 'Dance events, New York', line: 'Runs their event marketing: 25 email and SMS templates, a campaign dashboard and a dancer portal, tested end to end before every event.' },
+      { client: 'SNAEB', what: 'Coffee subscription platform, UK', line: 'Built the production platform from scratch: member app, café payouts through Stripe and a live café finder.' },
+    ],
+  },
+
   hubspot: {
     portalId: '149523755',
     /** New deals and companies are assigned to this owner. */

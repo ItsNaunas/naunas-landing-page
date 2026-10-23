@@ -1068,6 +1068,24 @@ export async function markReplyHandled(form: FormData) {
   changed();
 }
 
+/** Clients: tick (or untick) an onboarding step. */
+export async function toggleClientStep(form: FormData) {
+  await requireSession();
+  const { toggleStep, STEPS } = await import('@/lib/clients');
+  const key = str(form, 'key');
+  if (!STEPS.some((s) => s.key === key)) return;
+  await toggleStep(str(form, 'dealId'), key as (typeof STEPS)[number]['key']);
+  changed();
+}
+
+/** Clients: save the notes for one client (deliverables, logins handed over, what's next). */
+export async function saveClientNote(form: FormData) {
+  await requireSession();
+  const { saveNote } = await import('@/lib/clients');
+  await saveNote(str(form, 'dealId'), str(form, 'note'));
+  changed();
+}
+
 /** Money: stop chasing an invoice (dashboard only, Stripe untouched), or undo that. */
 export async function writeOffInvoice(form: FormData) {
   await requireSession();
