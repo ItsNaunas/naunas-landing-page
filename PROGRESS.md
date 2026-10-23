@@ -1,10 +1,10 @@
 # Project Status
 
-**Last updated**: 2026-10-23 (dashboard UX overhaul, branch ux-overhaul, not deployed)
-**State**: Dashboard UX overhaul built on branch `ux-overhaul` (6 commits covering 8 batches, 17/17 e2e suites, not pushed or deployed). The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
+**Last updated**: 2026-10-23 (dashboard UX overhaul shipped)
+**State**: Dashboard UX overhaul live in production (merged from `ux-overhaul`, 8 batches, 17/17 e2e suites, deploy Ready 2026-10-23). The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
-- [ ] **Ship the dashboard UX overhaul** (branch `ux-overhaul`): Naufal reviews, then merge to master and deploy. Audit + plan: https://claude.ai/artifact/HFUuczFepgxcY7PFzbtDM1.
+- [x] **Dashboard UX overhaul shipped** (2026-10-23, fast-forward of `ux-overhaul` to master). Audit + plan: https://claude.ai/artifact/HFUuczFepgxcY7PFzbtDM1.
 - [ ] **Approve the proof lines** in src/config/funnel.ts (`proof.items`, drafted from the vault, no numbers) and set `proof.approved: true` to show them on /p and /r. Add a headshot later if wanted (Signature uses an initial for now).
 - [ ] **Check the "Write off" decision before using it**: Consultancy 4 You Ltd is Marcus's company (SNAEB). Its overdue £400 invoices are likely SNAEB subscription invoices, not dead debt.
 - [x] **Tests in the repo + 09:00 jobs split** (2026-10-23): the 15 Playwright suites moved to tests/e2e with one command, `npm run test:e2e` (fresh store per group, keys blanked, HubSpot + OpenAI mocks); 15/15 pass. Four suites were stale against recent changes (single-channel Start outreach, the lead-page banner, streamed pages, the queued-research race) and were brought up to date; no app bugs found. The health cron now only runs checks and dispatches: each job in lib/dailyJobs goes to QStash as its own /api/content/fire call (plan +90s, brief +150s so they see the others' results), or inline without QStash. `?job=<name>` runs one by hand. Outreach send cron maxDuration 300s.
