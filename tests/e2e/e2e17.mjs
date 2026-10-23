@@ -32,7 +32,8 @@ check('Proposal blocks have no 01/02 numbering', !/\b01\b/.test(pt) && pt.includ
 check('Proposal offers a 15-minute call', await pub.getByRole('link', { name: /Book 15 minutes/ }).count() === 1);
 check('Proposal is signed', pt.includes('Naufal Nassor'));
 check('Phones get a sticky Accept bar', await pub.getByRole('link', { name: /Accept · £4,500/ }).isVisible());
-check('Proof stays hidden until approved', !pt.includes('Recent work'));
+// Proof approved 2026-10-23: the three client lines show on the proposal.
+check('Proof shows the approved client lines', /recent work/i.test(pt) && pt.includes('Nelia Rose Designs') && pt.includes('Soul in the Horn') && pt.includes('SNAEB'));
 
 check('No page errors', !errors.length, errors.join(' | '));
 await b.close();
