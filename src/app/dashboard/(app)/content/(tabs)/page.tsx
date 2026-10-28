@@ -114,7 +114,7 @@ export default async function Content() {
               <p className="font-medium">⏳ {held.length} post{held.length > 1 ? 's' : ''} waiting for TikTok</p>
               <p className="text-sm text-white/65 mt-1">LinkedIn and Instagram already went out. TikTok only allows public posts once it approves the app. Then send these in one go, or open one and drop it if it’s stale.</p>
             </div>
-            <SendHeldButton approved={tiktokApproved()} count={held.length} />
+            <SendHeldButton approved={await tiktokApproved()} count={held.length} />
           </div>
         </Card>
       )}

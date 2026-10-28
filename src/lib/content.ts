@@ -146,7 +146,7 @@ export function preflight(p: ContentPost, ctx: { linkedinDaysLeft?: number | nul
     if (!tt.privacy) out.push({ ch: 'tiktok', level: 'block', text: 'Choose who can see the TikTok.' });
     if (tt.brandedContent && tt.privacy === 'SELF_ONLY') out.push({ ch: 'tiktok', level: 'block', text: 'Branded content can’t be private on TikTok.' });
     if (m?.kind === 'video' && !isVertical) out.push({ ch: 'tiktok', level: 'warn', text: 'TikTok is vertical (9:16). This video isn’t.' });
-    if (!ctx.tiktokApproved) out.push({ ch: 'tiktok', level: 'warn', text: 'TikTok hasn’t approved the app yet, so this waits in the held tray and goes out when you press Send all.' });
+    if (!ctx.tiktokApproved) out.push({ ch: 'tiktok', level: 'warn', text: 'TikTok refused the last post (app not audited yet), so this waits in the held tray until Send all gets one through.' });
   }
 
   // Guardrail: a number in a caption that isn't in the idea or transcript might be made up (AI or memory).

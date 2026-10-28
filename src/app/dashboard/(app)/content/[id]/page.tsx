@@ -53,7 +53,7 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
           stitchDisabled: creator.stitch_disabled, maxSec: creator.max_video_post_duration_sec,
         } : null,
         linkedinName: li?.name, linkedinDays: li && !li.expired ? li.daysLeft : null,
-        tiktokApproved: tiktokApproved(), qstash: demo || qstashReady(),
+        tiktokApproved: await tiktokApproved(), qstash: demo || qstashReady(),
         links: Object.fromEntries(CHANNELS.map((c) => [c, trackedLink(post.id, c)])) as Record<(typeof CHANNELS)[number], string>,
         quickTimes: [...FUNNEL.content.defaultTimes], usTz: FUNNEL.content.usTz, firstComment: FUNNEL.content.linkedinFirstComment, ai: demo || aiReady(),
       }} />

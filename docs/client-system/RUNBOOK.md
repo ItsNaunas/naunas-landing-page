@@ -178,7 +178,6 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `APIFY_TOKEN` | Apify → Settings → Integrations | Outreach → Find prospects (optional, monthly cap in dashboard) |
 | (none) IMAP | Zoho Mail → Settings → Mail Accounts → IMAP Access ON (same app password) | email threads, outreach replies, sequence stop-on-reply |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | developers.tiktok.com → app → Credentials (Sandbox until approved, then Production) | TikTok tab + content engine (optional) |
-| `TIKTOK_APPROVED` | set to `1` only after TikTok's app review **and** Direct Post audit pass | releases held TikTok posts (Content → Send all) |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | linkedin.com/developers → app → Auth (products: OpenID Connect + Share on LinkedIn) | LinkedIn tab + content engine; reconnect every 60 days (optional) |
 | `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` (+ `QSTASH_URL` if shown) | console.upstash.com → QStash → Request builder / Signing keys | exact-time scheduled posts (optional; without it, Publish now only) |
 

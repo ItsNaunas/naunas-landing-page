@@ -493,18 +493,19 @@ export async function retryContentChannel(id: string, ch: ChannelKey): Promise<C
   return { post: out.post };
 }
 
-/** Sends TikTok for every held post (after the app is approved), oldest first, within one request's time. */
+/** Sends TikTok for every held post, oldest first, within one request's time. Stops at the first refusal:
+ *  TikTok still treats the app as unaudited, so the rest would be refused too. */
 export async function sendHeldTikTok(): Promise<{ error?: string; sent: number; left: number }> {
   await requireSession();
-  const { tiktokApproved, runPost } = await import('@/lib/publish');
-  if (!tiktokApproved()) return { error: 'TikTok has not approved the app yet (set TIKTOK_APPROVED=1 once it has).', sent: 0, left: 0 };
+  const { runPost } = await import('@/lib/publish');
   const { getIndex } = await import('@/lib/content');
   const held = (await getIndex()).filter((r) => r.channels.tiktok === 'held').reverse();
   const until = Date.now() + 200_000;
   let sent = 0;
   for (const row of held) {
     if (Date.now() > until) break;
-    const out = await runPost(row.id, { only: ['tiktok'] });
+    const out = await runPost(row.id, { only: ['tiktok'], retryHeld: true });
+    if (out.post.channels.tiktok.status === 'held') { revalidatePath('/dashboard/content'); return { error: 'TikTok still only allows private posts for this app. Check the Direct Post audit in the TikTok developer portal.', sent, left: held.length - sent }; }
     if (out.post.channels.tiktok.status === 'posted') sent++;
   }
   revalidatePath('/dashboard/content');

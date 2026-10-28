@@ -1,7 +1,7 @@
 // Runs a content post's channels. Each channel is independent: they run in parallel, each result is saved
 // the moment it lands (so a timeout on one can't lose another), and a failure only marks that channel.
-// TikTok waits in "held" until the app is approved (env TIKTOK_APPROVED=1): unaudited apps can only post
-// to private accounts. Called only from Naufal's Publish click or a schedule he set.
+// TikTok goes straight out; if TikTok refuses it as an unaudited app (private accounts only), it waits in
+// "held" and we remember the refusal, so later posts hold without trying until Send all held gets one through. Called only from Naufal's Publish click or a schedule he set.
 
 import { get, del } from '@vercel/blob';
 import { getPost, savePost, rollUp, trackedLink, preflight, CHANNELS, CHANNEL_LABEL, type ChannelKey, type ContentPost } from '@/lib/content';
@@ -11,11 +11,16 @@ import { publishToInstagram } from '@/lib/instagram';
 import { getCampaigns, saveCampaigns } from '@/lib/campaigns';
 import { mediaLink } from '@/lib/mediaLink';
 import { notify, line } from '@/lib/alert';
+import { getJSON, putJSON } from '@/lib/store';
 import { qstashReady, scheduleAt } from '@/lib/qstash';
 import { logEvent } from '@/lib/events';
 import { FUNNEL } from '@/config/funnel';
 
-export const tiktokApproved = () => process.env.TIKTOK_APPROVED === '1';
+const TT_AUDIT = 'tiktok/audit.json';
+/** TikTok's own last answer, not an env flag: false only after it refused a post as unaudited. */
+export async function tiktokApproved(): Promise<boolean> {
+  return !(await getJSON<{ refusedAt?: string }>(TT_AUDIT, {})).refusedAt;
+}
 
 type Outcome = { status: 'posted' | 'failed' | 'held'; url?: string; error?: string; patch?: Record<string, unknown> };
 
@@ -54,17 +59,18 @@ async function runInstagram(p: ContentPost): Promise<Outcome> {
   return { status: 'posted', url: permalink, patch: { mediaId } };
 }
 
-async function runTikTok(p: ContentPost, buf: () => Promise<Buffer>): Promise<Outcome> {
-  if (!tiktokApproved()) return { status: 'held' };
+async function runTikTok(p: ContentPost, buf: () => Promise<Buffer>, retryHeld = false): Promise<Outcome> {
+  if (!retryHeld && !(await tiktokApproved())) return { status: 'held' };
   const c = p.channels.tiktok;
   try {
     const publishId = await tiktokPost(await buf(), {
       caption: c.caption, privacy: c.privacy, allowComment: c.allowComment, allowDuet: c.allowDuet, allowStitch: c.allowStitch,
       yourBrand: c.yourBrand, brandedContent: c.brandedContent,
     });
+    if (retryHeld || !(await tiktokApproved())) await putJSON(TT_AUDIT, {});
     return { status: 'posted', patch: { publishId } };
   } catch (err) {
-    if (String(err).includes('unaudited_client')) return { status: 'held' };
+    if (String(err).includes('unaudited_client')) { await putJSON(TT_AUDIT, { refusedAt: new Date().toISOString() }); return { status: 'held' }; }
     throw err;
   }
 }
@@ -75,7 +81,7 @@ export async function checkPost(p: ContentPost) {
   const [li, campaigns] = await Promise.all([linkedinAccount().catch(() => null), getCampaigns()]);
   const camp = campaigns.find((c) => c.id === p.channels.instagram.campaignId);
   const keywords = camp ? camp.keywords : [...FUNNEL.instagram.keywords];
-  return preflight(p, { linkedinDaysLeft: li && !li.expired ? li.daysLeft : null, tiktokApproved: tiktokApproved(), keywords });
+  return preflight(p, { linkedinDaysLeft: li && !li.expired ? li.daysLeft : null, tiktokApproved: await tiktokApproved(), keywords });
 }
 
 /**
@@ -83,7 +89,7 @@ export async function checkPost(p: ContentPost) {
  * `expectScheduled`: only run if the post is still scheduled (the QStash fire route), so a cancelled or
  * already-published schedule does nothing.
  */
-export async function runPost(id: string, opts: { only?: ChannelKey[]; expectScheduled?: boolean } = {}) {
+export async function runPost(id: string, opts: { only?: ChannelKey[]; expectScheduled?: boolean; retryHeld?: boolean } = {}) {
   const p = await getPost(id);
   if (!p) throw new Error('Post not found');
   if (opts.expectScheduled && p.status !== 'scheduled') return { skipped: true as const, post: p };
@@ -113,7 +119,7 @@ export async function runPost(id: string, opts: { only?: ChannelKey[]; expectSch
   const runners: Record<ChannelKey, () => Promise<Outcome>> = {
     linkedin: () => runLinkedIn(p, buf),
     instagram: () => runInstagram(p),
-    tiktok: () => runTikTok(p, buf),
+    tiktok: () => runTikTok(p, buf, opts.retryHeld),
   };
   await Promise.all(targets.map(async (c) => {
     try { await record(c, await runners[c]()); } catch (err) {

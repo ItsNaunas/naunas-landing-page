@@ -16,6 +16,7 @@ export async function Connections() {
     demo ? Promise.resolve(true) : tiktokConfigured() ? tiktokConnected().catch(() => false) : Promise.resolve(false),
     demo ? Promise.resolve({ daysLeft: 41, expired: false, name: 'Naufal Nassor' }) : linkedinConfigured() ? linkedinAccount().catch(() => null) : Promise.resolve(null),
   ]);
+  const ttOk = await tiktokApproved().catch(() => true);
   const accounts: Acct[] = [
     {
       name: 'LinkedIn', href: '/dashboard/linkedin', cta: !li ? 'Connect LinkedIn →' : 'Manage connection →',
@@ -25,8 +26,8 @@ export async function Connections() {
     },
     {
       name: 'TikTok', href: '/dashboard/tiktok', cta: !tt ? 'Connect TikTok →' : 'Manage connection →',
-      state: !tt ? 'Not connected' : tiktokApproved() ? 'Connected · public posting' : 'Connected · posts held',
-      tone: !tt ? 'bad' : tiktokApproved() ? 'good' : 'warn',
+      state: !tt ? 'Not connected' : ttOk ? 'Connected · public posting' : 'Connected · posts held',
+      tone: !tt ? 'bad' : ttOk ? 'good' : 'warn',
       note: 'Until TikTok approves the app, TikTok posts wait in Content → Plan and the other channels still go out.',
     },
     {
