@@ -7,7 +7,7 @@ import { videoStats, type VideoStats } from '@/lib/videoWatch';
 import { tiktokConfigured, tiktokConnected, tiktokUser, tiktokVideos, type TikTokUser, type TikTokVideo } from '@/lib/tiktok';
 import { TabIntro, Errors, Badge, Card, Kpi, Empty, ago, linkProps } from '@/components/dashboard/ui';
 import { SectionTitle, SectionError, RangeChips, errFor } from '@/components/dashboard/kit';
-import { refreshPostStats, duplicateContentPost } from '@/app/dashboard/actions';
+import { refreshPostStats, duplicateContentPost, importLinkedInStats } from '@/app/dashboard/actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +33,9 @@ async function attempt<T>(p: Promise<T>): Promise<T | null> {
   try { return await p; } catch { return null; }
 }
 
-export default async function Performance({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
-  const range = (await searchParams).range ?? '30';
+export default async function Performance({ searchParams }: { searchParams: Promise<{ range?: string; li?: string; miss?: string; err?: string }> }) {
+  const sp = await searchParams;
+  const range = sp.range ?? '30';
   const span = RANGES.find(([v]) => v === range)?.[1] ?? 'All time';
   const [perf, d, tt] = await Promise.all([
     demoOn() ? { rows: demoPerf(), errors: [] as string[] } : postPerformance(365).catch(() => ({ rows: [] as PostPerf[], errors: ['Post performance failed to load'] })),
@@ -56,7 +57,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
       <Errors errors={[...perf.errors, ...d.errors]} />
 
       {/* What's working */}
-      <SectionTitle action={<form action={refreshPostStats}><button className="text-xs text-white/60 hover:text-white">Refresh Instagram stats ↻</button></form>}>Post leaderboard · last 120 days</SectionTitle>
+      <SectionTitle action={<form action={refreshPostStats}><button className="text-xs text-white/60 hover:text-white">Refresh Instagram + TikTok stats ↻</button></form>}>Post leaderboard · last 120 days</SectionTitle>
       <Card pad={false}>
         {board.length ? (
           <div className="overflow-x-auto">
@@ -64,7 +65,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
               <thead><tr className="text-left text-[11px] text-white/60 border-b border-white/[0.06]">
                 <th className="px-5 py-2.5 font-normal">Post</th>
                 <th className="px-2 py-2.5 font-normal text-right" title="Tracked-link clicks per channel">Clicks LI · IG · TT</th>
-                <th className="px-2 py-2.5 font-normal text-right" title="Instagram reach / views">IG reach</th>
+                <th className="px-2 py-2.5 font-normal text-right" title="LinkedIn impressions (from your export) · Instagram reach · TikTok views">Seen LI · IG · TT</th>
                 <th className="px-2 py-2.5 font-normal text-right">Leads</th>
                 <th className="px-5 py-2.5 font-normal text-right">Deals</th>
               </tr></thead>
@@ -76,7 +77,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
                       <span className="text-[11px] text-white/55">{ago(r.when)}{CHANNELS.filter((c) => r.urls?.[c]).map((c) => <a key={c} href={r.urls![c]} {...linkProps} className="ml-2 hover:text-white">{CHANNEL_CODE[c].toUpperCase()} ↗</a>)}</span>
                     </td>
                     <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.clicks.linkedin ?? 0} · {r.clicks.instagram ?? 0} · {r.clicks.tiktok ?? 0}</td>
-                    <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.insights ? (r.insights.reach ?? r.insights.views ?? 0).toLocaleString() : '—'}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums text-white/70">{r.linkedin?.impressions != null ? n(r.linkedin.impressions) : '—'} · {r.insights ? n(r.insights.reach ?? r.insights.views) : '—'} · {r.tiktok?.views != null ? n(r.tiktok.views) : '—'}</td>
                     <td className="px-2 py-2.5 text-right tabular-nums font-medium">{r.leads || <span className="text-white/55">0</span>}</td>
                     <td className="px-5 py-2.5 text-right tabular-nums">{r.deals ? <span className="text-emerald-300">{r.deals}</span> : <span className="text-white/55">0</span>}</td>
                   </tr>
@@ -86,6 +87,13 @@ export default async function Performance({ searchParams }: { searchParams: Prom
           </div>
         ) : <Empty>Once posts go out from here, each one ranks by the leads, deals and clicks it brings. LinkedIn has no stats API, so it counts clicks on the post’s tracked link.</Empty>}
       </Card>
+      <form action={importLinkedInStats} className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+        <span>LinkedIn impressions: in LinkedIn go to Analytics → Content → Export, then upload the .xlsx here.</span>
+        <input type="file" name="file" accept=".xlsx" aria-label="LinkedIn analytics export" className="text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-white/[0.08] file:px-2.5 file:py-1.5 file:text-white/80" />
+        <button className="rounded-lg bg-white/[0.08] hover:bg-white/[0.14] px-2.5 py-1.5 text-white/80">Import</button>
+        {sp.li && <span className="text-emerald-300">Matched {sp.li} post{sp.li === '1' ? '' : 's'}{sp.miss && sp.miss !== '0' ? ` · ${sp.miss} from before the dashboard (skipped)` : ''}.</span>}
+        {sp.err && <span className="text-rose-300">{sp.err}</span>}
+      </form>
 
 
         <Card title="Worth posting again">
@@ -154,7 +162,7 @@ export default async function Performance({ searchParams }: { searchParams: Prom
           </div>
         </>
       ) : null}
-      <p className="text-xs text-white/55">LinkedIn doesn’t give apps stats on personal posts, so LinkedIn here means clicks on each post’s tracked link and the leads it brought.</p>
+      <p className="text-xs text-white/55">LinkedIn doesn’t give apps stats on personal posts: its clicks and leads come from each post’s tracked link, and impressions from the export you upload above.</p>
     </>
   );
 }

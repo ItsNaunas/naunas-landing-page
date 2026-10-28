@@ -1,9 +1,10 @@
 # Project Status
 
-**Last updated**: 2026-10-23 (dashboard UX overhaul shipped)
+**Last updated**: 2026-10-28 (studio drop, TikTok + LinkedIn stats)
 **State**: Dashboard UX overhaul live in production (merged from `ux-overhaul`, 8 batches, 17/17 e2e suites, deploy Ready 2026-10-23). The Client System funnel is live end to end (capture → sequences → booking → brief → deposit → onboarding, Telegram alerts, daily health, Monday scoreboard, daily Claude operator). Productised: one config (src/config/funnel.ts) + docs/client-system/RUNBOOK.md + scripts/funnel-test.mjs. Instagram webhook built, inert until the Meta app exists.
 
 ## Next steps
+- [x] **Content flow finished** (2026-10-28): studio drop (naunas-studio `node scripts/drop.mjs <name>` → /api/content/drop: draft post with the video, captions written from the edit's transcript, next free day suggested at 09:00 ET, Telegram ping; the editor's 'Schedule at suggested time' is the one click). TikTok stats per post (publish id → video id → views/likes, daily with the Instagram insights). LinkedIn impressions from the analytics .xlsx export (Content → Performance → Import; matched by post URL, else by day). TikTok no longer needs TIKTOK_APPROVED: held vs public comes from TikTok's own refusal. Instagram publish permission confirmed by the 2026-10-28 health check (no post made yet). e2e19 17/17. **To do (Naufal):** add STUDIO_DROP_TOKEN to Vercel + naunas-studio/.env.local + Bitwarden; swap TikTok to Production keys and reconnect.
 - [x] **Dashboard UX overhaul shipped** (2026-10-23, fast-forward of `ux-overhaul` to master). Audit + plan: https://claude.ai/artifact/HFUuczFepgxcY7PFzbtDM1.
 - [x] **Proof lines approved** (2026-10-23): Nelia Rose, Soul in the Horn and SNAEB show under "Recent work" on /p and /r. Add a headshot later if wanted (Signature uses an initial for now).
 - [x] **Consultancy 4 You / Yati Jeremiah invoices written off** by Naufal on Money (2026-10-23; dashboard-only, still open in Stripe, Undo list on Money). Note: Consultancy 4 You Ltd is Marcus's company (SNAEB).

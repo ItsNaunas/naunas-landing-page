@@ -18,7 +18,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 // Order matters inside a group: later suites build on the store the earlier ones leave.
 const GROUPS = [
-  { name: 'dashboard', suites: ['e2e', 'e2e2', 'e2e3', 'e2e4', 'e2e5', 'e2e6', 'e2e7', 'e2e8', 'e2e12', 'e2e13', 'e2e14', 'e2e15', 'e2e16', 'e2e17', 'e2e18'], env: {} },
+  { name: 'dashboard', suites: ['e2e', 'e2e2', 'e2e3', 'e2e4', 'e2e5', 'e2e6', 'e2e7', 'e2e8', 'e2e12', 'e2e13', 'e2e14', 'e2e15', 'e2e16', 'e2e17', 'e2e18', 'e2e19'], env: { STUDIO_DROP_TOKEN: 'studiotest' } },
   { name: 'hubspot (mock)', suites: ['e2e9', 'e2e10'], env: { HUBSPOT_TOKEN: 'mock', HUBSPOT_API_BASE: 'http://localhost:4010', CAL_WEBHOOK_SECRET: 'testsecret' }, mock: ['mockhs.mjs', 'CALLS'] },
   { name: 'openai (mock)', suites: ['e2e11'], env: { OPENAI_API_KEY: 'mock', OPENAI_API_BASE: 'http://localhost:4011' }, mock: ['mockoai.mjs', 'OAILOG'] },
 ];
@@ -27,7 +27,7 @@ const only = process.argv.slice(2);
 // Every key the app reads, blanked, so a test can never reach a real service.
 const BLANK = Object.fromEntries(['HUBSPOT_TOKEN', 'MAILERLITE_API_TOKEN', 'OPENAI_API_KEY', 'APIFY_TOKEN', 'QSTASH_TOKEN', 'QSTASH_CURRENT_SIGNING_KEY', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID',
   'IG_ACCESS_TOKEN', 'ZOHO_SMTP_HOST', 'ZOHO_SMTP_USER', 'ZOHO_SMTP_PASS', 'CAL_API_KEY', 'STRIPE_READ_KEY', 'STRIPE_KEY', 'STRIPE_SECRET_KEY', 'STRIPE_LINKS_KEY',
-  'BLOB_READ_WRITE_TOKEN', 'DATABASE_URL', 'FATHOM_API_KEY', 'FATHOM_WEBHOOK_SECRET', 'CAL_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_SECRET', 'TIKTOK_CLIENT_KEY', 'LINKEDIN_CLIENT_ID', 'CRON_SECRET'].map((k) => [k, '']));
+  'BLOB_READ_WRITE_TOKEN', 'DATABASE_URL', 'FATHOM_API_KEY', 'FATHOM_WEBHOOK_SECRET', 'CAL_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_SECRET', 'TIKTOK_CLIENT_KEY', 'LINKEDIN_CLIENT_ID', 'CRON_SECRET', 'STUDIO_DROP_TOKEN'].map((k) => [k, '']));
 
 const freePort = (p) => { try { execSync(process.platform === 'win32' ? `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${p} ^| findstr LISTENING') do taskkill /F /T /PID %a` : `lsof -ti:${p} | xargs -r kill -9`, { stdio: 'ignore', shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh' }); } catch { /* nothing listening */ } };
 const kill = (child) => { if (!child?.pid) return; try { process.platform === 'win32' ? execSync(`taskkill /F /T /PID ${child.pid}`, { stdio: 'ignore' }) : process.kill(-child.pid, 'SIGKILL'); } catch { /* gone */ } };

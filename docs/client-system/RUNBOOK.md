@@ -177,7 +177,8 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `FATHOM_WEBHOOK_SECRET` | Fathom → API Access → Manage → Add Webhook (URL `/api/fathom-webhook`, include summary + action items) | same-day recap to HubSpot + Telegram (optional) |
 | `APIFY_TOKEN` | Apify → Settings → Integrations | Outreach → Find prospects (optional, monthly cap in dashboard) |
 | (none) IMAP | Zoho Mail → Settings → Mail Accounts → IMAP Access ON (same app password) | email threads, outreach replies, sequence stop-on-reply |
-| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | developers.tiktok.com → app → Credentials (Sandbox until approved, then Production) | TikTok tab + content engine (optional) |
+| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | developers.tiktok.com → app → Credentials (Production since the app was approved) | TikTok tab + content engine (optional). Whether posts can go public is read from TikTok's own answer: no flag to set. |
+| `STUDIO_DROP_TOKEN` | any long random string; the same value goes in `naunas-studio/.env.local` | lets `naunas-studio/scripts/drop.mjs` send finished edits to Content as drafts |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | linkedin.com/developers → app → Auth (products: OpenID Connect + Share on LinkedIn) | LinkedIn tab + content engine; reconnect every 60 days (optional) |
 | `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` (+ `QSTASH_URL` if shown) | console.upstash.com → QStash → Request builder / Signing keys | exact-time scheduled posts (optional; without it, Publish now only) |
 

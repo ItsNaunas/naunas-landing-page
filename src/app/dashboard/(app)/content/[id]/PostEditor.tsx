@@ -8,6 +8,7 @@ import {
 } from '../../../actions';
 import type { ContentPost, ChannelKey, Issue, Media } from '@/lib/content';
 import { FUNNEL } from '@/config/funnel';
+import { nextAt } from '@/lib/slots';
 
 type Campaign = { id: string; name: string; keywords: string[] };
 type Creator = { nickname?: string; username?: string; avatar?: string; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxSec: number } | null;
@@ -28,23 +29,6 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 const field = 'w-full rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-sm outline-none focus:border-white/30';
 const box = 'size-4 accent-[#F2613F] disabled:opacity-30';
 
-/** UTC instant for a wall-clock time in a time zone (good to the minute, DST-safe for our use). */
-function zonedToUtc(y: number, mo: number, d: number, h: number, mi: number, tz: string) {
-  const guess = Date.UTC(y, mo, d, h, mi);
-  const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).formatToParts(guess).map((x) => [x.type, x.value]));
-  const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
-  return new Date(guess - (asUtc - guess));
-}
-function nextAt(hhmm: string, tz: string) {
-  const [h, m] = hhmm.split(':').map(Number);
-  for (let i = 0; i < 3; i++) {
-    const day = new Date(Date.now() + i * 86_400_000);
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(day).map((x) => [x.type, x.value]));
-    const at = zonedToUtc(+p.year, +p.month - 1, +p.day, h, m, tz);
-    if (at.getTime() > Date.now() + 5 * 60_000) return at;
-  }
-  return new Date(Date.now() + 86_400_000);
-}
 // Always a fixed zone: the server renders this too, so the browser's own zone would mismatch on hydration.
 const fmt = (d: Date, tz: string = FUNNEL.ownerTz) => d.toLocaleString('en-GB', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const localInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -169,6 +153,8 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
   const quick = useMemo(() => ctx.quickTimes.map((t) => nextAt(t, ctx.usTz)), [ctx.quickTimes, ctx.usTz]);
   const kw = ctx.campaigns.find((c) => c.id === post.channels.instagram.campaignId)?.keywords[0] ?? ctx.campaigns[0]?.keywords[0] ?? 'LEAK';
   const m = post.master.media;
+  // From the studio drop: the next free day, offered as one click while it's still ahead and nothing has run.
+  const suggested = ctx.qstash && !ran && post.suggestedFor && Date.parse(post.suggestedFor) > Date.now() + 2 * 60_000 ? new Date(post.suggestedFor) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -351,8 +337,15 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           </>
         ) : (
           <>
+            {suggested && (
+              <button disabled={!canGo || busy} onClick={() => act(() => scheduleContent(post.id, suggested.toISOString()), 'Scheduled.')}
+                className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
+                Schedule at suggested time · {fmt(suggested)} <span className="font-normal">({fmt(suggested, ctx.usTz)} ET)</span>
+              </button>
+            )}
             <button disabled={!canGo || busy} onClick={() => act(() => publishContentNow(post.id), 'Done. Results are on each channel above.')}
-              className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
+              className={suggested ? 'rounded-lg border border-white/15 px-3 py-1.5 text-sm hover:border-white/40 disabled:opacity-35 disabled:cursor-not-allowed'
+                : 'rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed'}>
               {busy ? 'Working…' : ran ? 'Publish remaining' : 'Publish now'}
             </button>
             {ctx.qstash ? (

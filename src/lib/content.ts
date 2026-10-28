@@ -36,6 +36,9 @@ export type ContentPost = {
   channels: { linkedin: LinkedInChannel; instagram: InstagramChannel; tiktok: TikTokChannel };
   flags: string[];
   newsletterBlurb?: string;
+  /** Made by the studio drop (lib/studioDrop), with the next free day suggested; nothing runs until he schedules. */
+  source?: 'studio';
+  suggestedFor?: string;
 };
 
 export type IndexRow = { id: string; createdAt: string; when: string; status: PostStatus; idea: string; kind?: 'video' | 'image'; channels: Partial<Record<ChannelKey, ChannelStatus>>;

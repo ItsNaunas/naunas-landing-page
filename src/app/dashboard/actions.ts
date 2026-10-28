@@ -657,6 +657,26 @@ export async function refreshPostStats() {
   revalidatePath('/dashboard/content');
 }
 
+/** LinkedIn analytics export (.xlsx, Content tab → Export) → impressions per post on the leaderboard. */
+export async function importLinkedInStats(form: FormData) {
+  await requireSession();
+  const f = form.get('file');
+  let q: string;
+  if (!(f instanceof File) || !f.size) q = 'err=Choose the .xlsx file first.';
+  else if (f.size > 900_000) q = 'err=That file is too big for a LinkedIn export.';
+  else {
+    try {
+      const { importLinkedInExport } = await import('@/lib/performance');
+      const r = await importLinkedInExport(Buffer.from(await f.arrayBuffer()));
+      q = `li=${r.matched}&miss=${r.unmatched}`;
+    } catch (err) {
+      q = `err=${encodeURIComponent(err instanceof Error ? err.message : 'Import failed')}`;
+    }
+  }
+  revalidatePath('/dashboard/content');
+  redirect(`/dashboard/content/performance?${q}`);
+}
+
 /** Re-post an old winner: a new draft with the same idea and copy (add the media again, try a new hook). */
 export async function duplicateContentPost(form: FormData) {
   await requireSession();

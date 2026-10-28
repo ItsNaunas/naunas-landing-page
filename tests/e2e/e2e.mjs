@@ -160,7 +160,7 @@ await page.waitForTimeout(4000);
 const nlMsg = await page.locator('.text-rose-300, .text-emerald-300').allInnerTexts();
 check('Newsletter button responds (no MailerLite key locally, so an error message is expected)', nlMsg.length > 0, nlMsg.join(' | ').slice(0, 90));
 await go('/dashboard/content/performance');
-await act(page.getByRole('button', { name: /Refresh Instagram stats/ }));
+await act(page.getByRole('button', { name: /Refresh Instagram/ }));
 check('Refresh Instagram stats returns', page.url().endsWith('/content/performance'));
 
 // Pipeline + System tabs, sidebar
