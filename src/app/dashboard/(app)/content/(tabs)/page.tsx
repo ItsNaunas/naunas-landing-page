@@ -12,6 +12,9 @@ import { SendHeldButton } from '../HeldTray';
 import { SchedulingTest } from '../SchedulingTest';
 import { qstashReady } from '@/lib/qstash';
 import { getJSON } from '@/lib/store';
+import { mediaLink } from '@/lib/mediaLink';
+import { DeleteDraftButton } from '../DeleteDraftButton';
+import { FUNNEL } from '@/config/funnel';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,11 +73,47 @@ export default async function Content() {
   const held = rows.filter((r) => r.channels.tiktok === 'held');
   const upcoming = rows.filter((r) => r.status === 'scheduled').sort((a, b) => a.when.localeCompare(b.when));
   const ping = demoOn() ? null : await getJSON<{ scheduledFor?: string; firedAt?: string | null } | null>('meta/qstash-ping.json', null);
-  const recent = rows.filter((r) => r.status !== 'scheduled').slice(0, 12);
+  // Drafts ready for a decision (a studio drop, or media with a channel ticked) vs the rest; posted work on its own.
+  const isWaiting = (r: IndexRow) => r.status === 'draft' && (r.source === 'studio' || (!!r.kind && Object.values(r.channels).some((s) => s && s !== 'off')));
+  const waiting = rows.filter(isWaiting).slice(0, 6);
+  const drafts = rows.filter((r) => r.status === 'draft' && !isWaiting(r)).slice(0, 12);
+  const recent = rows.filter((r) => r.status !== 'scheduled' && r.status !== 'draft').slice(0, 10);
+  const thumb = (r: IndexRow) => { try { return r.media ? mediaLink(r.media, 4 * 3600).replace(FUNNEL.site, '') : undefined; } catch { return undefined; } };
+  const fmtWhen = (iso: string) => new Date(iso).toLocaleString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
   return (
     <>
       <Errors errors={[...d.errors, ...x.errors]} />
+
+      {waiting.length > 0 && (
+        <section aria-label="Waiting for you" className="flex flex-col gap-2">
+          <h2 className="text-sm font-medium text-white/80">Waiting for you <span className="text-white/55 tabular-nums">{waiting.length}</span></h2>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {waiting.map((r) => {
+              const src = thumb(r);
+              const late = r.suggestedFor && Date.parse(r.suggestedFor) < Date.now();
+              return (
+                <Link key={r.id} href={`/dashboard/content/${r.id}`} className="group rounded-2xl border border-[#F2613F]/25 bg-[#141414] hover:border-[#F2613F]/50 p-3 flex gap-3 min-w-0">
+                  <span className="relative w-16 shrink-0 aspect-[9/16] rounded-lg bg-black overflow-hidden">
+                    {src && (r.kind === 'image'
+                      ? <img src={src} alt="" className="absolute inset-0 size-full object-cover" />
+                      : <video src={`${src}#t=0.5`} muted playsInline preload="metadata" aria-hidden className="absolute inset-0 size-full object-cover" />)}
+                  </span>
+                  <span className="flex-1 min-w-0 flex flex-col gap-1.5">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      {r.source === 'studio' && <Badge tone="accent">From the studio</Badge>}
+                      <span className="flex gap-1.5">{CHANNELS.filter((c) => r.channels[c] && r.channels[c] !== 'off').map((c) => <span key={c} className="text-[11px] text-white/55">{CHANNEL_CODE[c].toUpperCase()}</span>)}</span>
+                    </span>
+                    <span className="text-[13px] text-white/90 line-clamp-2">{r.idea || 'Untitled'}</span>
+                    <span className="text-[11px] text-white/60">{r.suggestedFor && !late ? <>Suggested <span className="text-white/80">{fmtWhen(r.suggestedFor)}</span></> : `Added ${ago(r.createdAt)}`}</span>
+                    <span className="mt-auto text-xs font-medium text-[#ff8a6d] group-hover:text-white">Review &amp; schedule →</span>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* This week */}
       <div className="grid lg:grid-cols-[1fr_260px] gap-3 md:gap-4">
@@ -112,7 +151,7 @@ export default async function Content() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <p className="font-medium">⏳ {held.length} post{held.length > 1 ? 's' : ''} waiting for TikTok</p>
-              <p className="text-sm text-white/65 mt-1">LinkedIn and Instagram already went out. TikTok only allows public posts once it approves the app. Then send these in one go, or open one and drop it if it’s stale.</p>
+              <p className="text-sm text-white/65 mt-1">LinkedIn and Instagram already went out. TikTok refused them as an unaudited app (private posts only). Send them again once the Direct Post audit passes, or open one and drop it if it’s stale.</p>
             </div>
             <SendHeldButton approved={await tiktokApproved()} count={held.length} />
           </div>
@@ -124,11 +163,27 @@ export default async function Content() {
           {upcoming.length ? <ul className="divide-y divide-white/[0.05]">{upcoming.map((r, j) => <PostRow key={r.id + j} r={r} />)}</ul>
             : <Empty>Nothing scheduled. Press New post, write it once, then Schedule for an exact time.</Empty>}
         </Card>
-        <Card title="Recent posts" pad={false}>
+        <Card title="Posted" pad={false}>
           {recent.length ? <ul className="divide-y divide-white/[0.05]">{recent.map((r, j) => <PostRow key={r.id + j} r={r} />)}</ul>
             : <Empty>Posts you publish from here show up with each channel’s result.</Empty>}
         </Card>
       </div>
+
+      {drafts.length > 0 && (
+        <Card title={`Drafts · ${drafts.length}`} pad={false}>
+          <ul className="divide-y divide-white/[0.05]">
+            {drafts.map((r) => (
+              <li key={r.id} className="flex items-center gap-2 pr-3">
+                <Link href={`/dashboard/content/${r.id}`} className="flex-1 min-w-0 px-5 py-2.5 flex items-center gap-3 hover:bg-white/[0.02]">
+                  <span className="text-xs text-white/60 w-[92px] shrink-0 tabular-nums">{ago(r.createdAt)}</span>
+                  <span className={`flex-1 min-w-0 truncate text-[13px] ${r.idea ? 'text-white/85' : 'text-white/55 italic'}`}>{r.idea || 'Empty draft'}</span>
+                </Link>
+                <DeleteDraftButton id={r.id} label={r.idea || 'Empty draft'} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-3 md:gap-4 items-start">
         <div className="lg:col-span-2 min-w-0">

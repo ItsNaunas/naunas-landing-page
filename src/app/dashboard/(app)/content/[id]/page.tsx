@@ -11,6 +11,7 @@ import { demoOn } from '@/lib/ops/demo';
 import { FUNNEL } from '@/config/funnel';
 import { PageHeader } from '@/components/dashboard/ui';
 import { PostEditor } from './PostEditor';
+import { mediaLink } from '@/lib/mediaLink';
 
 export const dynamic = 'force-dynamic';
 // Publish runs every channel inside this request (video uploads, Instagram processing).
@@ -56,6 +57,7 @@ export default async function EditPost({ params }: { params: Promise<{ id: strin
         tiktokApproved: await tiktokApproved(), qstash: demo || qstashReady(),
         links: Object.fromEntries(CHANNELS.map((c) => [c, trackedLink(post.id, c)])) as Record<(typeof CHANNELS)[number], string>,
         quickTimes: [...FUNNEL.content.defaultTimes], usTz: FUNNEL.content.usTz, firstComment: FUNNEL.content.linkedinFirstComment, ai: demo || aiReady(),
+        previewUrl: (() => { try { return post.master.media ? mediaLink(post.master.media.path, 4 * 3600).replace(FUNNEL.site, '') : undefined; } catch { return undefined; } })(),
       }} />
     </>
   );

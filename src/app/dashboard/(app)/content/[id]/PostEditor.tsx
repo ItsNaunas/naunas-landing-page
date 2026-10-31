@@ -8,6 +8,7 @@ import {
 } from '../../../actions';
 import type { ContentPost, ChannelKey, Issue, Media } from '@/lib/content';
 import { FUNNEL } from '@/config/funnel';
+import { CopyButton } from '@/components/dashboard/client';
 import { nextAt } from '@/lib/slots';
 
 type Campaign = { id: string; name: string; keywords: string[] };
@@ -15,6 +16,8 @@ type Creator = { nickname?: string; username?: string; avatar?: string; privacyO
 type Ctx = {
   campaigns: Campaign[]; creator: Creator; linkedinName?: string; linkedinDays: number | null;
   tiktokApproved: boolean; qstash: boolean; links: Record<ChannelKey, string>; quickTimes: string[]; usTz: string; firstComment: boolean; ai: boolean;
+  /** Short-lived signed link to the stored video/image, so it can be watched here before scheduling. */
+  previewUrl?: string;
 };
 
 const LABEL: Record<ChannelKey, string> = { linkedin: 'LinkedIn', instagram: 'Instagram', tiktok: 'TikTok' };
@@ -42,6 +45,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
   const [progress, setProgress] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ url: string; kind: Media['kind'] } | null>(null);
   const [when, setWhen] = useState('');
+  const [picker, setPicker] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const first = useRef(true);
 
@@ -138,6 +142,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
   }
 
   const blocking = issues.filter((i) => i.level === 'block');
+  const issuesFor = (c: ChannelKey | 'post') => issues.filter((i) => i.ch === c);
   const warns = issues.filter((i) => i.level === 'warn');
   const unacked = warns.filter((w) => !post.flags.includes(w.text));
   const canGo = !locked && saved === 'saved' && !blocking.length && !unacked.length && progress === null;
@@ -150,24 +155,49 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
     setMsg(r.error ? { tone: 'bad', text: r.error } : { tone: 'good', text: ok });
   });
 
-  const quick = useMemo(() => ctx.quickTimes.map((t) => nextAt(t, ctx.usTz)), [ctx.quickTimes, ctx.usTz]);
+  const quickAll = useMemo(() => ctx.quickTimes.map((t) => nextAt(t, ctx.usTz)), [ctx.quickTimes, ctx.usTz]);
   const kw = ctx.campaigns.find((c) => c.id === post.channels.instagram.campaignId)?.keywords[0] ?? ctx.campaigns[0]?.keywords[0] ?? 'LEAK';
   const m = post.master.media;
   // From the studio drop: the next free day, offered as one click while it's still ahead and nothing has run.
   const suggested = ctx.qstash && !ran && post.suggestedFor && Date.parse(post.suggestedFor) > Date.now() + 2 * 60_000 ? new Date(post.suggestedFor) : null;
+  const quick = quickAll.filter((d) => !suggested || Math.abs(d.getTime() - suggested.getTime()) > 60_000);
+  const toFix = blocking.length + unacked.length;
+  const goToFix = () => document.querySelector('[data-has-issue="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
   return (
     <div className="flex flex-col gap-4">
+      {post.source === 'studio' && !ran && post.status !== 'scheduled' && (
+        <div className="rounded-2xl border border-[#F2613F]/30 bg-[#F2613F]/[0.06] px-4 py-3 text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="rounded-full bg-[#F2613F]/20 px-2 py-0.5 text-[11px] font-medium text-[#ffb19e]">From the studio</span>
+          <span className="text-white/80">Watch the video, read the three captions, then {suggested ? <>press <b>Schedule at suggested time</b> below.</> : 'pick a time below.'}</span>
+        </div>
+      )}
       {/* Master */}
       <div className="grid lg:grid-cols-[240px_1fr] gap-4">
-        <label className={`relative aspect-[9/16] w-40 mx-auto lg:w-auto lg:mx-0 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] overflow-hidden grid place-items-center ${locked ? '' : 'cursor-pointer hover:border-white/30'}`}>
-          {preview ? (preview.kind === 'image'
-            ? <img src={preview.url} alt="" className="absolute inset-0 size-full object-cover" />
-            : <video src={preview.url} controls muted playsInline className="absolute inset-0 size-full object-cover" />)
-            : m ? <span className="text-xs text-white/65 px-4 text-center">{m.name ?? (m.kind === 'video' ? 'Video uploaded' : 'Image uploaded')}<br /><span className="text-white/55">Tap to replace</span></span>
-            : <span className="text-xs text-white/60 text-center px-4">Add a video or image<br /><span className="text-white/55">Vertical 9:16 works everywhere</span></span>}
-          {!locked && <input type="file" accept="video/mp4,video/quicktime,image/jpeg,image/png" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />}
-        </label>
+        <div className="flex flex-col gap-2 w-48 mx-auto lg:w-auto lg:mx-0">
+          {(() => {
+            const src = preview?.url ?? (m ? ctx.previewUrl : undefined);
+            const kind = preview?.kind ?? m?.kind;
+            if (src) return (
+              <div className="relative aspect-[9/16] rounded-2xl border border-white/10 bg-black overflow-hidden">
+                {kind === 'image'
+                  ? <img src={src} alt="The post's image" className="absolute inset-0 size-full object-contain" />
+                  : <video src={src} controls playsInline preload="metadata" aria-label="Watch the video" className="absolute inset-0 size-full object-contain" />}
+              </div>
+            );
+            return (
+              <label className={`relative aspect-[9/16] rounded-2xl border border-dashed border-white/15 bg-white/[0.03] grid place-items-center ${locked ? '' : 'cursor-pointer hover:border-white/30'}`}>
+                <span className="text-xs text-white/60 text-center px-4">{m ? (m.name ?? 'Media uploaded') : <>Add a video or image<br /><span className="text-white/55">Vertical 9:16 works everywhere</span></>}</span>
+                {!locked && <input type="file" accept="video/mp4,video/quicktime,image/jpeg,image/png" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />}
+              </label>
+            );
+          })()}
+          {(m || preview) && !locked && (
+            <label className="self-center text-xs text-white/60 hover:text-white cursor-pointer py-1">Replace {m?.kind === 'image' ? 'image' : 'video'}
+              <input type="file" accept="video/mp4,video/quicktime,image/jpeg,image/png" className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
+            </label>
+          )}
+        </div>
         <div className="flex flex-col gap-3 min-w-0">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs text-white/65">The idea (your notes or master caption; each channel gets its own version below)</span>
@@ -203,10 +233,17 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           const ch = post.channels[c];
           const text = c === 'linkedin' ? post.channels.linkedin.text : c === 'instagram' ? post.channels.instagram.caption : post.channels.tiktok.caption;
           const chLocked = locked || ch.status === 'posted' || ch.status === 'publishing';
-          const st = STATUS[ch.status] ?? STATUS.off;
+          const mine = ch.enabled ? issuesFor(c) : [];
+          const cardBlock = mine.filter((i) => i.level === 'block');
+          const cardWarn = mine.filter((i) => i.level === 'warn' && !post.flags.includes(i.text));
+          // "Ready" only when it can actually go: a channel that's blocked says why in its badge.
+          const st = ch.status === 'ready' && cardBlock.length
+            ? { label: c === 'linkedin' && ctx.linkedinDays == null ? 'Not connected' : 'Needs a fix', cls: 'bg-rose-400/15 text-rose-300' }
+            : ch.status === 'ready' && cardWarn.length ? { label: 'Check first', cls: 'bg-amber-400/15 text-amber-200' }
+            : STATUS[ch.status] ?? STATUS.off;
           const disabledTt = c === 'tiktok' && m?.kind === 'image';
           return (
-            <div key={c} className={`rounded-2xl border p-4 flex flex-col gap-3 min-w-0 ${ch.enabled ? 'border-white/15 bg-[#141414]' : 'border-white/[0.06] bg-[#101010]'}`}>
+            <div key={c} data-has-issue={cardBlock.length + cardWarn.length > 0 ? 'true' : undefined} className={`rounded-2xl border p-4 flex flex-col gap-3 min-w-0 ${ch.enabled ? 'border-white/15 bg-[#141414]' : 'border-white/[0.06] bg-[#101010]'}`}>
               <div className="flex items-center justify-between gap-2">
                 <label className="flex items-center gap-2 font-medium">
                   <input type="checkbox" className={box} checked={ch.enabled} disabled={chLocked || disabledTt} onChange={(e) => setCh(c, { enabled: e.target.checked } as never)} />
@@ -218,12 +255,23 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
 
               {ch.enabled && (
                 <>
-                  {c === 'linkedin' && <p className="text-xs text-white/60">Posting as {ctx.linkedinName ?? '…'}{ctx.linkedinDays == null ? ' (not connected)' : ` · ${ctx.linkedinDays} days left on the connection`}</p>}
+                  {c === 'linkedin' && (ctx.linkedinDays == null
+                    ? <p className="text-xs text-rose-300">LinkedIn isn’t connected. <a href="/dashboard/linkedin" className="underline hover:text-white">Connect it</a></p>
+                    : <p className="text-xs text-white/60">Posting as {ctx.linkedinName ?? '…'} · {ctx.linkedinDays} days left on the connection</p>)}
+                  {mine.filter((i) => !(c === 'linkedin' && ctx.linkedinDays == null && /connected/i.test(i.text))).map((i) => i.level === 'block'
+                    ? <p key={i.text} className="text-xs text-rose-300">✕ {i.text}</p>
+                    : (
+                      <label key={i.text} className="flex items-start gap-2 text-xs text-amber-200/90">
+                        <input type="checkbox" className={`${box} mt-0.5`} disabled={locked} checked={post.flags.includes(i.text)}
+                          onChange={(e) => setPost((p) => ({ ...p, flags: e.target.checked ? [...p.flags, i.text] : p.flags.filter((f) => f !== i.text) }))} />
+                        <span>{i.text} <span className="text-white/55">Tick if it’s fine.</span></span>
+                      </label>
+                    ))}
                   {c === 'tiktok' && ctx.creator && <p className="text-xs text-white/60">Posting to {ctx.creator.nickname ?? ctx.creator.username}{ctx.creator.username ? ` @${ctx.creator.username}` : ''}</p>}
 
                   <label className="flex flex-col gap-1.5">
                     <span className="text-xs text-white/65 flex justify-between"><span>{c === 'linkedin' ? 'Post' : 'Caption'}</span><span className={text.length > LIMIT[c] ? 'text-rose-300' : ''}>{text.length}/{LIMIT[c].toLocaleString('en-GB')}</span></span>
-                    <textarea rows={c === 'linkedin' ? 10 : 7} disabled={chLocked} value={text} className={field}
+                    <textarea rows={c === 'linkedin' ? 10 : 7} disabled={chLocked} value={text} className={`${field} [field-sizing:content] min-h-40 max-h-[70vh]`}
                       placeholder={c === 'linkedin' ? 'Hook line.\n\nShort paragraphs. 3–5 hashtags at the end.' : c === 'instagram' ? `Caption… then: Comment ${kw} and I’ll send it to you.` : 'Short caption #hashtags'}
                       onChange={(e) => setCh(c, (c === 'linkedin' ? { text: e.target.value } : { caption: e.target.value }) as never)} />
                   </label>
@@ -287,7 +335,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                     <button type="button" disabled={busy} onClick={() => startBusy(async () => { const r = await copyAsTextPost(post.id); if (r.id) window.location.href = `/dashboard/content/${r.id}`; else setMsg({ tone: 'bad', text: r.error ?? 'Could not copy' }); })}
                       className="self-start text-[11px] text-white/60 hover:text-white">Repurpose: copy as a text-only LinkedIn post →</button>
                   )}
-                  <p className="text-[11px] text-white/55 truncate">Tracked link: {ctx.links[c]}</p>
+                  <div className="flex items-center gap-2 text-[11px] text-white/55"><span>Tracked link</span><CopyButton text={ctx.links[c]} label="Copy link" /></div>
                 </>
               )}
 
@@ -312,11 +360,11 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
       </details>
 
       {/* Pre-flight */}
-      {(blocking.length > 0 || warns.length > 0) && (
-        <div className="rounded-2xl border border-white/[0.08] bg-[#121212] p-4 flex flex-col gap-2">
+      {issuesFor('post').length > 0 && (
+        <div data-has-issue="true" className="rounded-2xl border border-white/[0.08] bg-[#121212] p-4 flex flex-col gap-2">
           <p className="text-sm font-medium">Before it goes out</p>
-          {blocking.map((i) => <p key={i.text} className="text-sm text-rose-300">✕ <span className="text-white/60">{i.ch === 'post' ? '' : `${LABEL[i.ch as ChannelKey]}: `}</span>{i.text}</p>)}
-          {warns.map((i) => (
+          {issuesFor('post').filter((i) => i.level === 'block').map((i) => <p key={i.text} className="text-sm text-rose-300">✕ <span className="text-white/60">{i.ch === 'post' ? '' : `${LABEL[i.ch as ChannelKey]}: `}</span>{i.text}</p>)}
+          {issuesFor('post').filter((i) => i.level === 'warn').map((i) => (
             <label key={i.text} className="flex items-start gap-2 text-sm text-amber-200/90">
               <input type="checkbox" className={`${box} mt-0.5`} disabled={locked} checked={post.flags.includes(i.text)}
                 onChange={(e) => setPost((p) => ({ ...p, flags: e.target.checked ? [...p.flags, i.text] : p.flags.filter((f) => f !== i.text) }))} />
@@ -327,7 +375,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
       )}
 
       {/* Actions */}
-      <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] lg:bottom-4 z-10 rounded-2xl border border-white/10 bg-[#0f0f0f]/95 backdrop-blur p-3 flex flex-wrap items-center gap-3">
+      <div className="sticky bottom-[calc(env(safe-area-inset-bottom,0px)+64px)] md:bottom-4 z-10 rounded-2xl border border-white/10 bg-[#0f0f0f]/95 backdrop-blur p-2.5 md:p-3 flex flex-wrap items-center gap-2 md:gap-3">
         {post.status === 'scheduled' && post.scheduledFor ? (
           <>
             <span className="text-sm">Scheduled for <b>{fmt(new Date(post.scheduledFor))}</b> <span className="text-white/60">({fmt(new Date(post.scheduledFor), ctx.usTz)} US East)</span></span>
@@ -337,10 +385,16 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           </>
         ) : (
           <>
+            {toFix > 0 && (
+              <button type="button" onClick={goToFix} className="rounded-lg bg-rose-400/15 px-3 py-2 text-sm text-rose-200 hover:bg-rose-400/25">
+                {toFix} thing{toFix > 1 ? 's' : ''} to fix ↑
+              </button>
+            )}
             {suggested && (
               <button disabled={!canGo || busy} onClick={() => act(() => scheduleContent(post.id, suggested.toISOString()), 'Scheduled.')}
                 className="rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed">
-                Schedule at suggested time · {fmt(suggested)} <span className="font-normal">({fmt(suggested, ctx.usTz)} ET)</span>
+                <span className="md:hidden">Schedule · {fmt(suggested)}</span>
+                <span className="hidden md:inline">Schedule at suggested time · {fmt(suggested)} <span className="font-normal">({fmt(suggested, ctx.usTz)} ET)</span></span>
               </button>
             )}
             <button disabled={!canGo || busy} onClick={() => act(() => publishContentNow(post.id), 'Done. Results are on each channel above.')}
@@ -348,9 +402,13 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
                 : 'rounded-lg bg-[#F2613F] px-4 py-2 text-sm font-medium text-[#0C0C0C] hover:bg-[#ff7553] disabled:opacity-35 disabled:cursor-not-allowed'}>
               {busy ? 'Working…' : ran ? 'Publish remaining' : 'Publish now'}
             </button>
-            {ctx.qstash ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-white/60">or schedule:</span>
+            {ctx.qstash && (
+              <button type="button" aria-expanded={picker} onClick={() => setPicker((v) => !v)} className="rounded-lg px-2.5 py-2 text-sm text-white/70 hover:text-white">
+                {suggested ? 'Other time' : 'Schedule'} {picker ? '▴' : '▾'}
+              </button>
+            )}
+            {ctx.qstash ? picker && (
+              <div className="w-full flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-2 order-last">
                 {quick.map((d) => (
                   <button key={d.toISOString()} type="button" disabled={!canGo || busy} onClick={() => setWhen(localInput(d))}
                     className="text-xs rounded-full border border-white/10 px-2.5 py-1 hover:border-white/30 disabled:opacity-35">{fmt(d, ctx.usTz)} ET</button>
@@ -365,7 +423,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
         )}
         {!ran && post.status !== 'publishing' && (
           <button disabled={busy} onClick={() => { if (window.confirm('Delete this draft?')) startBusy(async () => { await deleteContentDraft(post.id); window.location.href = '/dashboard/content'; }); }}
-            className="ml-auto text-xs text-white/55 hover:text-rose-300">Delete draft</button>
+            className="ml-auto text-xs text-white/55 hover:text-rose-300 px-2 py-2">Delete draft</button>
         )}
         {msg && <p className={`w-full text-xs ${msg.tone === 'good' ? 'text-emerald-300/90' : 'text-rose-300'}`}>{msg.text}</p>}
       </div>

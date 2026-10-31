@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, Fragment } from 'react';
 import { askNaunas } from '@/app/dashboard/actions';
+import { usePathname } from 'next/navigation';
 
 // "Ask Naunas": a chat panel on every dashboard page (lib/assistant). Read-only: it answers and suggests
 // next steps as links; you do the clicking. The conversation lives in this tab only (sessionStorage).
@@ -55,6 +56,8 @@ export function AskButton() {
 
 export function AskNaunas() {
   const [open, setOpen] = useState(false);
+  // A single post (/dashboard/content/<id>), not the Content tabs.
+  const onPost = /^\/dashboard\/content\/(?!performance$|newsletter$|keywords$)[^/]+$/.test(usePathname() ?? '');
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -88,11 +91,12 @@ export function AskNaunas() {
 
   return (
     <>
-      {/* Phones only: on desktop the button sits in the top bar (AskButton) so it never covers content. */}
-      <button onClick={() => setOpen(true)} aria-label="Ask Naunas"
+      {/* Phones only: on desktop the button sits in the top bar (AskButton) so it never covers content.
+          Hidden on a single post, where the sticky Schedule bar lives in the same corner. */}
+      {!onPost && <button onClick={() => setOpen(true)} aria-label="Ask Naunas"
         className={`md:hidden fixed right-4 bottom-24 z-30 flex items-center gap-2 rounded-full bg-[#F2613F] px-4 py-3 text-sm font-medium text-[#0C0C0C] shadow-lg shadow-black/40 hover:bg-[#ff7553] ${open ? 'hidden' : ''}`}>
         <span aria-hidden>✦</span> Ask
-      </button>
+      </button>}
       {open && (
         <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-label="Ask Naunas">
           <button className="absolute inset-0 bg-black/50" aria-label="Close" onClick={() => setOpen(false)} />

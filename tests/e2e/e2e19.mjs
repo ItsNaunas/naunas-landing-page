@@ -41,6 +41,16 @@ const errors = []; page.on('pageerror', (e) => errors.push(e.message));
 await page.goto(`${BASE}/dashboard/login`); await page.fill('input[name=password]', 'localtest'); await page.click('button'); await page.waitForURL(/\/dashboard(?!\/login)(\/|\?|$)/);
 await page.goto(`${BASE}/dashboard/content/${out.id}`, { waitUntil: 'networkidle' });
 check('Post page opens with the video', (await page.locator('main').innerText()).includes('Video · 18.2s'));
+// Content UI (2026-10-31): the studio draft is waiting on Plan, the post shows a player and a compact bar.
+const pm = await page.locator('main').innerText();
+check('Studio banner tells him what to do', pm.includes('From the studio') && pm.includes('Watch the video'));
+check('The stored video has a player', (await page.locator('video[aria-label="Watch the video"]').count()) === 1);
+check('Other times stay folded until asked for', (await page.locator('input[type=datetime-local]').count()) === 0);
+check('Channel blocked by a missing connection says so', pm.includes('Not connected') || pm.includes('Needs a fix'));
+await page.goto(`${BASE}/dashboard/content`, { waitUntil: 'networkidle' });
+const wait = page.locator('section[aria-label="Waiting for you"]');
+check('Plan: the drop is under Waiting for you', (await wait.count()) === 1 && (await wait.innerText()).includes('Why slow replies lose interior design clients'));
+check('Plan: Review & schedule opens it', (await wait.locator(`a[href="/dashboard/content/${out.id}"]`).count()) === 1);
 check('No page errors', !errors.length, errors.join(' | '));
 
 // Clean up the fixtures so later suites see the content list as before.
