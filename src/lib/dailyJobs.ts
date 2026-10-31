@@ -22,6 +22,8 @@ export const JOBS: Job[] = [
     const r = await (await import('@/lib/instagram')).refreshIgToken();
     if (r.changed) await notify({ level: 'error', title: 'Instagram token: new value issued', lines: [`Instagram returned a new token (valid ${r.expiresInDays} days). The old one keeps working until it expires.`], next: 'Generate a fresh long-lived token in the Meta app and replace IG_ACCESS_TOKEN in Vercel + Bitwarden.' });
   } },
+  { name: 'lessons', when: monday, delayS: 0, what: 'content lessons from post results', run: async () => (await import('@/lib/contentLearning')).runContentLessons() },
+  { name: 'marketwatch', when: (d) => monday(d) && !!process.env.APIFY_TOKEN, delayS: 0, what: 'what’s working for other creators', run: async () => (await import('@/lib/marketWatch')).runMarketWatch() },
   // After the jobs above have landed: the plan reads the flags, the brief counts the triaged replies.
   { name: 'briefing', when: () => !!process.env.OPENAI_API_KEY, delayS: 90, what: 'today’s plan', run: async () => (await import('@/lib/assistant')).writeBriefing() },
   { name: 'brief', when: daily, delayS: 150, what: 'morning Telegram brief', run: async () => (await import('@/lib/ops/todayBrief')).sendTodayBrief() },

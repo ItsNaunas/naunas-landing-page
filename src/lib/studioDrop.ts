@@ -50,6 +50,7 @@ export async function createFromStudio(d: Drop) {
       p.channels.instagram.campaignId = camp.id;
       p.channels.tiktok.caption = a.tiktok.caption;
       p.newsletterBlurb = a.newsletterBlurb;
+      p.aiDraft = { linkedin: a.linkedin.text, instagram: a.instagram.caption, tiktok: a.tiktok.caption };
       if (!p.master.idea) p.master.idea = a.linkedin.hooks[0] ?? '';
       drafted = true;
     } catch { /* the draft still lands; Adapt can be pressed on the page */ }

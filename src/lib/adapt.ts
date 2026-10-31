@@ -55,7 +55,10 @@ export async function adapt(input: { idea: string; transcript?: string; keyword:
     `Idea / notes:\n${input.idea.trim()}`,
     input.transcript?.trim() ? `\nVideo transcript:\n${input.transcript.trim().slice(0, 12_000)}` : '',
   ].join('\n');
-  const out = await aiJSON<Adapted>(SYSTEM, user, 'adapted_post', SCHEMA);
+  // What his own results taught us (lib/contentLearning): winners, best hook kinds, his edits. Empty at first.
+  const { learnedPrompt } = await import('@/lib/contentLearning');
+  const learned = await learnedPrompt().catch(() => '');
+  const out = await aiJSON<Adapted>(learned ? `${SYSTEM}\n\n${learned}` : SYSTEM, user, 'adapted_post', SCHEMA);
   out.linkedin.hooks = out.linkedin.hooks.slice(0, 3);
   out.instagram.hooks = out.instagram.hooks.slice(0, 3);
   out.tiktok.hooks = out.tiktok.hooks.slice(0, 3);

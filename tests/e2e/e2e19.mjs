@@ -53,6 +53,22 @@ check('Plan: the drop is under Waiting for you', (await wait.count()) === 1 && (
 check('Plan: Review & schedule opens it', (await wait.locator(`a[href="/dashboard/content/${out.id}"]`).count()) === 1);
 check('No page errors', !errors.length, errors.join(' | '));
 
+// Market feed + learned winners (2026-10-31): seeded results render; an idea card starts a draft.
+write('content/market.json', { at: new Date().toISOString(), creators: 9, videos: 60, items: [
+  { creator: 'initiatearchitecture', followers: 24800, url: 'https://www.tiktok.com/@initiatearchitecture/video/1', postedAt: '2026-10-20T00:00:00Z', views: 272425, likes: 9897, saves: 7131, comments: 71, lift: 6.2, caption: 'My process for onboarding clients',
+    pattern: 'Walkthrough of my own system', why: 'Designers save processes they can copy.', angle: 'Walk through the client portal you built for a design studio, step by step.', hook: 'Here’s what a new client sees the day they sign.' } ] });
+write('content/learning.json', { at: new Date().toISOString(), posted: 3, winners: [{ id: 'p-win', hook: 'Your follow-up is you remembering.', leads: 2, deals: 1, clicks: 14 }], kinds: {}, kindStats: [], edits: [] });
+await page.goto(`${BASE}/dashboard/content`, { waitUntil: 'networkidle' });
+const ideas = page.getByRole('tabpanel').first();
+const it = await ideas.innerText();
+check('Market feed shows the breakout and your angle', it.includes('@initiatearchitecture') && it.includes('6.2× their usual') && it.includes('Here’s what a new client sees'));
+await page.getByRole('tab', { name: /Your winners/ }).click();
+check('Hook bank becomes your winners, with numbers', (await page.locator('main').innerText()).includes('2 leads · 1 deal · 14 clicks'));
+await page.getByRole('tab', { name: /What’s working out there/ }).click();
+await Promise.all([page.waitForURL(/\/dashboard\/content\/p\d{8}-/, { timeout: 60000 }), page.getByRole('button', { name: 'Start a post →' }).first().click()]);
+const started = read(`content/posts/${page.url().split('/').pop()}.json`);
+check('Start a post makes a draft from the idea', started?.status === 'draft' && started.master.idea.includes('Here’s what a new client sees'));
+
 // Clean up the fixtures so later suites see the content list as before.
 write('content/index.json', (read('content/index.json') ?? []).filter((x) => !x.id.startsWith('busy')));
 await b.close();

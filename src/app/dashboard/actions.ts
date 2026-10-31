@@ -401,7 +401,7 @@ export async function createContentPost(idea = ''): Promise<ContentResult> {
 }
 
 /** Save the composer's fields (text, options, media, ticks); statuses and results are never taken from the client. */
-export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'> & { newsletterBlurb?: string }): Promise<ContentResult> {
+export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'> & { newsletterBlurb?: string; aiDraft?: ContentPost['aiDraft'] }): Promise<ContentResult> {
   await requireSession();
   const { getPost, savePost, CHANNELS } = await import('@/lib/content');
   const p = await getPost(input.id);
@@ -410,6 +410,7 @@ export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' |
   const m = input.master.media;
   if (m && !m.path.startsWith('content/media/')) return { error: 'Upload the media again.' };
   p.master = { idea: String(input.master.idea ?? '').slice(0, 5000), media: m, transcript: input.master.transcript?.slice(0, 50_000) };
+  if (input.aiDraft) p.aiDraft = { linkedin: input.aiDraft.linkedin?.slice(0, 5000), instagram: input.aiDraft.instagram?.slice(0, 3000), tiktok: input.aiDraft.tiktok?.slice(0, 3000) };
   for (const c of CHANNELS) {
     const cur = p.channels[c];
     const keep = { status: cur.status, url: cur.url, error: cur.error, attempts: cur.attempts, postedAt: cur.postedAt };
@@ -655,6 +656,34 @@ export async function refreshPostStats() {
   const { refreshInsights } = await import('@/lib/performance');
   await refreshInsights().catch(() => 0);
   revalidatePath('/dashboard/content');
+}
+
+/** Content → Plan → Ideas: pull the watch-list now (queued when QStash is set, so the page isn't held for minutes). */
+export async function refreshMarketWatch(): Promise<{ error?: string; queued?: boolean }> {
+  await requireSession();
+  if (!process.env.APIFY_TOKEN) return { error: 'APIFY_TOKEN is not set in Vercel.' };
+  const { qstashReady, scheduleAt } = await import('@/lib/qstash');
+  if (qstashReady()) { await scheduleAt(new Date(), { job: 'marketwatch' }); return { queued: true }; }
+  const { runMarketWatch } = await import('@/lib/marketWatch');
+  await runMarketWatch();
+  revalidatePath('/dashboard/content');
+  return {};
+}
+
+export async function saveMarketWatchlist(form: FormData) {
+  await requireSession();
+  const { saveWatchlist } = await import('@/lib/marketWatch');
+  await saveWatchlist(String(form.get('list') ?? ''));
+  revalidatePath('/dashboard/content');
+}
+
+/** An idea card (market feed or hook bank) → a new draft with the angle and hook as its idea. */
+export async function draftFromIdea(idea: string): Promise<{ id?: string; error?: string }> {
+  await requireSession();
+  const { newPost, savePost } = await import('@/lib/content');
+  const p = newPost(idea.slice(0, 2000));
+  await savePost(p);
+  return { id: p.id };
 }
 
 /** LinkedIn analytics export (.xlsx, Content tab → Export) → impressions per post on the leaderboard. */

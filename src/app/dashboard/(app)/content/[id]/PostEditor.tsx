@@ -59,14 +59,14 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       setSaved('saving');
-      const r = await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '' });
+      const r = await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '', aiDraft: post.aiDraft });
       if (r.error) { setSaved('error'); setMsg({ tone: 'bad', text: r.error }); return; }
       setSaved('saved');
       setIssues((await checkContentPost(post.id)).issues);
     }, 1000);
     return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post.master, post.channels, post.flags, post.newsletterBlurb]);
+  }, [post.master, post.channels, post.flags, post.newsletterBlurb, post.aiDraft]);
 
   // ---- AI (Adapt): drafts every channel from the idea + transcript; Naufal edits before publishing.
   const [hooks, setHooks] = useState<Partial<Record<ChannelKey, string[]>>>({});
@@ -87,6 +87,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
     setPost((p) => ({
       ...p,
       newsletterBlurb: a.newsletterBlurb,
+      aiDraft: { linkedin: a.linkedin.text, instagram: a.instagram.caption, tiktok: a.tiktok.caption },
       channels: {
         linkedin: { ...p.channels.linkedin, text: a.linkedin.text, firstComment: a.linkedin.firstComment, ...(none ? { enabled: true } : {}) },
         instagram: { ...p.channels.instagram, caption: a.instagram.caption, ...(none && p.master.media ? { enabled: true } : {}) },

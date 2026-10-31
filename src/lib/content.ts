@@ -39,6 +39,8 @@ export type ContentPost = {
   /** Made by the studio drop (lib/studioDrop), with the next free day suggested; nothing runs until he schedules. */
   source?: 'studio';
   suggestedFor?: string;
+  /** The AI's draft as it first came back (Adapt or the studio drop): compared with what he posted. */
+  aiDraft?: Partial<Record<ChannelKey, string>>;
 };
 
 export type IndexRow = { id: string; createdAt: string; when: string; status: PostStatus; idea: string; kind?: 'video' | 'image'; channels: Partial<Record<ChannelKey, ChannelStatus>>;
