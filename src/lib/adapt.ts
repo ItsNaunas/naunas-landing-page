@@ -44,10 +44,17 @@ Rules for every output:
 - Instagram: 300-900 characters, hook first, line breaks, then a final line exactly like "Comment KEYWORD and I'll send you OFFER." using the given keyword and offer, then 3-6 hashtags.
 - TikTok: under 300 characters, punchy, 3-5 hashtags.
 - newsletterBlurb: 2-3 sentences summarising the post for a weekly email, in the same voice.
-- icpNote: one sentence: does this speak to owners of US interior design / high-ticket project businesses? If not, how to angle it.`;
+- When a PROBLEM is given, every hook names that problem in the owner's plain words. Never open with "service businesses" or "business owners" in general.
+- When an INDUSTRY is given, write in that industry's world (its words, its clients, its moments) but do not invent a client, a story or a scenario from it: only the source's facts.
+- icpNote: one sentence: does this speak to a service-business owner (and the given industry), and is the problem clear in the first line? If not, how to angle it.`;
 
-export async function adapt(input: { idea: string; transcript?: string; keyword: string; offer: string }): Promise<Adapted> {
+export async function adapt(input: { idea: string; transcript?: string; keyword: string; offer: string; layer?: string; industry?: string }): Promise<Adapted> {
+  const { LAYERS, INDUSTRIES } = await import('@/config/contentStrategy');
+  const layer = LAYERS.find((l) => l.key === input.layer);
+  const industry = INDUSTRIES.find((i) => i.key === input.industry);
   const user = [
+    layer ? `PROBLEM (Leak Map layer ${layer.label}): ${layer.problem}` : '',
+    industry ? `INDUSTRY to frame it for: ${industry.label} (${industry.example})` : '',
     `Instagram keyword: ${input.keyword}`,
     `What the keyword gets them: ${input.offer}`,
     '',

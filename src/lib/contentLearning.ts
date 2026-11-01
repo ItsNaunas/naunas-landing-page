@@ -5,6 +5,8 @@
 //   2. hook kinds: each posted hook is labelled once (question, confession, number...), and kinds are compared
 //      only once there are enough posts to mean something (MIN_POSTS).
 //   3. edits: what Naufal changed in the AI's drafts before posting, so the next drafts start closer to him.
+//   4. problems and industries (config/contentStrategy): which Leak Map layer and which industry example bring
+//      leads, compared once there are MIN_POSTS posts. That's what decides where outbound goes next.
 // It only changes what the AI writes from. Nothing is posted, scheduled or sent because of a lesson.
 
 import { getJSON, putJSON } from '@/lib/store';
@@ -20,6 +22,8 @@ export type Learning = {
   /** Post id → its hook's kind, labelled once. */
   kinds: Record<string, string>;
   kindStats: KindStat[];
+  layerStats: KindStat[];
+  industryStats: KindStat[];
   edits: { channel: string; ai: string; final: string }[];
 };
 
@@ -66,6 +70,20 @@ export async function runContentLessons(): Promise<Learning> {
     }).filter((k) => k.posts >= 2).sort((a, b) => b.perPost - a.perPost)
     : [];
 
+  const { layerLabel, industryLabel } = await import('@/config/contentStrategy');
+  const groupBy = (key: (r: (typeof rows)[number]) => string | undefined): KindStat[] => {
+    if (rows.length < MIN_POSTS) return [];
+    const groups = new Map<string, typeof rows>();
+    for (const r of rows) { const k = key(r); if (k) groups.set(k, [...(groups.get(k) ?? []), r]); }
+    return [...groups.entries()].map(([kind, mine]) => {
+      const leads = mine.reduce((s, r) => s + r.leads, 0);
+      const clicks = mine.reduce((s, r) => s + r.totalClicks, 0);
+      return { kind, posts: mine.length, leads, clicks, perPost: Math.round(((leads * 10 + clicks) / mine.length) * 10) / 10 };
+    }).filter((k) => k.posts >= 2).sort((a, b) => b.perPost - a.perPost);
+  };
+  const layerStats = groupBy((r) => layerLabel(r.layer) || undefined);
+  const industryStats = groupBy((r) => industryLabel(r.industry) || undefined);
+
   // What he changed in the AI's drafts (newest first): enough to show the AI his corrections.
   const edits: Learning['edits'] = [];
   for (const p of posts) {
@@ -77,7 +95,7 @@ export async function runContentLessons(): Promise<Learning> {
     if (edits.length >= 4) break;
   }
 
-  const learning: Learning = { at: new Date().toISOString(), posted: rows.length, winners, kinds, kindStats, edits };
+  const learning: Learning = { at: new Date().toISOString(), posted: rows.length, winners, kinds, kindStats, layerStats, industryStats, edits };
   await putJSON(LEARN, learning);
   return learning;
 }
@@ -89,6 +107,9 @@ export async function learnedPrompt(): Promise<string> {
   const parts: string[] = [];
   if (l.winners.length) {
     parts.push(`Naufal's own posts that brought the most leads and clicks (match their tone and directness; never reuse their facts):\n${l.winners.map((w) => `- ${w.hook} (${w.leads} leads, ${w.clicks} clicks)`).join('\n')}`);
+  }
+  if (l.layerStats?.length) {
+    parts.push(`Problems that have brought him the most leads so far: ${l.layerStats.slice(0, 2).map((k) => k.kind).join(', ')}.`);
   }
   if (l.kindStats.length) {
     parts.push(`For his audience, these kinds of opening line have done best so far: ${l.kindStats.slice(0, 2).map((k) => k.kind).join(', ')}. Make at least one of the three hooks per channel one of these kinds.`);

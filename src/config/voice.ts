@@ -4,8 +4,9 @@
 export const VOICE = `
 Who: Naufal, founder of Naunas. Builds "client systems" for service businesses: enquiry capture, fast follow-up,
 booking, proposals, onboarding, so more enquiries turn into signed projects with less chasing.
-Audience (ICP): owners of US high-ticket project businesses. Interior design studios first, then architects,
-design-build, custom home builders, landscape design, kitchen/bath remodelers.
+Audience: owners of service businesses in the US and UK (the same market as Agentryx): design studios, property,
+construction and trades, agencies and B2B services, education and academies, professional services. They all lose
+clients in the same places (the 8 Leak Map layers), so posts lead with the problem and use one industry as the frame.
 
 Voice:
 - Direct, plain words, short sentences. Talks like a builder who has seen the inside of these businesses.

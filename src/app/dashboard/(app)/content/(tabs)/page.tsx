@@ -15,10 +15,11 @@ import { getJSON } from '@/lib/store';
 import { mediaLink } from '@/lib/mediaLink';
 import { DeleteDraftButton } from '../DeleteDraftButton';
 import { UseIdeaButton, RefreshMarketButton } from '../IdeaActions';
-import { getMarket, getWatchlist } from '@/lib/marketWatch';
+import { getMarket, getWatchlist, laneText, LANES, type WatchEntry } from '@/lib/marketWatch';
 import { getLearning, MIN_POSTS } from '@/lib/contentLearning';
 import { saveMarketWatchlist } from '@/app/dashboard/actions';
 import { FUNNEL } from '@/config/funnel';
+import { WEEK, layerLabel, industryFor } from '@/config/contentStrategy';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,7 +83,7 @@ export default async function Content() {
   const waiting = rows.filter(isWaiting).slice(0, 6);
   const drafts = rows.filter((r) => r.status === 'draft' && !isWaiting(r)).slice(0, 12);
   const recent = rows.filter((r) => r.status !== 'scheduled' && r.status !== 'draft').slice(0, 10);
-  const [market, watch, learning] = demoOn() ? [null, [] as string[], null] : await Promise.all([getMarket().catch(() => null), getWatchlist().catch(() => [] as string[]), getLearning().catch(() => null)]);
+  const [market, watch, learning] = demoOn() ? [null, [] as WatchEntry[], null] : await Promise.all([getMarket().catch(() => null), getWatchlist().catch(() => [] as WatchEntry[]), getLearning().catch(() => null)]);
   const k = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
   const thumb = (r: IndexRow) => { try { return r.media ? mediaLink(r.media, 4 * 3600).replace(FUNNEL.site, '') : undefined; } catch { return undefined; } };
   const fmtWhen = (iso: string) => new Date(iso).toLocaleString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -125,11 +126,12 @@ export default async function Content() {
       <div className="grid lg:grid-cols-[1fr_260px] gap-3 md:gap-4">
         <Card title="This week" pad={false}>
           <div className="grid grid-cols-[repeat(7,minmax(112px,1fr))] min-w-0 overflow-x-auto">
-            {x.plan.map((p, i) => (
+            {WEEK.map((p, i) => (
               <div key={p.day} className={`px-3 py-3 border-r border-white/[0.05] last:border-r-0 ${i === todayIdx ? 'bg-[#F2613F]/[0.08]' : ''}`}>
                 <p className={`text-xs font-semibold ${i === todayIdx ? 'text-[#ff8a6d]' : 'text-white/60'}`}>{p.day}{i === todayIdx ? ' · today' : ''}</p>
-                <p className="text-[13px] mt-2 text-white/90">{p.a}</p>
-                <p className="text-[11px] text-white/60 mt-1">{p.b}</p>
+                <p className="text-[13px] mt-2 text-white/90" title={p.how}>{p.format}</p>
+                <p className="text-[11px] text-white/60 mt-1">{p.layers.map(layerLabel).join(' · ')}</p>
+                <p className="text-[11px] text-white/50 mt-0.5">e.g. {industryFor(new Date(Date.now() + (i - todayIdx) * 86_400_000)).label}</p>
                 <div className="mt-2 flex flex-col gap-1">
                   {byDay(weekDays[i]).map((r, j) => (
                     <Link key={r.id + j} href={`/dashboard/content/${r.id}`} className="rounded-md bg-white/[0.05] hover:bg-white/[0.09] px-1.5 py-1 text-[11px] leading-tight text-white/75 flex items-start gap-1">
@@ -197,7 +199,7 @@ export default async function Content() {
             { label: 'What’s working out there', count: market?.items.length ?? 0, content: (
               <div className="flex flex-col">
                 <div className="px-5 pt-3 pb-1 flex flex-wrap items-center justify-between gap-2 text-[11px] text-white/60">
-                  <span>{market ? `Breakout videos from ${market.creators} creators you watch · ${ago(market.at)}` : 'Every Monday: the videos doing best for creators close to what you sell.'}{market?.error ? ` · last pull failed (${market.error})` : ''}</span>
+                  <span>{market ? `Breakout posts from ${market.creators} accounts you watch · ${ago(market.at)}` : 'Every Monday: the posts doing best for the accounts you watch, in three lanes.'}{market?.error ? ` · last pull failed (${market.error})` : ''}</span>
                   <RefreshMarketButton />
                 </div>
                 {market?.items.length ? (
@@ -205,10 +207,11 @@ export default async function Content() {
                     {market.items.map((m) => (
                       <li key={m.url} className="px-5 py-4 flex flex-col gap-2">
                         <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/60">
+                          <Badge tone="neutral">{LANES.find((l) => l.key === m.lane)?.label ?? 'Watch-list'}</Badge>
                           <a href={m.url} {...linkProps} className="text-white/80 hover:text-white">@{m.creator} ↗</a>
-                          <span>{k(m.followers)} followers</span>
+                          <span>{m.platform === 'instagram' ? 'Instagram' : 'TikTok'} {m.format !== 'video' ? m.format : ''} · {k(m.followers)} followers</span>
                           <Badge tone="accent">{m.lift}× their usual</Badge>
-                          <span className="tabular-nums">{k(m.views)} views · {k(m.saves)} saves</span>
+                          <span className="tabular-nums">{m.platform === 'tiktok' ? `${k(m.views)} views · ${k(m.saves)} saves` : `${k(m.likes)} likes · ${k(m.comments)} comments`}</span>
                         </div>
                         {m.pattern && <p className="text-[13px] text-white/90"><span className="text-white/55">Pattern: </span>{m.pattern}. <span className="text-white/65">{m.why}</span></p>}
                         {m.angle && <p className="text-[13px] text-white/80"><span className="text-white/55">Your angle: </span>{m.angle}</p>}
@@ -222,9 +225,13 @@ export default async function Content() {
                 ) : <Empty>{process.env.APIFY_TOKEN ? 'Nothing pulled yet. Press Refresh, or wait for Monday.' : 'Turns on with APIFY_TOKEN (already used for prospect searches).'}</Empty>}
                 <details className="px-5 py-3 border-t border-white/[0.05]">
                   <summary className="text-xs text-white/60 cursor-pointer">Who you watch ({watch.length})</summary>
-                  <form action={saveMarketWatchlist} className="mt-2 flex flex-col gap-2">
-                    <textarea name="list" rows={3} defaultValue={watch.join(', ')} aria-label="TikTok usernames to watch" className="w-full rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-xs" />
-                    <div className="flex items-center justify-between gap-2"><span className="text-[11px] text-white/55">TikTok usernames, comma separated (up to 20). About $0.30 a weekly pull.</span><button className="rounded-lg bg-white/[0.08] hover:bg-white/[0.14] px-2.5 py-1.5 text-xs">Save</button></div>
+                  <form action={saveMarketWatchlist} className="mt-2 flex flex-col gap-3">
+                    {LANES.map((l) => (
+                      <label key={l.key} className="flex flex-col gap-1 text-xs text-white/70">{l.label} <span className="text-[11px] text-white/55">{l.hint}</span>
+                        <textarea name={l.key} rows={2} defaultValue={laneText(watch, l.key)} className="w-full rounded-lg bg-white/[0.04] border border-white/10 px-3 py-2 text-xs" />
+                      </label>
+                    ))}
+                    <div className="flex items-center justify-between gap-2"><span className="text-[11px] text-white/55">tt:username for TikTok, ig:username for Instagram, comma separated (up to 24 in all). About $0.40 a weekly pull.</span><button className="rounded-lg bg-white/[0.08] hover:bg-white/[0.14] px-2.5 py-1.5 text-xs">Save</button></div>
                   </form>
                 </details>
               </div>
@@ -251,6 +258,13 @@ export default async function Content() {
             ) : <Empty>The first three drafts arrive with Monday’s run: a Leak post, a hot take and a build-in-public post, each with its comment keyword.</Empty> },
             { label: learning?.winners.length ? 'Your winners' : 'Hook bank', count: learning?.winners.length || x.hooks.length, content: learning?.winners.length ? (
               <div>
+                {(learning.layerStats?.length || learning.industryStats?.length) ? (
+                  <div className="px-5 pt-3 grid sm:grid-cols-2 gap-3 text-[12px]">
+                    {([['Best problems', learning.layerStats], ['Best industry examples', learning.industryStats]] as const).map(([t, list]) => (
+                      <div key={t}><p className="text-[11px] text-white/55 mb-1">{t}</p>{(list ?? []).slice(0, 3).map((k) => <p key={k.kind} className="text-white/80 tabular-nums">{k.kind} <span className="text-white/55">· {k.leads} leads · {k.clicks} clicks · {k.posts} posts</span></p>)}</div>
+                    ))}
+                  </div>
+                ) : null}
                 <p className="px-5 pt-3 text-[11px] text-white/60">Opening lines of your posts that brought leads or clicks. The AI writes from these now.{learning.kindStats.length ? ` Best kind so far: ${learning.kindStats[0].kind}.` : learning.posted < MIN_POSTS ? ` Hook kinds compare once ${MIN_POSTS} posts are out (${learning.posted} so far).` : ''}</p>
                 <ul className="divide-y divide-white/[0.05]">
                   {learning.winners.map((w) => (

@@ -401,7 +401,7 @@ export async function createContentPost(idea = ''): Promise<ContentResult> {
 }
 
 /** Save the composer's fields (text, options, media, ticks); statuses and results are never taken from the client. */
-export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'> & { newsletterBlurb?: string; aiDraft?: ContentPost['aiDraft'] }): Promise<ContentResult> {
+export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' | 'channels' | 'flags'> & { newsletterBlurb?: string; aiDraft?: ContentPost['aiDraft']; tags?: ContentPost['tags'] }): Promise<ContentResult> {
   await requireSession();
   const { getPost, savePost, CHANNELS } = await import('@/lib/content');
   const p = await getPost(input.id);
@@ -410,6 +410,7 @@ export async function saveContentPost(input: Pick<ContentPost, 'id' | 'master' |
   const m = input.master.media;
   if (m && !m.path.startsWith('content/media/')) return { error: 'Upload the media again.' };
   p.master = { idea: String(input.master.idea ?? '').slice(0, 5000), media: m, transcript: input.master.transcript?.slice(0, 50_000) };
+  if (input.tags) p.tags = { layer: input.tags.layer?.slice(0, 30) || undefined, industry: input.tags.industry?.slice(0, 30) || undefined };
   if (input.aiDraft) p.aiDraft = { linkedin: input.aiDraft.linkedin?.slice(0, 5000), instagram: input.aiDraft.instagram?.slice(0, 3000), tiktok: input.aiDraft.tiktok?.slice(0, 3000) };
   for (const c of CHANNELS) {
     const cur = p.channels[c];
@@ -570,7 +571,7 @@ export async function adaptContent(id: string): Promise<{ error?: string; result
   const camp = (await getCampaigns()).find((c) => c.id === p.channels.instagram.campaignId) ?? DEFAULT_CAMPAIGN;
   try {
     const { adapt } = await import('@/lib/adapt');
-    return { result: await adapt({ idea: p.master.idea, transcript: p.master.transcript, keyword: camp.keywords[0] ?? 'LEAK', offer: camp.name }) };
+    return { result: await adapt({ idea: p.master.idea, transcript: p.master.transcript, keyword: camp.keywords[0] ?? 'LEAK', offer: camp.name, layer: p.tags?.layer, industry: p.tags?.industry }) };
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'Adapt failed' };
   }
@@ -673,7 +674,7 @@ export async function refreshMarketWatch(): Promise<{ error?: string; queued?: b
 export async function saveMarketWatchlist(form: FormData) {
   await requireSession();
   const { saveWatchlist } = await import('@/lib/marketWatch');
-  await saveWatchlist(String(form.get('list') ?? ''));
+  await saveWatchlist({ demo: String(form.get('demo') ?? ''), problem: String(form.get('problem') ?? ''), world: String(form.get('world') ?? '') });
   revalidatePath('/dashboard/content');
 }
 

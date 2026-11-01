@@ -41,13 +41,15 @@ export type ContentPost = {
   suggestedFor?: string;
   /** The AI's draft as it first came back (Adapt or the studio drop): compared with what he posted. */
   aiDraft?: Partial<Record<ChannelKey, string>>;
+  /** Content strategy (config/contentStrategy): the shared problem it's about and the industry used as the example. */
+  tags?: { layer?: string; industry?: string };
 };
 
 export type IndexRow = { id: string; createdAt: string; when: string; status: PostStatus; idea: string; kind?: 'video' | 'image'; channels: Partial<Record<ChannelKey, ChannelStatus>>;
   /** Live post links and the Instagram media id, for the leaderboard and newsletter without loading every post. */
   urls?: Partial<Record<ChannelKey, string>>; igMediaId?: string;
   /** For Content → Plan's "Waiting for you": studio drafts, their suggested time and a thumbnail. */
-  source?: 'studio'; suggestedFor?: string; media?: string };
+  source?: 'studio'; suggestedFor?: string; media?: string; layer?: string; industry?: string };
 
 const postPath = (id: string) => `content/posts/${id}.json`;
 const INDEX = 'content/index.json';
@@ -87,7 +89,7 @@ export async function savePost(p: ContentPost) {
     channels: Object.fromEntries(CHANNELS.map((c) => [c, p.channels[c].enabled ? p.channels[c].status : 'off'])),
     urls: Object.fromEntries(CHANNELS.filter((c) => p.channels[c].url).map((c) => [c, p.channels[c].url])),
     igMediaId: p.channels.instagram.mediaId,
-    source: p.source, suggestedFor: p.suggestedFor, media: p.master.media?.path,
+    source: p.source, suggestedFor: p.suggestedFor, media: p.master.media?.path, layer: p.tags?.layer, industry: p.tags?.industry,
   };
   const idx = await getIndex();
   await putJSON(INDEX, [row, ...idx.filter((r) => r.id !== p.id)].sort((a, b) => b.when.localeCompare(a.when)).slice(0, 1000));

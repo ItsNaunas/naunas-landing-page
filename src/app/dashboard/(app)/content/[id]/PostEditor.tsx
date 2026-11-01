@@ -10,6 +10,7 @@ import type { ContentPost, ChannelKey, Issue, Media } from '@/lib/content';
 import { FUNNEL } from '@/config/funnel';
 import { CopyButton } from '@/components/dashboard/client';
 import { nextAt } from '@/lib/slots';
+import { LAYERS, INDUSTRIES, industryFor } from '@/config/contentStrategy';
 
 type Campaign = { id: string; name: string; keywords: string[] };
 type Creator = { nickname?: string; username?: string; avatar?: string; privacyOptions: string[]; commentDisabled: boolean; duetDisabled: boolean; stitchDisabled: boolean; maxSec: number } | null;
@@ -59,14 +60,14 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       setSaved('saving');
-      const r = await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '', aiDraft: post.aiDraft });
+      const r = await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '', aiDraft: post.aiDraft, tags: post.tags });
       if (r.error) { setSaved('error'); setMsg({ tone: 'bad', text: r.error }); return; }
       setSaved('saved');
       setIssues((await checkContentPost(post.id)).issues);
     }, 1000);
     return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post.master, post.channels, post.flags, post.newsletterBlurb, post.aiDraft]);
+  }, [post.master, post.channels, post.flags, post.newsletterBlurb, post.aiDraft, post.tags]);
 
   // ---- AI (Adapt): drafts every channel from the idea + transcript; Naufal edits before publishing.
   const [hooks, setHooks] = useState<Partial<Record<ChannelKey, string[]>>>({});
@@ -78,7 +79,7 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
     if (hasText && !window.confirm('Replace the current channel texts with fresh AI drafts?')) return;
     setAdapting(true); setMsg(null);
     // Make sure the server has the latest idea/transcript before it writes from them.
-    await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '' });
+    await saveContentPost({ id: post.id, master: post.master, channels: post.channels, flags: post.flags, newsletterBlurb: post.newsletterBlurb ?? '', tags: post.tags });
     const r = await adaptContent(post.id);
     setAdapting(false);
     if (r.error || !r.result) { setMsg({ tone: 'bad', text: r.error ?? 'Adapt failed' }); return; }
@@ -211,6 +212,20 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
               {!locked && <label className="self-start text-xs text-white/55 hover:text-white cursor-pointer">Upload .srt / .vtt / .txt<input type="file" accept=".srt,.vtt,.txt,text/plain" className="sr-only" onChange={(e) => readTranscript(e.target.files?.[0])} /></label>}
             </div>
           </details>
+          <div className="grid sm:grid-cols-2 gap-2">
+            <label className="flex flex-col gap-1 text-xs text-white/65">The problem (Leak Map layer)
+              <select disabled={locked} value={post.tags?.layer ?? ''} onChange={(e) => setPost((p) => ({ ...p, tags: { ...p.tags, layer: e.target.value || undefined } }))} className={`${field} [&>option]:bg-[#161616]`}>
+                <option value="">Pick the problem it’s about…</option>
+                {LAYERS.map((l) => <option key={l.key} value={l.key}>{l.label}: {l.problem}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs text-white/65">Industry used as the example
+              <select disabled={locked} value={post.tags?.industry ?? ''} onChange={(e) => setPost((p) => ({ ...p, tags: { ...p.tags, industry: e.target.value || undefined } }))} className={`${field} [&>option]:bg-[#161616]`}>
+                <option value="">Any (today’s rotation: {industryFor(new Date()).label})</option>
+                {INDUSTRIES.map((i) => <option key={i.key} value={i.key}>{i.label}</option>)}
+              </select>
+            </label>
+          </div>
           <div className="flex flex-wrap items-center gap-3">
             {ctx.ai
               ? <button type="button" disabled={locked || adapting} onClick={runAdapt} className="rounded-lg border border-[#F2613F]/50 bg-[#F2613F]/10 px-3.5 py-1.5 text-sm text-[#ffb19e] hover:bg-[#F2613F]/20 disabled:opacity-40">{adapting ? 'Writing…' : '✨ Write all 3 with AI'}</button>

@@ -46,6 +46,11 @@ const pm = await page.locator('main').innerText();
 check('Studio banner tells him what to do', pm.includes('From the studio') && pm.includes('Watch the video'));
 check('The stored video has a player', (await page.locator('video[aria-label="Watch the video"]').count()) === 1);
 check('Other times stay folded until asked for', (await page.locator('input[type=datetime-local]').count()) === 0);
+// Content strategy (2026-11-01): pick the problem and the industry example; both are saved on the post.
+await page.getByLabel('The problem (Leak Map layer)').selectOption('followup');
+await page.getByLabel('Industry used as the example').selectOption('property');
+await page.waitForTimeout(2500);
+check('Problem + industry saved on the post', read(`content/posts/${out.id}.json`)?.tags?.layer === 'followup' && read(`content/posts/${out.id}.json`)?.tags?.industry === 'property');
 check('Channel blocked by a missing connection says so', pm.includes('Not connected') || pm.includes('Needs a fix'));
 await page.goto(`${BASE}/dashboard/content`, { waitUntil: 'networkidle' });
 const wait = page.locator('section[aria-label="Waiting for you"]');
@@ -56,12 +61,13 @@ check('No page errors', !errors.length, errors.join(' | '));
 // Market feed + learned winners (2026-10-31): seeded results render; an idea card starts a draft.
 write('content/market.json', { at: new Date().toISOString(), creators: 9, videos: 60, items: [
   { creator: 'initiatearchitecture', followers: 24800, url: 'https://www.tiktok.com/@initiatearchitecture/video/1', postedAt: '2026-10-20T00:00:00Z', views: 272425, likes: 9897, saves: 7131, comments: 71, lift: 6.2, caption: 'My process for onboarding clients',
+    platform: 'tiktok', lane: 'demo', format: 'video',
     pattern: 'Walkthrough of my own system', why: 'Designers save processes they can copy.', angle: 'Walk through the client portal you built for a design studio, step by step.', hook: 'Here’s what a new client sees the day they sign.' } ] });
 write('content/learning.json', { at: new Date().toISOString(), posted: 3, winners: [{ id: 'p-win', hook: 'Your follow-up is you remembering.', leads: 2, deals: 1, clicks: 14 }], kinds: {}, kindStats: [], edits: [] });
 await page.goto(`${BASE}/dashboard/content`, { waitUntil: 'networkidle' });
 const ideas = page.getByRole('tabpanel').first();
 const it = await ideas.innerText();
-check('Market feed shows the breakout and your angle', it.includes('@initiatearchitecture') && it.includes('6.2× their usual') && it.includes('Here’s what a new client sees'));
+check('Market feed shows the breakout, its lane and your angle', it.includes('@initiatearchitecture') && it.includes('Build demos') && it.includes('6.2× their usual') && it.includes('Here’s what a new client sees'));
 await page.getByRole('tab', { name: /Your winners/ }).click();
 check('Hook bank becomes your winners, with numbers', (await page.locator('main').innerText()).includes('2 leads · 1 deal · 14 clicks'));
 await page.getByRole('tab', { name: /What’s working out there/ }).click();

@@ -8,13 +8,13 @@ export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   if (!studioAuthed(req.headers.get('authorization'))) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  const b = (await req.json().catch(() => null)) as { media?: Partial<Media>; idea?: string; transcript?: string } | null;
+  const b = (await req.json().catch(() => null)) as { media?: Partial<Media>; idea?: string; transcript?: string; layer?: string; industry?: string } | null;
   const m = b?.media;
   if (!m?.path?.startsWith('content/media/') || (m.kind !== 'video' && m.kind !== 'image') || !m.sizeBytes) {
     return NextResponse.json({ error: 'media.path (content/media/…), media.kind and media.sizeBytes are required' }, { status: 400 });
   }
   const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : undefined);
   const media: Media = { path: m.path, kind: m.kind, sizeBytes: m.sizeBytes, name: m.name?.slice(0, 120), durationSec: num(m.durationSec), width: num(m.width), height: num(m.height) };
-  const out = await createFromStudio({ media, idea: b?.idea, transcript: b?.transcript });
+  const out = await createFromStudio({ media, idea: b?.idea, transcript: b?.transcript, layer: b?.layer, industry: b?.industry });
   return NextResponse.json({ ok: true, ...out });
 }

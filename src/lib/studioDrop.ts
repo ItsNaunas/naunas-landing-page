@@ -25,13 +25,15 @@ export async function suggestSlot(): Promise<Date> {
   return nextFreeSlot(taken, FUNNEL.content.defaultTimes[0], FUNNEL.content.usTz);
 }
 
-export type Drop = { media: Media; idea?: string; transcript?: string };
+export type Drop = { media: Media; idea?: string; transcript?: string; layer?: string; industry?: string };
 
 export async function createFromStudio(d: Drop) {
   const p = newPost((d.idea ?? '').slice(0, 5000));
   p.master.media = d.media;
   if (d.transcript) p.master.transcript = d.transcript.slice(0, 50_000);
   p.source = 'studio';
+  const { LAYERS, INDUSTRIES } = await import('@/config/contentStrategy');
+  p.tags = { layer: LAYERS.some((l) => l.key === d.layer) ? d.layer : undefined, industry: INDUSTRIES.some((i) => i.key === d.industry) ? d.industry : undefined };
   const video = d.media.kind === 'video';
   p.channels.linkedin.enabled = true;
   p.channels.instagram.enabled = !!process.env.IG_ACCESS_TOKEN;
@@ -43,7 +45,7 @@ export async function createFromStudio(d: Drop) {
     try {
       const [{ adapt }, { getCampaigns, DEFAULT_CAMPAIGN }] = await Promise.all([import('@/lib/adapt'), import('@/lib/campaigns')]);
       const camp = (await getCampaigns()).find((c) => c.active) ?? DEFAULT_CAMPAIGN;
-      const a = await adapt({ idea: p.master.idea, transcript: p.master.transcript, keyword: camp.keywords[0] ?? 'LEAK', offer: camp.name });
+      const a = await adapt({ idea: p.master.idea, transcript: p.master.transcript, keyword: camp.keywords[0] ?? 'LEAK', offer: camp.name, layer: p.tags?.layer, industry: p.tags?.industry });
       p.channels.linkedin.text = a.linkedin.text;
       p.channels.linkedin.firstComment = a.linkedin.firstComment;
       p.channels.instagram.caption = a.instagram.caption;
