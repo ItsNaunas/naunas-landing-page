@@ -174,6 +174,11 @@ export function PostEditor({ initial, ctx }: { initial: ContentPost; ctx: Ctx })
           <span className="text-white/80">Watch the video, read the three captions, then {suggested ? <>press <b>Schedule at suggested time</b> below.</> : 'pick a time below.'}</span>
         </div>
       )}
+      {post.inspiration && (
+        <a href={post.inspiration.url} target="_blank" rel="noopener noreferrer" className="self-start rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/75 hover:border-white/30 hover:text-white">
+          ▶ Watch the inspiration{post.inspiration.label ? `: ${post.inspiration.label}` : ''} ↗
+        </a>
+      )}
       {/* Master */}
       <div className="grid lg:grid-cols-[240px_1fr] gap-4">
         <div className="flex flex-col gap-2 w-48 mx-auto lg:w-auto lg:mx-0">

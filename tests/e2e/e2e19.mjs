@@ -74,6 +74,8 @@ await page.getByRole('tab', { name: /What’s working out there/ }).click();
 await Promise.all([page.waitForURL(/\/dashboard\/content\/p\d{8}-/, { timeout: 60000 }), page.getByRole('button', { name: 'Start a post →' }).first().click()]);
 const started = read(`content/posts/${page.url().split('/').pop()}.json`);
 check('Start a post makes a draft from the idea', started?.status === 'draft' && started.master.idea.includes('Here’s what a new client sees'));
+check('The draft keeps a link to its inspiration', started?.inspiration?.url === 'https://www.tiktok.com/@initiatearchitecture/video/1'
+  && (await page.getByRole('link', { name: /Watch the inspiration: @initiatearchitecture/ }).count()) === 1);
 
 // Clean up the fixtures so later suites see the content list as before.
 write('content/index.json', (read('content/index.json') ?? []).filter((x) => !x.id.startsWith('busy')));

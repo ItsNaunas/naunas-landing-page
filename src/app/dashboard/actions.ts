@@ -679,10 +679,11 @@ export async function saveMarketWatchlist(form: FormData) {
 }
 
 /** An idea card (market feed or hook bank) → a new draft with the angle and hook as its idea. */
-export async function draftFromIdea(idea: string): Promise<{ id?: string; error?: string }> {
+export async function draftFromIdea(idea: string, inspiration?: { url: string; label?: string }): Promise<{ id?: string; error?: string }> {
   await requireSession();
   const { newPost, savePost } = await import('@/lib/content');
   const p = newPost(idea.slice(0, 2000));
+  if (inspiration && /^https:\/\/(www\.)?(tiktok|instagram)\.com\//.test(inspiration.url)) p.inspiration = { url: inspiration.url, label: inspiration.label?.slice(0, 80) };
   await savePost(p);
   return { id: p.id };
 }

@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { draftFromIdea, refreshMarketWatch } from '../../actions';
 
 /** "Start a post": an idea card becomes a new draft, opened straight away. */
-export function UseIdeaButton({ idea, label = 'Start a post →' }: { idea: string; label?: string }) {
+export function UseIdeaButton({ idea, label = 'Start a post →', inspiration }: { idea: string; label?: string; inspiration?: { url: string; label?: string } }) {
   const [busy, start] = useTransition();
   const router = useRouter();
   return (
     <button type="button" disabled={busy || !idea.trim()}
-      onClick={() => start(async () => { const r = await draftFromIdea(idea); if (r.id) router.push(`/dashboard/content/${r.id}`); })}
+      onClick={() => start(async () => { const r = await draftFromIdea(idea, inspiration); if (r.id) router.push(`/dashboard/content/${r.id}`); })}
       className="shrink-0 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] px-2.5 py-1.5 text-xs text-white/85 disabled:opacity-40">{busy ? 'Opening…' : label}</button>
   );
 }

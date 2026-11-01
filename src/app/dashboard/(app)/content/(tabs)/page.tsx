@@ -186,6 +186,7 @@ export default async function Content() {
                   <span className="text-xs text-white/60 w-[92px] shrink-0 tabular-nums">{ago(r.createdAt)}</span>
                   <span className={`flex-1 min-w-0 truncate text-[13px] ${r.idea ? 'text-white/85' : 'text-white/55 italic'}`}>{r.idea || 'Empty draft'}</span>
                 </Link>
+                {r.inspiration && <a href={r.inspiration.url} {...linkProps} className="shrink-0 rounded-md px-2 py-1.5 text-xs text-[#ff8a6d] hover:text-white" title="Watch the post that inspired this">Inspo{r.inspiration.label ? ` ${r.inspiration.label}` : ''} ↗</a>}
                 <DeleteDraftButton id={r.id} label={r.idea || 'Empty draft'} />
               </li>
             ))}
@@ -217,7 +218,7 @@ export default async function Content() {
                         {m.angle && <p className="text-[13px] text-white/80"><span className="text-white/55">Your angle: </span>{m.angle}</p>}
                         <div className="flex items-start justify-between gap-3">
                           {m.hook ? <p className="text-sm font-medium text-[#ffb19e]">“{m.hook}”</p> : <p className="text-xs text-white/55 line-clamp-2">{m.caption || 'No caption'}</p>}
-                          {m.angle && m.hook && <UseIdeaButton idea={`${m.hook}\n\n${m.angle}`} />}
+                          {m.angle && m.hook && <UseIdeaButton idea={`${m.hook}\n\n${m.angle}`} inspiration={{ url: m.url, label: `@${m.creator}` }} />}
                         </div>
                       </li>
                     ))}
