@@ -7,6 +7,7 @@ import { ActionForm } from '@/components/dashboard/ActionForm';
 import { migrateStore } from '@/app/dashboard/actions';
 import { ago } from '@/components/dashboard/ui';
 import { Connections } from '../Connections';
+import { NotesHealth } from './NotesHealth';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,8 @@ export default async function System() {
       </div>
 
       <div id="connections" className="scroll-mt-20 flex flex-col gap-3"><Connections /></div>
+
+      <NotesHealth />
     </>
   );
 }

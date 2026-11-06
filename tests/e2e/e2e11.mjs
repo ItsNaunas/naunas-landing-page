@@ -28,7 +28,7 @@ const check = (n, ok, d = '') => { results.push(ok); console.log(`${ok ? 'PASS' 
 const vpost = (auth, body) => fetch(`${BASE}/api/vault/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: `Bearer ${auth}` } : {}) }, body: JSON.stringify(body) });
 check('Vault sync refuses without the token', (await vpost('', { items: [] })).status === 401);
 check('Vault sync refuses a bad body', (await vpost('studiotest', { nope: 1 })).status === 400);
-const vr = await vpost('studiotest', { items: [{ name: 'SNAEB', kind: 'client', status: 'building', lastContact: '2026-11-05', next: ['Ship the offers page'], blocked: ['Marcus: UAE legal docs'], tasks: [{ text: 'Rotate sk_live_abcdefghijklmnop now', high: true }] }, { name: 'bad', kind: 'nonsense' }] });
+const vr = await vpost('studiotest', { items: [{ name: 'SNAEB', kind: 'client', status: 'building', lastContact: '2026-11-05', next: ['Ship the offers page'], blocked: ['Marcus: UAE legal docs'], tasks: [{ text: 'Rotate sk_live_abcdefghijklmnop now', high: true }], noteEdited: '2026-11-05', repo: { path: '~/projects/personal/snaeb', branch: 'main', updated: '2026-10-22', lastCommit: '2026-11-05', behind: 5, state: 'Live on main' }, issues: ['PROGRESS.md is 5 commits behind (updated 2026-10-22, last commit 2026-11-05)'] }, { name: 'bad', kind: 'nonsense' }] });
 check('Vault sync stores valid items only', vr.ok && (await vr.json()).saved === 1);
 const vault = JSON.parse(fs.readFileSync(path.join(STORE, 'vault/summary.json'), 'utf8'));
 check('Vault sync redacts a pasted key', JSON.stringify(vault).includes('[redacted]') && !JSON.stringify(vault).includes('sk_live_abc'));
@@ -79,7 +79,9 @@ check('Context sent includes flags + snapshot', log[0].messages.some((m) => m.ro
 const ctx = log[0].messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
 check('Snapshot carries failed health checks', ctx.includes('TikTok (token expired)'));
 check('Snapshot carries the activity log', ctx.includes('Problem: Daily job: weekly scoreboard'));
-check('Snapshot carries the vault', ctx.includes('SNAEB [client, building, last contact 2026-11-05]'));
+check('Snapshot carries the vault', ctx.includes('SNAEB [client, building, last contact 2026-11-05, note edited 2026-11-05]'));
+check('Snapshot carries repo build state + drift', ctx.includes('build (PROGRESS.md 2026-10-22): Live on main') && ctx.includes('DRIFT: PROGRESS.md is 5 commits behind'));
+check('Prompt sets the source order', ctx.includes('live data (HubSpot') || log[0].messages[0].content.includes('live data (HubSpot'));
 check('Snapshot carries build progress', ctx.includes('BUILD (this dashboard'));
 check('Page context sent', ctx.includes('Naufal is asking from the page /dashboard'));
 check('Tools include vault + activity + health', ['vault', 'activity_log', 'health_checks', 'clients_and_money', 'build_progress'].every((n) => log[0].tools.some((t) => t.function.name === n)));
@@ -90,6 +92,9 @@ check('Follow-up chip carries the conversation', log2.length >= 3 && log2[2].mes
 await page.keyboard.press('Escape');
 check('Escape closes the panel', !(await page.locator('[role=dialog]').isVisible()));
 
+await page.goto(`${BASE}/dashboard/system`, { waitUntil: 'networkidle' });
+const sys = await page.locator('#notes').innerText();
+check('System lists notes drifting from their repos', sys.includes('SNAEB') && sys.includes('5 commits behind') && /Vault last synced/i.test(sys), sys.slice(0, 120));
 await page.setViewportSize({ width: 390, height: 844 });
 await page.goto(`${BASE}/dashboard`, { waitUntil: 'networkidle' });
 check('Home: no sideways scroll at 390px', (await page.evaluate(() => document.documentElement.scrollWidth)) <= 391);

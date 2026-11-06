@@ -15,6 +15,7 @@ import { FUNNEL } from '@/config/funnel';
 import { listProposals, getProposal } from '@/lib/proposal';
 import { reportOpens } from '@/lib/leakReport';
 import { overdueInvoices, money } from '@/lib/invoices';
+import { getVault } from '@/lib/assistantData';
 
 export type Flag = {
   id: string; level: 'high' | 'medium' | 'low'; area: 'Outreach' | 'Pipeline' | 'Money' | 'Content' | 'System';
@@ -148,6 +149,11 @@ export async function missing(): Promise<{ flags: Flag[]; deals: Deal[]; errors:
   // ---- System
   if (health.ok === false) add({ id: 'health', level: 'high', area: 'System', title: 'The daily health check found a problem', detail: 'Leads may be slipping through until it’s fixed.', href: '/dashboard/system', label: 'Open health' });
   else if (health.at && daysSince(health.at) >= 2) add({ id: 'health-stale', level: 'medium', area: 'System', title: `Health check hasn't run for ${daysSince(health.at)} days`, href: '/dashboard/system', label: 'Open health' });
+  // Notes drifting from their repos (scripts/vault-sync.mjs): fix the repo's PROGRESS.md, not the assistant.
+  const vault = await getVault().catch(() => null);
+  const drift = vault?.items.filter((i) => i.issues?.length) ?? [];
+  if (drift.length) add({ id: 'vault-drift', level: 'low', area: 'System', title: `${plural(drift.length, 'project')} with out-of-date build notes`, detail: drift.slice(0, 3).map((i) => i.name).join(', ') + (drift.length > 3 ? '…' : ''), href: '/dashboard/system#notes', label: 'See which' });
+  else if (vault && daysSince(vault.at) >= 2) add({ id: 'vault-stale', level: 'low', area: 'System', title: `The vault hasn't synced for ${daysSince(vault.at)} days`, detail: 'Ask Naunas is working from an old copy. Is the laptop on, and is the scheduled task installed?', href: '/dashboard/system#notes' });
   for (const e of errors) add({ id: `err-${e.slice(0, 20)}`, level: 'low', area: 'System', title: `Couldn't read ${e.split(':')[0]}`, detail: e, href: '/dashboard/system' });
 
   const rank = { high: 0, medium: 1, low: 2 };

@@ -37,6 +37,8 @@ const SYSTEM = `You are "Ask Naunas", the assistant inside Naufal's business das
 
 You get FLAGS (fixed checks that are always true), a SNAPSHOT, and read-only tools to look further (firms, HubSpot notes, content, activity log, health checks, clients and invoices, build progress of this dashboard, and the vault: client and project status, next steps, blockers, open tasks). Rules:
 - Only state facts from the flags, snapshot or tool results. Never invent numbers, names, results, dates or prices. If you don't know, say so and say where to look.
+- When sources disagree, trust them in this order: live data (HubSpot, Stripe/invoices, the activity log, health checks, outreach) > a repo's PROGRESS.md (build state) > the vault note (relationship, money, tasks). Within the same kind, the newer date wins. Say when something is old ("the vault note was last edited 9 weeks ago") and, if two sources really conflict, say both and which one you went with. Never quietly pick.
+- Vault items carry drift issues (PROGRESS.md undated or commits behind, repo missing). Mention them when they matter to the question.
 - Money first: promises and replies, then deals going stale, overdue invoices and client delivery, then the outreach engine, then content, then system.
 - UK spelling, plain words, no jargon, no preamble, no sign-off.
 - You cannot send, edit or change anything. You suggest; Naufal clicks.
@@ -101,7 +103,13 @@ export async function snapshot(): Promise<{ text: string; flags: Flag[]; deals: 
   return { text: L.join('\n'), flags, deals };
 }
 
-const vaultLine = (v: VaultItem) => `${v.name} [${v.kind}${v.status ? `, ${v.status}` : ''}${v.lastContact ? `, last contact ${v.lastContact}` : ''}] open tasks ${v.tasks.length}${v.tasks.some((t) => t.high) ? ' (some urgent)' : ''}${v.blocked.length ? `, blocked ${v.blocked.length}` : ''}${v.next[0] ? `; next: ${v.next[0].slice(0, 100)}` : ''}`;
+const vaultLine = (v: VaultItem) => [
+  `${v.name} [${v.kind}${v.status ? `, ${v.status}` : ''}${v.lastContact ? `, last contact ${v.lastContact}` : ''}${v.noteEdited ? `, note edited ${v.noteEdited}` : ''}]`,
+  `open tasks ${v.tasks.length}${v.tasks.some((t) => t.high) ? ' (some urgent)' : ''}${v.blocked.length ? `, blocked ${v.blocked.length}` : ''}`,
+  v.repo?.updated ? `build (PROGRESS.md ${v.repo.updated}): ${(v.repo.state ?? '').slice(0, 90)}` : '',
+  v.next[0] ? `next: ${v.next[0].slice(0, 90)}` : '',
+  v.issues?.length ? `DRIFT: ${v.issues.join('; ')}` : '',
+].filter(Boolean).join('; ');
 
 // ---------------------------------------------------------------- Tools (read-only)
 

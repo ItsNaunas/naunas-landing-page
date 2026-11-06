@@ -43,15 +43,23 @@ export async function recentActivity(days = 7, limit = 40) {
 
 // ---------------------------------------------------------------- Vault summary (pushed from the laptop)
 
+/** The repo's own PROGRESS.md, read from its main branch on the laptop: the one home for build state. */
+export type RepoBuild = { path?: string; branch?: string; updated?: string; lastCommit?: string; behind?: number; state?: string; next?: string[] };
 export type VaultItem = {
   name: string; kind: 'client' | 'project' | 'partner' | 'outbound'; status?: string; value?: string; lastContact?: string;
+  /** When the vault note itself was last edited. */
+  noteEdited?: string;
   state?: string; next: string[]; blocked: string[]; tasks: { text: string; due?: string; high?: boolean }[];
+  repo?: RepoBuild;
+  /** Drift found on the laptop: repo folder missing, PROGRESS.md undated or commits behind. */
+  issues: string[];
 };
 export type VaultSummary = { at: string; items: VaultItem[] };
 const VAULT = 'vault/summary.json';
 export const getVault = () => getJSON<VaultSummary | null>(VAULT, null);
 
 const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : undefined);
+const date = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : undefined);
 const list = (v: unknown, n: number, len: number) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string').slice(0, n).map((x) => x.slice(0, len)) : []);
 // Belt and braces: the vault holds pointers, never values, but a pasted key must never reach the store.
 const SECRET = /\b(sk|rk|pk)_(live|test)_[A-Za-z0-9]{8,}|\bre_[A-Za-z0-9_]{16,}|\bgh[pousr]_[A-Za-z0-9]{20,}|\bxox[abp]-[A-Za-z0-9-]{10,}|\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}|\bsb_secret_[A-Za-z0-9_-]{10,}/g;
@@ -69,9 +77,14 @@ export async function saveVault(body: unknown): Promise<number> {
       const tt = t as Record<string, unknown>;
       return typeof tt?.text === 'string' ? [{ text: tt.text.slice(0, 300), due: clip(tt.due, 10), high: tt.high === true || undefined }] : [];
     }) : [];
+    const rb = r.repo as Record<string, unknown> | undefined;
+    const repo: RepoBuild | undefined = rb && typeof rb === 'object' ? {
+      path: clip(rb.path, 160), branch: clip(rb.branch, 60), updated: date(rb.updated), lastCommit: date(rb.lastCommit),
+      behind: typeof rb.behind === 'number' && rb.behind >= 0 ? Math.floor(rb.behind) : undefined, state: clip(rb.state, 700), next: list(rb.next, 6, 300),
+    } : undefined;
     return [{
-      name: r.name.slice(0, 80), kind: r.kind as VaultItem['kind'], status: clip(r.status, 40), value: clip(r.value, 300), lastContact: clip(r.lastContact, 10),
-      state: clip(r.state, 700), next: list(r.next, 8, 300), blocked: list(r.blocked, 6, 300), tasks,
+      name: r.name.slice(0, 80), kind: r.kind as VaultItem['kind'], status: clip(r.status, 40), value: clip(r.value, 300), lastContact: date(r.lastContact),
+      noteEdited: date(r.noteEdited), state: clip(r.state, 700), next: list(r.next, 8, 300), blocked: list(r.blocked, 6, 300), tasks, repo, issues: list(r.issues, 6, 200),
     }];
   });
   await putJSON(VAULT, scrub({ at: new Date().toISOString(), items }));
