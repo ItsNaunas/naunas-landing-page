@@ -20,7 +20,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const GROUPS = [
   { name: 'dashboard', suites: ['e2e', 'e2e2', 'e2e3', 'e2e4', 'e2e5', 'e2e6', 'e2e7', 'e2e8', 'e2e12', 'e2e13', 'e2e14', 'e2e15', 'e2e16', 'e2e17', 'e2e18', 'e2e19'], env: { STUDIO_DROP_TOKEN: 'studiotest' } },
   { name: 'hubspot (mock)', suites: ['e2e9', 'e2e10'], env: { HUBSPOT_TOKEN: 'mock', HUBSPOT_API_BASE: 'http://localhost:4010', CAL_WEBHOOK_SECRET: 'testsecret' }, mock: ['mockhs.mjs', 'CALLS'] },
-  { name: 'openai (mock)', suites: ['e2e11'], env: { OPENAI_API_KEY: 'mock', OPENAI_API_BASE: 'http://localhost:4011' }, mock: ['mockoai.mjs', 'OAILOG'] },
+  { name: 'openai (mock)', suites: ['e2e11'], env: { OPENAI_API_KEY: 'mock', OPENAI_API_BASE: 'http://localhost:4011', STUDIO_DROP_TOKEN: 'studiotest' }, mock: ['mockoai.mjs', 'OAILOG'] },
 ];
 const only = process.argv.slice(2);
 

@@ -178,7 +178,7 @@ Automation names must match `mailerlite.automations` exactly. The health check a
 | `APIFY_TOKEN` | Apify → Settings → Integrations | Outreach → Find prospects (optional, monthly cap in dashboard) |
 | (none) IMAP | Zoho Mail → Settings → Mail Accounts → IMAP Access ON (same app password) | email threads, outreach replies, sequence stop-on-reply |
 | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | developers.tiktok.com → app → Credentials (Production since the app was approved) | TikTok tab + content engine (optional). Whether posts can go public is read from TikTok's own answer: no flag to set. |
-| `STUDIO_DROP_TOKEN` | any long random string; the same value goes in `naunas-studio/.env.local` | lets `naunas-studio/scripts/drop.mjs` send finished edits to Content as drafts |
+| `STUDIO_DROP_TOKEN` | any long random string; the same value goes in `naunas-studio/.env.local` | lets `naunas-studio/scripts/drop.mjs` send finished edits to Content as drafts, and `scripts/vault-sync.mjs` send the vault summary to Ask Naunas |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | linkedin.com/developers → app → Auth (products: OpenID Connect + Share on LinkedIn) | LinkedIn tab + content engine; reconnect every 60 days (optional) |
 | `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` (+ `QSTASH_URL` if shown) | console.upstash.com → QStash → Request builder / Signing keys | exact-time scheduled posts (optional; without it, Publish now only) |
 
@@ -205,3 +205,9 @@ Everything comes back as **one digest email to the owner**. The routine never me
 5. `GET /api/health?ping=1&job=scoreboard` with the cron secret: Telegram shows all green plus the scoreboard. `?job=<name>` runs one of the 09:00 jobs on its own (deals, asks, triage, topup, backup, insights, scoreboard, newsletter, igtoken, briefing, brief; see `src/lib/dailyJobs.ts`). Without `job`, the cron hands each of today's jobs to QStash as its own call, so one slow service can't time out the rest; with no QStash keys they run one after another.
 6. Delete the test contacts and deals in HubSpot.
 7. Before any change ships: `npm run test:e2e` (or `npm run test:e2e -- e2e3 e2e10` for some). 15 browser suites run against local dev servers with every real key blanked and HubSpot/OpenAI mocked; nothing reaches a real service. Needs Chrome (`CHROME_PATH` if it isn't in the Windows default place). Logs and screenshots land in `tests/e2e/.out/`.
+
+
+## Vault sync (Ask Naunas knows the vault)
+
+`scripts/vault-sync.mjs` runs on the laptop (Windows Task Scheduler: "Naunas vault sync AM" 08:30 and "PM" 17:30, Zanzibar time). It reads only the hub notes (`01-Clients/*/_*.md`, `08-Projects/*.md`, `02-Partners/*.md`) and sends status, value, last contact, the state line, next steps, blockers and open tasks to `/api/vault/sync` (bearer `STUDIO_DROP_TOKEN`), stored at `vault/summary.json`. Meeting notes, people, finance, daily notes and mentorship never leave the laptop; Big Money London is skipped; pasted keys are redacted on both ends. `--dry` prints what would be sent. Log: `%LOCALAPPDATA%
+aunasault-sync.log`. If the laptop is off, Ask Naunas says when the vault was last synced.

@@ -1,4 +1,5 @@
-// Fake OpenAI chat completions: if no tool result yet, call find_firm("Firm rp"); then answer from the tool result.
+// Fake OpenAI chat completions: if no tool result yet, call find_firm("Firm rp"); then answer from the tool result
+// in the structured card shape (headline, sections, followups, sources), with one unsafe link to be dropped.
 import http from 'node:http';
 import fs from 'node:fs';
 const LOG = process.argv[2];
@@ -16,8 +17,18 @@ http.createServer((req, res) => {
     const sys = b.messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
     const flagLine = sys.split('\n').find((l) => l.startsWith('- [high]')) ?? '';
     send({ role: 'assistant', content: JSON.stringify({
-      answer: `**Do this first:**\n- Answer [${firm.firm}](${firm.href}): replied, step ${firm.step}\n- Top flag: ${flagLine.slice(2, 80)}\n\nThat's it.`,
+      headline: `Do this first: answer ${firm.firm}.`,
+      sections: [
+        { title: 'Today’s plan', kind: 'plan', items: [
+          { text: `Reply to ${firm.firm}`, detail: `replied, step ${firm.step}`, href: firm.href, urgency: 'high' },
+          { text: 'Check the top flag', detail: flagLine.slice(2, 80), href: 'https://evil.example/x', urgency: 'medium' },
+        ] },
+        { title: 'Worth knowing', kind: 'list', items: [{ text: 'Nothing else is on fire', detail: '', href: '', urgency: 'low' }] },
+      ],
+      notes: '',
+      followups: ['What did they say?', 'Which deals are stale?'],
       actions: [{ label: 'Open firm', href: firm.href }, { label: 'Evil', href: 'https://evil.example/x' }],
+      sources: ['Outreach', 'Dashboard flags', 'Made up source'],
     }) });
   });
 }).listen(4011, () => console.log('mock openai on 4011'));

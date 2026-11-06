@@ -1,4 +1,5 @@
-// "What you're missing" flags on Home, Ask Naunas panel (tool loop via mock OpenAI), Today's plan.
+// "What you're missing" flags on Home, Ask Naunas panel (tool loop via mock OpenAI, card answers, follow-ups,
+// sources, page context, wider snapshot: health, activity, vault), Today's plan, the vault sync endpoint.
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,10 +18,21 @@ write('outreach/prospects.json', [
   base('rf', { status: 'approved', researchError: 'OpenAI timed out' }),
 ]);
 write('outreach/owed.json', [{ id: 'o1', who: 'Ann · Firm X', what: 'Loom teardown', channel: 'Instagram', owedAt: iso(2 * D) }]);
-write('meta/health.json', { at: iso(3600_000), ok: false });
+write('meta/health.json', { at: iso(3600_000), ok: false, checks: [{ name: 'TikTok', ok: false, detail: 'token expired' }, { name: 'HubSpot', ok: true }] });
+write('events.json', [{ at: iso(3600_000), kind: 'alert', title: 'Problem: Daily job: weekly scoreboard' }]);
 
 const results = [];
 const check = (n, ok, d = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${n}${d ? `  (${d})` : ''}`); };
+
+// Vault sync (laptop -> site): token required, items validated, pasted keys redacted.
+const vpost = (auth, body) => fetch(`${BASE}/api/vault/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: `Bearer ${auth}` } : {}) }, body: JSON.stringify(body) });
+check('Vault sync refuses without the token', (await vpost('', { items: [] })).status === 401);
+check('Vault sync refuses a bad body', (await vpost('studiotest', { nope: 1 })).status === 400);
+const vr = await vpost('studiotest', { items: [{ name: 'SNAEB', kind: 'client', status: 'building', lastContact: '2026-11-05', next: ['Ship the offers page'], blocked: ['Marcus: UAE legal docs'], tasks: [{ text: 'Rotate sk_live_abcdefghijklmnop now', high: true }] }, { name: 'bad', kind: 'nonsense' }] });
+check('Vault sync stores valid items only', vr.ok && (await vr.json()).saved === 1);
+const vault = JSON.parse(fs.readFileSync(path.join(STORE, 'vault/summary.json'), 'utf8'));
+check('Vault sync redacts a pasted key', JSON.stringify(vault).includes('[redacted]') && !JSON.stringify(vault).includes('sk_live_abc'));
+
 const b = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });
 const page = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 const errors = []; page.on('pageerror', (e) => errors.push(e.message));
@@ -42,7 +54,8 @@ const nav = page.waitForEvent('framenavigated', { timeout: 20000 }).catch(() => 
 await Promise.all([page.waitForResponse((x) => x.request().method() === 'POST', { timeout: 60000 }), page.getByRole('button', { name: /Write today’s plan/ }).click()]);
 await nav; await page.waitForLoadState('networkidle');
 const plan = await page.locator('section', { hasText: 'Today’s plan' }).last().innerText();
-check('Today’s plan written and shown', plan.includes('Do this first') && plan.includes('Firm rp'), plan.slice(0, 120));
+check('Today’s plan written and shown as cards', plan.includes('Do this first') && plan.includes('Reply to Firm rp'), plan.slice(0, 160));
+check('Plan steps are numbered and tick off', (await page.getByRole('button', { name: 'Mark step 1 done' }).count()) >= 1);
 check('Unsafe action link dropped from the plan', (await page.locator('a[href^="https://evil"]').count()) === 0);
 
 // Ask panel
@@ -52,16 +65,28 @@ fs.writeFileSync(OAILOG, '[]');
 await page.getByRole('button', { name: 'What am I missing out on?' }).click();
 await page.locator('[role=dialog] a', { hasText: 'Firm rp' }).first().waitFor({ timeout: 30000 }).catch(() => {});
 const dlg = await page.locator('[role=dialog]').innerText();
-check('Answer rendered with bold + bullets + link', dlg.includes('Do this first') && (await page.locator('[role=dialog] a[href="/dashboard/outreach/firm/rp"]').count()) >= 1);
+check('Answer rendered as cards with a headline and links', dlg.includes('Do this first: answer Firm rp.') && dlg.includes('Reply to Firm rp') && (await page.locator('[role=dialog] a[href="/dashboard/outreach/firm/rp"]').count()) >= 2);
+check('Unsafe item link dropped', (await page.locator('[role=dialog] a[href^="https://evil"]').count()) === 0);
+check('Sources footer shows real sources only', dlg.includes('From: Outreach · Dashboard flags') && !dlg.includes('Made up source'));
+check('Follow-up chips shown', await page.getByRole('button', { name: 'Which deals are stale?' }).isVisible());
+check('Copy and Retry on the answer', await page.locator('[role=dialog]').getByRole('button', { name: 'Copy' }).isVisible() && await page.locator('[role=dialog]').getByRole('button', { name: /Retry/ }).isVisible());
+await page.locator('[role=dialog] summary').first().click();
+check('How I checked lists the tool steps', (await page.locator('[role=dialog]').innerText()).includes('Looked up Firm rp'));
 check('Action button shown, unsafe one dropped', (await page.locator('[role=dialog] a', { hasText: 'Open firm →' }).count()) === 1 && (await page.locator('[role=dialog] a', { hasText: 'Evil' }).count()) === 0);
 const log = JSON.parse(fs.readFileSync(OAILOG, 'utf8'));
 check('Tool loop: find_firm called, then answered', log.length === 2 && log[1].messages.some((m) => m.role === 'tool' && m.content.includes('"firm":"Firm rp"')));
 check('Context sent includes flags + snapshot', log[0].messages.some((m) => m.role === 'system' && m.content.includes('FLAGS (') && m.content.includes('PROSPECTS by step')));
-await page.locator('[role=dialog] input').fill('And after that?');
-await page.locator('[role=dialog] form button').click();
+const ctx = log[0].messages.filter((m) => m.role === 'system').map((m) => m.content).join('\n');
+check('Snapshot carries failed health checks', ctx.includes('TikTok (token expired)'));
+check('Snapshot carries the activity log', ctx.includes('Problem: Daily job: weekly scoreboard'));
+check('Snapshot carries the vault', ctx.includes('SNAEB [client, building, last contact 2026-11-05]'));
+check('Snapshot carries build progress', ctx.includes('BUILD (this dashboard'));
+check('Page context sent', ctx.includes('Naufal is asking from the page /dashboard'));
+check('Tools include vault + activity + health', ['vault', 'activity_log', 'health_checks', 'clients_and_money', 'build_progress'].every((n) => log[0].tools.some((t) => t.function.name === n)));
+await page.getByRole('button', { name: 'Which deals are stale?' }).click();
 await page.waitForTimeout(3000);
 const log2 = JSON.parse(fs.readFileSync(OAILOG, 'utf8'));
-check('Follow-up question carries the conversation', log2.length >= 3 && log2[2].messages.filter((m) => m.role === 'user').length === 2);
+check('Follow-up chip carries the conversation', log2.length >= 3 && log2[2].messages.filter((m) => m.role === 'user').length === 2 && log2[2].messages.some((m) => m.role === 'assistant' && m.content.includes('1. Reply to Firm rp')));
 await page.keyboard.press('Escape');
 check('Escape closes the panel', !(await page.locator('[role=dialog]').isVisible()));
 

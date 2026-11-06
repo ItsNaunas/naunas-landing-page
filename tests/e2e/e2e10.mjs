@@ -10,7 +10,8 @@ const BASE = process.env.BASE || 'http://localhost:3000';
 const D = 86_400_000;
 const iso = (ms) => new Date(Date.now() - ms).toISOString();
 const write = (p, v) => { fs.mkdirSync(path.dirname(path.join(STORE, p)), { recursive: true }); fs.writeFileSync(path.join(STORE, p), JSON.stringify(v, null, 2)); };
-const read = (p) => JSON.parse(fs.readFileSync(path.join(STORE, p), 'utf8'));
+// Tolerates catching a store file mid-write (the server writes while this polls): an unreadable read counts as an empty list.
+const read = (p) => { try { return JSON.parse(fs.readFileSync(path.join(STORE, p), 'utf8')); } catch { return []; } };
 fs.rmSync(STORE, { recursive: true, force: true });
 const research = { owner: 'Ann Lee', gap: 'Form says replies in 5 days', detail: 'Oak stair' };
 const drafts = { subject: 's', steps: ['a', 'b', 'c', 'd'], research };

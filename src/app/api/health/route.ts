@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
   }
 
   const checks = await runChecks();
-  // Last run, for the dashboard Automations tab.
-  await putJSON('meta/health.json', { at: new Date().toISOString(), ok: checks.every((c) => c.ok) }).catch(() => {});
+  // Last run, for the dashboard Automations tab and Ask Naunas (which checks failed).
+  await putJSON('meta/health.json', { at: new Date().toISOString(), ok: checks.every((c) => c.ok), checks }).catch(() => {});
 
   const failed = checks.filter((c) => !c.ok);
   const checklist = checks.map((c) => (c.ok ? `✓ ${esc(c.name)}` : `✗ <b>${esc(c.name)}</b>\n    <code>${esc(c.detail ?? 'failed')}</code>`));

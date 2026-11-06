@@ -17,6 +17,8 @@ const SHORT_LINKS: { path: string; source: string; medium: string; to: string }[
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Ask Naunas reads this repo's PROGRESS.md at runtime (lib/assistantData), from any dashboard page or the cron.
+  outputFileTracingIncludes: { '/dashboard/**': ['./PROGRESS.md'], '/api/health': ['./PROGRESS.md'], '/api/content/fire': ['./PROGRESS.md'] },
   async redirects() {
     return [
       ...SHORT_LINKS.map(({ path, source, medium, to }) => ({

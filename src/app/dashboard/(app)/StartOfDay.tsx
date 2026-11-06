@@ -2,7 +2,7 @@ import { getBriefing } from '@/lib/assistant';
 import { aiReady } from '@/lib/ai';
 import { demoOn } from '@/lib/ops/demo';
 import { ActionForm } from '@/components/dashboard/ActionForm';
-import { Markdown } from '@/components/dashboard/AskNaunas';
+import { AnswerView } from '@/components/dashboard/AskNaunas';
 import { refreshBriefing } from '@/app/dashboard/actions';
 import { untilOrAgo } from '@/components/dashboard/kit';
 
@@ -21,14 +21,7 @@ export async function Plan() {
         )}
       </div>
       {brief ? (
-        <>
-          <Markdown text={brief.answer} />
-          {!!brief.actions.length && (
-            <div className="flex flex-wrap gap-2">
-              {brief.actions.map((a) => <a key={a.href + a.label} href={a.href} className="rounded-full bg-white text-black px-3 py-1.5 text-xs font-medium hover:bg-white/90">{a.label} →</a>)}
-            </div>
-          )}
-        </>
+        <AnswerView a={brief} />
       ) : (
         <p className="text-sm text-white/55">{aiReady() ? 'Written at 09:00 each morning from everything the dashboard knows. Press “Write today’s plan” to get it now, or use Ask (Ctrl+J).' : 'Connect OpenAI (System → Connections) to get a written plan each morning.'}</p>
       )}
